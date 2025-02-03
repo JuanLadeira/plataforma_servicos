@@ -13,6 +13,14 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   # psycopg dependencies
   libpq-dev
 
+RUN apt-get update && apt-get install -y curl \
+  && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+  && apt-get install -y nodejs \
+  && npm install -g npm@latest
+
+# Verifica as versões instaladas (apenas para debug)
+RUN node -v && npm -v
+
 # Requirements are installed here to ensure they will be cached.
 COPY ./requirements .
 
@@ -85,6 +93,7 @@ COPY ./compose/local/django/celery/flower/start /start-flower
 RUN sed -i 's/\r$//g' /start-flower
 RUN chmod +x /start-flower
 
+ENV NPM_BIN_PATH="/usr/bin/npm"
 
 # copy application code to WORKDIR
 COPY . ${APP_HOME}

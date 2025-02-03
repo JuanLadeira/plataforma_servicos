@@ -83,6 +83,8 @@ THIRD_PARTY_APPS = [
     "theme",
 ]
 
+TAILWIND_APP_NAME = "theme"
+
 LOCAL_APPS = [
     "plataforma_de_servicos.users",
     # Your stuff: custom apps go here
