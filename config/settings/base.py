@@ -79,6 +79,8 @@ THIRD_PARTY_APPS = [
     "allauth.mfa",
     "allauth.socialaccount",
     "django_celery_beat",
+    "tailwind",
+    "theme",
 ]
 
 LOCAL_APPS = [
