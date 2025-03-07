@@ -87,6 +87,11 @@ TAILWIND_APP_NAME = "theme"
 
 LOCAL_APPS = [
     "plataforma_de_servicos.users",
+    "plataforma_de_servicos.empresa",
+    "plataforma_de_servicos.servico",
+    "plataforma_de_servicos.produto",
+    "plataforma_de_servicos.estoque",
+
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
