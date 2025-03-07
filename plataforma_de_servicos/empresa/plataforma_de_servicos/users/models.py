@@ -9,8 +9,6 @@ from django.db.models import TextChoices
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
-from plataforma_de_servicos.empresa.models import Empresa
-
 from .managers import UserManager
 
 
@@ -78,7 +76,15 @@ class Funcionario(models.Model):
 
 class Cliente(models.Model):
     usuario = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
-    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
+    empresa = models.ForeignKey("empresas.Empresa", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return super().__str__()
+
+
+    nome = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    email = models.EmailField()
 
     def __str__(self):
         return super().__str__()
