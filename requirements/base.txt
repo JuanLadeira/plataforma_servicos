@@ -32,7 +32,7 @@ hiredis==3.1.0
 httptools==0.6.4
 humanize==4.12.1
 idna==3.10
-kombu==5.5.0
+kombu==5.5.1
 packaging==24.2
 pillow==11.1.0
 prometheus-client==0.21.1
