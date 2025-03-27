@@ -61,6 +61,13 @@ WSGI_APPLICATION = "config.wsgi.application"
 # APPS
 # ------------------------------------------------------------------------------
 DJANGO_APPS = [
+    "unfold",  # before django.contrib.admin
+    "unfold.contrib.filters",  # optional, if special filters are needed
+    "unfold.contrib.forms",  # optional, if special form elements are needed
+    "unfold.contrib.inlines",  # optional, if special inlines are needed
+    "unfold.contrib.import_export",  # optional, if django-import-export package is used
+    "unfold.contrib.guardian",  # optional, if django-guardian package is used
+    "unfold.contrib.simple_history",  # optional, if django-simple-history package is used
     "django.contrib.admin",  # required
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -87,7 +94,6 @@ LOCAL_APPS = [
     "plataforma_de_servicos.servico",
     "plataforma_de_servicos.produto",
     "plataforma_de_servicos.estoque",
-
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -331,7 +337,9 @@ ACCOUNT_FORMS = {"signup": "plataforma_de_servicos.users.forms.UserSignupForm"}
 # https://docs.allauth.org/en/latest/socialaccount/configuration.html
 SOCIALACCOUNT_ADAPTER = "plataforma_de_servicos.users.adapters.SocialAccountAdapter"
 # https://docs.allauth.org/en/latest/socialaccount/configuration.html
-SOCIALACCOUNT_FORMS = {"signup": "plataforma_de_servicos.users.forms.UserSocialSignupForm"}
+SOCIALACCOUNT_FORMS = {
+    "signup": "plataforma_de_servicos.users.forms.UserSocialSignupForm",
+}
 # django-compressor
 # ------------------------------------------------------------------------------
 # https://django-compressor.readthedocs.io/en/latest/quickstart/#installation
@@ -339,3 +347,19 @@ INSTALLED_APPS += ["compressor"]
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+UNFOLD = {
+    "SITE_TITLE": "Plataforma de Serviços",
+    "SITE_HEADER": "Plataforma de Serviços",
+    "SITE_URL": "/admin",
+    "SITE_ICON": None,  # path to image from static
+    "DASHBOARD_CALLBACK": None,
+    "LOGIN": {
+        "image": None,  # path to image from static
+        "redirect_after": None,
+    },
+    "STYLES": [],  # paths to css files from static
+    "SCRIPTS": [],  # paths to js files from static
+    "TABS": False,
+    "LOADER": False,
+    "SHOW_HISTORY": True,
+}
