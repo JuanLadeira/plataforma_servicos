@@ -2,8 +2,6 @@ from typing import Any
 
 from django import forms
 from django.contrib import admin
-from unfold.admin import ModelAdmin
-from unfold.admin import TabularInline
 
 from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueItens
 from plataforma_de_servicos.estoque.models.protocolo_entrega_itens_model import (
@@ -16,14 +14,14 @@ from plataforma_de_servicos.estoque.models.proxys.estoque_entrada import Estoque
 from plataforma_de_servicos.estoque.models.proxys.estoque_saida import EstoqueSaida
 
 
-class EstoqueItensInline(TabularInline):
+class EstoqueItensInline(admin.TabularInline):
     model = EstoqueItens
     extra = 0
     readonly_fields = ("saldo",)
 
 
 @admin.register(EstoqueEntrada)
-class EstoqueEntradaAdmin(ModelAdmin):
+class EstoqueEntradaAdmin(admin.ModelAdmin):
     inlines = (EstoqueItensInline,)
     list_display = ("__str__", "nf", "funcionario")
     search_fields = ("nf",)
@@ -71,7 +69,7 @@ class EstoqueEntradaAdmin(ModelAdmin):
 
 
 @admin.register(EstoqueSaida)
-class EstoqueSaidaAdmin(ModelAdmin):
+class EstoqueSaidaAdmin(admin.ModelAdmin):
     inlines = (EstoqueItensInline,)
     list_display = ("__str__", "nf", "funcionario")
     search_fields = ("nf",)
@@ -94,13 +92,13 @@ class EstoqueSaidaAdmin(ModelAdmin):
         obj.processar()
 
 
-class ProtocoloEntregaItensInline(TabularInline):
+class ProtocoloEntregaItensInline(admin.TabularInline):
     model = ProtocoloEntregaItens
     extra = 0
 
 
 @admin.register(ProtocoloEntrega)
-class ProtocoloEntregaAdmin(ModelAdmin):
+class ProtocoloEntregaAdmin(admin.ModelAdmin):
     inlines = (ProtocoloEntregaItensInline,)
     list_display = ("__str__", "estoque_atualizado")
     list_filter = ("usuario",)

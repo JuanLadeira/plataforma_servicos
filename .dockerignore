@@ -10,3 +10,10 @@
 venv
 .git
 .envs/
+.ipython/
+.git/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env

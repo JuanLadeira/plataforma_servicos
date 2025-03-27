@@ -10,7 +10,7 @@ class Produto(models.Model):
     produto = models.CharField(max_length=100, unique=True)
     slug = AutoSlugField(populate_from="produto", unique=True)
     preco = models.DecimalField("preço", max_digits=7, decimal_places=2)
-    estoque = models.IntegerField("estoque atual")
+    estoque = models.IntegerField("estoque atual", default=0)
     estoque_minimo = models.PositiveIntegerField("estoque mínimo", default=0)
     data = models.DateField(null=True, blank=True)
     categoria = models.ForeignKey(
