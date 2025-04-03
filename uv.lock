@@ -53,6 +53,19 @@ wheels = [
 ]
 
 [[package]]
+name = "django-extensions"
+version = "3.2.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django", version = "4.2.20", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "django", version = "5.1.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8a/f1/318684c9466968bf9a9c221663128206e460c1a67f595055be4b284cde8a/django-extensions-3.2.3.tar.gz", hash = "sha256:44d27919d04e23b3f40231c4ab7af4e61ce832ef46d610cc650d53e68328410a", size = 277216 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a7/7e/ba12b9660642663f5273141018d2bec0a1cae1711f4f6d1093920e157946/django_extensions-3.2.3-py3-none-any.whl", hash = "sha256:9600b7562f79a92cbf1fde6403c04fee314608fefbb595502e34383ae8203401", size = 229868 },
+]
+
+[[package]]
 name = "django-unfold"
 version = "0.52.0"
 source = { registry = "https://pypi.org/simple" }
@@ -79,18 +92,46 @@ wheels = [
 ]
 
 [[package]]
+name = "factory-boy"
+version = "3.3.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "faker" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ba/98/75cacae9945f67cfe323829fc2ac451f64517a8a330b572a06a323997065/factory_boy-3.3.3.tar.gz", hash = "sha256:866862d226128dfac7f2b4160287e899daf54f2612778327dd03d0e2cb1e3d03", size = 164146 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/27/8d/2bc5f5546ff2ccb3f7de06742853483ab75bf74f36a92254702f8baecc79/factory_boy-3.3.3-py2.py3-none-any.whl", hash = "sha256:1c39e3289f7e667c4285433f305f8d506efc2fe9c73aaea4151ebd5cdea394fc", size = 37036 },
+]
+
+[[package]]
+name = "faker"
+version = "37.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "tzdata" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ba/a6/b77f42021308ec8b134502343da882c0905d725a4d661c7adeaf7acaf515/faker-37.1.0.tar.gz", hash = "sha256:ad9dc66a3b84888b837ca729e85299a96b58fdaef0323ed0baace93c9614af06", size = 1875707 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d7/a1/8936bc8e79af80ca38288dd93ed44ed1f9d63beb25447a4c59e746e01f8d/faker-37.1.0-py3-none-any.whl", hash = "sha256:dc2f730be71cb770e9c715b13374d80dbcee879675121ab51f9683d262ae9a1c", size = 1918783 },
+]
+
+[[package]]
 name = "plataforma-de-servicos"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "django-extensions" },
     { name = "django-unfold" },
     { name = "djangorestframework" },
+    { name = "factory-boy" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "django-extensions", specifier = ">=3.2.3" },
     { name = "django-unfold", specifier = ">=0.52.0" },
     { name = "djangorestframework", specifier = ">=3.15.2" },
+    { name = "factory-boy", specifier = ">=3.3.3" },
 ]
 
 [[package]]
