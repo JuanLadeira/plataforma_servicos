@@ -1,18 +1,19 @@
 from django.db import models
 from django.db import transaction
 from django.utils.translation import gettext as _
+from django_extensions.db.fields import AutoSlugField
 
 from plataforma_de_servicos.core.models import TimeStampedModel
 from plataforma_de_servicos.produto.models.produto_model import Produto
 
 
-# Create your models here.
 class Inventario(TimeStampedModel):
     nome = models.CharField(max_length=255, unique=True, verbose_name="Nome")
-    slug = models.SlugField(
-        max_length=255,
+    slug = AutoSlugField(
+        populate_from="nome",
         unique=True,
-        verbose_name="Identificador",
+        max_length=255,
+        verbose_name="Slug",
     )
     is_ativo = models.BooleanField(
         default=True,

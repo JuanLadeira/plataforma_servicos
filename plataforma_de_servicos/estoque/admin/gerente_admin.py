@@ -10,7 +10,7 @@ from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueIte
 class EstoqueItensInline(TabularInline):
     model = EstoqueItens
     extra = 0
-    readonly_fields = ("saldo",)
+    readonly_fields = ("saldo", "inventario")
 
 
 class EstoqueEntradaAdmin(ModelAdmin):
@@ -40,6 +40,10 @@ class EstoqueEntradaAdmin(ModelAdmin):
         # Para ocultar o campo 'movimento' do formulário
         if "movimento" in form.base_fields:
             form.base_fields["movimento"].widget = forms.HiddenInput()
+        if "processado" in form.base_fields:
+            form.base_fields["processado"].widget = forms.HiddenInput()
+        if "inventario_origem" in form.base_fields:
+            form.base_fields["inventario_origem"].widget = forms.HiddenInput()
         return form
 
     def save_related(self, request: Any, form: Any, formsets: Any, change: Any) -> None:

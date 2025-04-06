@@ -102,6 +102,11 @@ class Estoque(TimeStampedModel):
         """
         itens = self.estoque_itens.all()
         for item in itens:
+            if self.movimento == "e":
+                item.inventario = self.inventario_destino
+            elif self.movimento == "s" | self.movimento == "t":
+                item.inventario = self.inventario_origem
+
             saldo = item.produto.estoque
             item.atualizar_saldo()
             saldo = item.produto.estoque
