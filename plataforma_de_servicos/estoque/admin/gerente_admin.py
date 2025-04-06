@@ -5,9 +5,6 @@ from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
 
 from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueItens
-from plataforma_de_servicos.estoque.models.protocolo_entrega_itens_model import (
-    ProtocoloEntregaItens,
-)
 
 
 class EstoqueItensInline(TabularInline):
@@ -107,35 +104,3 @@ class EstoqueSaidaAdmin(ModelAdmin):
         super().save_related(request, form, formsets, change)
         obj = form.instance
         obj.processar()
-
-
-class ProtocoloEntregaItensInline(TabularInline):
-    model = ProtocoloEntregaItens
-    extra = 0
-
-
-class ProtocoloEntregaAdmin(ModelAdmin):
-    inlines = (ProtocoloEntregaItensInline,)
-    list_display = ("__str__", "estoque_atualizado")
-    list_filter = ("usuario",)
-    date_hierarchy = "created"
-
-    compressed_fields = True
-    warn_unsaved_form = True
-
-    list_filter_submit = True
-    list_fullwidth = True
-
-    list_horizontal_scrollbar_top = True
-    list_disable_select_all = True
-
-    actions_list = []  # Displayed above the results list
-    actions_row = []  # Displayed in a table row in results list
-    actions_detail = []  # Displayed at the top of for in object detail
-    actions_submit_line = []  # Displayed near save in object detail
-
-    def save_related(self, request: Any, form: Any, formsets: Any, change: Any) -> None:
-        super().save_related(request, form, formsets, change)
-        obj = form.instance
-        user = request.user
-        obj.processar_protocolo(usuario=user)

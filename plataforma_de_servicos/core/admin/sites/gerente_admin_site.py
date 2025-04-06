@@ -2,10 +2,6 @@ from unfold.sites import UnfoldAdminSite
 
 from plataforma_de_servicos.estoque.admin.gerente_admin import EstoqueEntradaAdmin
 from plataforma_de_servicos.estoque.admin.gerente_admin import EstoqueSaidaAdmin
-from plataforma_de_servicos.estoque.admin.gerente_admin import ProtocoloEntregaAdmin
-from plataforma_de_servicos.estoque.models.protocolo_entrega_model import (
-    ProtocoloEntrega,
-)
 from plataforma_de_servicos.estoque.models.proxys.estoque_entrada import EstoqueEntrada
 from plataforma_de_servicos.estoque.models.proxys.estoque_saida import EstoqueSaida
 from plataforma_de_servicos.produto.admin.gerente_admin import CategoriaGerenteAdmin
@@ -41,4 +37,3 @@ gerente_site.register(Produto, ProdutoGerenteAdmin)
 gerente_site.register(Categoria, CategoriaGerenteAdmin)
 gerente_site.register(EstoqueEntrada, EstoqueEntradaAdmin)
 gerente_site.register(EstoqueSaida, EstoqueSaidaAdmin)
-gerente_site.register(ProtocoloEntrega, ProtocoloEntregaAdmin)

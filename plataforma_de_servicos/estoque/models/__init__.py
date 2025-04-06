@@ -1,11 +1,7 @@
-from .estoque_model import Estoque
 from .estoque_itens_model import EstoqueItens
-from .protocolo_entrega_model import ProtocoloEntrega
-from .protocolo_entrega_itens_model import ProtocoloEntregaItens
+from .estoque_model import Estoque
 
 __all__ = [
-    'Estoque',
-    'EstoqueItens',
-    'ProtocoloEntrega',
-    'ProtocoloEntregaItens',
+    "Estoque",
+    "EstoqueItens",
 ]

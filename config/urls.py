@@ -7,7 +7,7 @@ from django.urls import include
 from django.urls import path
 from django.views import defaults as default_views
 from django.views.generic import TemplateView
-from plataforma_de_servicos.produto.admin.gerente_admin import gerente_site
+from plataforma_de_servicos.core.admin.sites.gerente_admin_site import gerente_site
 
 
 urlpatterns = [
