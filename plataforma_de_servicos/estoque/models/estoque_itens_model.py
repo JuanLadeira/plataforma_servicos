@@ -20,6 +20,12 @@ class EstoqueItens(models.Model):
     produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
     quantidade = models.PositiveIntegerField()
     saldo = models.PositiveIntegerField(blank=True, null=True)
+    inventario = models.ForeignKey(
+        "inventario.Inventario",
+        on_delete=models.CASCADE,
+        related_name="estoque_itens",
+        verbose_name="Inventário",
+    )
 
     class Meta:
         ordering = ("pk",)
@@ -28,6 +34,13 @@ class EstoqueItens(models.Model):
 
     def __str__(self):
         return f"{self.pk} - {self.estoque.pk} - {self.produto}"
+
+    def save(self, *args, **kwargs):
+        """
+        Salva o item de estoque.
+        """
+        self.inventario = self.estoque.inventario
+        super().save(*args, **kwargs)
 
     def data(self) -> date:
         return self.estoque.data
@@ -45,14 +58,35 @@ class EstoqueItens(models.Model):
         """
         if self.estoque.movimento == "e":
             saldo = self.produto.estoque + self.quantidade
-        else:
+        elif self.estoque.movimento == "s":
             log.info("entrei na subtração do saldo")
             saldo = self.produto.estoque - self.quantidade
             if saldo < 0:
                 raise ProdutoSaldoInsuficienteError(
                     self.produto.produto, self.quantidade,
                 )
+        elif self.estoque.movimento == "t":
+            saldo = self.produto.estoque
         self.saldo = saldo
         self.produto.estoque = saldo
         self.produto.save()
         self.save()
+
+    def validate_inventario(self):
+        """
+        Valida se o inventário do item de estoque é o mesmo que o do estoque.
+        """
+        if self.inventario != self.estoque.inventario:
+            self.inventario = self.estoque.inventario
+
+    def clean(self):
+        """
+        Valida o item de estoque antes de salvar.
+        """
+        self.validate_inventario()
+        if self.quantidade <= 0:
+            message = (
+                "A quantidade deve ser maior que zero."
+                f"Quantidade: {self.quantidade}"
+            )
+            raise ValueError(message)

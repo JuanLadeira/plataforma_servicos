@@ -2,16 +2,19 @@ from logging import DEBUG
 from logging import basicConfig
 from logging import getLogger
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db import transaction
 
 from plataforma_de_servicos.core.models import TimeStampedModel
 from plataforma_de_servicos.inventario.models import Inventario
+from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.users.models import User
 
 MOVIMENTO = (
     ("e", "entrada"),
     ("s", "saída"),
+    ("t", "transferência"),
 )
 
 
@@ -25,15 +28,38 @@ class Estoque(TimeStampedModel):
     movimento = models.CharField(max_length=1, choices=MOVIMENTO, blank=True)
     processado = models.BooleanField(default=False)
     data = models.DateField("data", auto_now_add=True, help_text="Data do movimento")
-    inventario = models.ForeignKey(
+    inventario_origem = models.ForeignKey(
         Inventario,
         on_delete=models.CASCADE,
-        related_name="estoque",
-        verbose_name="Inventário",
+        related_name="estoque_origem",
+        verbose_name="Inventário de Origem",
+        null=True,
+        blank=True,
     )
-
+    inventario_destino = models.ForeignKey(
+        Inventario,
+        on_delete=models.CASCADE,
+        related_name="estoque_destino",
+        verbose_name="Inventário de Destino",
+        null=True,
+        blank=True,
+    )
     class Meta:
         ordering = ("-created",)
+
+    def clean(self):
+        """Validação de consistência dos inventários"""
+        if self.movimento == "e" and not self.inventario_destino:
+            message = "Entrada requer inventário de destino"
+            raise ValidationError(message=message)
+
+        if self.movimento == "s" and not self.inventario_origem:
+            message = "Saída requer inventário de origem"
+            raise ValidationError(message=message)
+
+        if self.movimento == "t" and not (self.inventario_origem and self.inventario_destino):
+            message = "Transferência requer origem e destino"
+            raise ValidationError(message=message)
 
     def __str__(self):
         if self.nf:
@@ -62,11 +88,11 @@ class Estoque(TimeStampedModel):
         that is, entry or exit.
         """
         if not self.processado:
-            self.atualizar_estoque_entrada_ou_saida()
+            self.atualizar_estoque()
             self.processado = True
             self.save()
 
-    def atualizar_estoque_entrada_ou_saida(self):
+    def atualizar_estoque(self):
         """
         Atualiza o estoque de acordo com a entrada ou saida,
         ou seja, incrementa ou decrementa o saldo dos produtos.
@@ -80,3 +106,34 @@ class Estoque(TimeStampedModel):
             item.atualizar_saldo()
             saldo = item.produto.estoque
             log.debug("Novo saldo do produto %s é %s", item.produto.produto, saldo)
+
+            self.atualizar_inventario_saldo(item)
+
+    def atualizar_inventario_saldo(self, item):
+        """Atualiza o saldo específico por inventário"""
+        if self.movimento == "e":
+            # Entrada - incrementa no destino
+            InventarioSaldo.objects.update_or_create(
+                inventario=self.inventario_destino,
+                produto=item.produto,
+                defaults={"quantidade": models.F("quantidade") + item.quantidade},
+            )
+        elif self.movimento == "s":
+            # Saída - decrementa na origem
+            InventarioSaldo.objects.update_or_create(
+                inventario=self.inventario_origem,
+                produto=item.produto,
+                defaults={"quantidade": models.F("quantidade") - item.quantidade},
+            )
+        elif self.movimento == "t":
+            # Transferência - decrementa na origem e incrementa no destino
+            InventarioSaldo.objects.update_or_create(
+                inventario=self.inventario_origem,
+                produto=item.produto,
+                defaults={"quantidade": models.F("quantidade") - item.quantidade},
+            )
+            InventarioSaldo.objects.update_or_create(
+                inventario=self.inventario_destino,
+                produto=item.produto,
+                defaults={"quantidade": models.F("quantidade") + item.quantidade},
+            )
