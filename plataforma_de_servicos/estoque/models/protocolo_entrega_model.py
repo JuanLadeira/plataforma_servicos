@@ -35,11 +35,7 @@ class ProtocoloEntrega(TimeStampedModel):
                     estoque=estoque_saida,
                     produto=item.produto,
                     quantidade=item.quantidade,
-                    saldo=item.produto.estoque - item.quantidade,
                 )
-                # Atualizar o estoque do produto
-                item.produto.estoque -= item.quantidade
-                item.produto.save()
             # Processando a saida.
             estoque_saida.processar()
 

@@ -6,6 +6,7 @@ from django.db import models
 from django.db import transaction
 
 from plataforma_de_servicos.core.models import TimeStampedModel
+from plataforma_de_servicos.inventario.models import Inventario
 from plataforma_de_servicos.users.models import User
 
 MOVIMENTO = (
@@ -24,6 +25,12 @@ class Estoque(TimeStampedModel):
     movimento = models.CharField(max_length=1, choices=MOVIMENTO, blank=True)
     processado = models.BooleanField(default=False)
     data = models.DateField("data", auto_now_add=True, help_text="Data do movimento")
+    inventario = models.ForeignKey(
+        Inventario,
+        on_delete=models.CASCADE,
+        related_name="estoque",
+        verbose_name="Inventário",
+    )
 
     class Meta:
         ordering = ("-created",)

@@ -1,0 +1,44 @@
+from unfold.sites import UnfoldAdminSite
+
+from plataforma_de_servicos.estoque.admin.gerente_admin import EstoqueEntradaAdmin
+from plataforma_de_servicos.estoque.admin.gerente_admin import EstoqueSaidaAdmin
+from plataforma_de_servicos.estoque.admin.gerente_admin import ProtocoloEntregaAdmin
+from plataforma_de_servicos.estoque.models.protocolo_entrega_model import (
+    ProtocoloEntrega,
+)
+from plataforma_de_servicos.estoque.models.proxys.estoque_entrada import EstoqueEntrada
+from plataforma_de_servicos.estoque.models.proxys.estoque_saida import EstoqueSaida
+from plataforma_de_servicos.produto.admin.gerente_admin import CategoriaGerenteAdmin
+from plataforma_de_servicos.produto.admin.gerente_admin import ProdutoGerenteAdmin
+from plataforma_de_servicos.produto.models.categoria_model import Categoria
+from plataforma_de_servicos.produto.models.produto_model import Produto
+
+
+class GerenteAdminSite(UnfoldAdminSite):
+    site_header = "Portal dos Gerentes"
+    site_title = "Gestão de Produtos e Serviços"
+    index_title = "Administração dos Gerentes"
+
+    settings_name = "UNFOLD_GERENTE_ADMIN"
+
+    def has_permission(self, request):
+        """
+        Verifica se o usuário tem permissão para acessar o site
+        """
+        if not request.user.is_authenticated:
+            return False
+        return request.user.is_active and (request.user.is_staff or request.user.is_superuser)
+
+    def each_context(self, request):
+        context = super().each_context(request)
+        context["site_url"] = "/gerentes"
+        return context
+
+
+gerente_site = GerenteAdminSite(name="gerentes")
+
+gerente_site.register(Produto, ProdutoGerenteAdmin)
+gerente_site.register(Categoria, CategoriaGerenteAdmin)
+gerente_site.register(EstoqueEntrada, EstoqueEntradaAdmin)
+gerente_site.register(EstoqueSaida, EstoqueSaidaAdmin)
+gerente_site.register(ProtocoloEntrega, ProtocoloEntregaAdmin)
