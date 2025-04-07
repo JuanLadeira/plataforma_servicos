@@ -12,3 +12,6 @@ class EstoqueEntrada(Estoque):
         verbose_name = "Entrada de estoque"
         verbose_name_plural = "Entradas de estoque"
         ordering = ("-created",)
+
+    def get_inline_title(self):
+        return "Entradas"

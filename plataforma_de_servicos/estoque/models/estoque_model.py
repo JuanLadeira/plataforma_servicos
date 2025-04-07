@@ -102,7 +102,7 @@ class Estoque(TimeStampedModel):
         for item in itens:
             if self.movimento == Movimento.ENTRADA.value:
                 item.inventario = self.inventario_destino
-            elif self.movimento == Movimento.SAIDA.value | self.movimento == Movimento.TRANSFERENCIA.value:
+            elif self.movimento in {Movimento.SAIDA.value, Movimento.TRANSFERENCIA.value}:
                 item.inventario = self.inventario_origem
 
             saldo = item.produto.estoque

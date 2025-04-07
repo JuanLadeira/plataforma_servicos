@@ -148,16 +148,3 @@ class EstoqueSaidaAdmin(ModelAdmin):
             instance.inventario = inventario
             instance.save()
         formset.save_m2m()
-
-    def get_colors(self, request):
-        colors = super().get_colors(request)
-        if request.path.endswith("estoquesaida/"):
-            colors.update({
-                "base": {
-                    "300": "0 255 0",  # Fundo verde
-                    "600": "255 0 0",  # Linhas da tabela vermelhas
-                    "900": "0 0 255",  # Títulos azuis
-                    "950": "0 255 0",  # Títulos verdes
-                },
-            })
-        return colors
