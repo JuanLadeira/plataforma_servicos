@@ -44,6 +44,9 @@ class ProdutoGerenteAdmin(ModelAdmin):
         ),
     ]
     readonly_fields = ["estoque", "data"]
+    conditional_fields = {
+        "importado": "preco != 0",
+    }
 
     compressed_fields = True
     warn_unsaved_form = True

@@ -124,6 +124,13 @@ class EstoqueSaidaAdmin(ModelAdmin):
 
         if "movimento" in form.base_fields:
             form.base_fields["movimento"].widget = forms.HiddenInput()
+
+        if "processado" in form.base_fields:
+            form.base_fields["processado"].widget = forms.HiddenInput()
+
+        if "inventario_destino" in form.base_fields:
+            form.base_fields["inventario_destino"].widget = forms.HiddenInput()
+
         return form
 
     def save_related(self, request: Any, form: Any, formsets: Any, change: Any) -> None:
@@ -141,3 +148,16 @@ class EstoqueSaidaAdmin(ModelAdmin):
             instance.inventario = inventario
             instance.save()
         formset.save_m2m()
+
+    def get_colors(self, request):
+        colors = super().get_colors(request)
+        if request.path.endswith("estoquesaida/"):
+            colors.update({
+                "base": {
+                    "300": "0 255 0",  # Fundo verde
+                    "600": "255 0 0",  # Linhas da tabela vermelhas
+                    "900": "0 0 255",  # Títulos azuis
+                    "950": "0 255 0",  # Títulos verdes
+                },
+            })
+        return colors

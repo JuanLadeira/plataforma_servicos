@@ -5,6 +5,7 @@ import ssl
 from pathlib import Path
 
 import environ
+from django.templatetags.static import static
 
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 # plataforma_de_servicos/
@@ -365,6 +366,10 @@ UNFOLD = {
     "SHOW_HISTORY": True,
 }
 
+CORES_LINHAS_TABELA = "0 0 0"
+CORES_PLACE_HOLDER_INPUT = "169 169 169"  # cores de placeholder de input
+CORES_TITULOS_TABELAS = "0 100 0"  # cores dos titulos de tabela
+
 UNFOLD_GERENTE_ADMIN = {
     "SITE_TITLE": "Plataforma dos Gerentes",
     "SITE_HEADER": "Plataforma dos Gerentes",
@@ -374,38 +379,40 @@ UNFOLD_GERENTE_ADMIN = {
     "LOGIN": {
         "image": None,  # path to image from static
         "redirect_after": None,
+
     },
-    "STYLES": [],  # paths to css files from static
-    "SCRIPTS": [],  # paths to js files from static
+      "STYLES": [
+        lambda request: static("css/gerente.css"),
+    ],
+    "SCRIPTS": [
+        lambda request: static("js/gerente.js"),
+    ],  # paths to js files from static
     "LOADER": False,
     "SHOW_HISTORY": True,
     "BORDER_RADIUS": "8px",
     "COLORS": {
         "base": {
-            "50": "249 250 251",
-            "100": "243 244 246",
-            "200": "229 231 235",
-            "300": "209 213 219",
-            "400": "156 163 175",
-            "500": "107 114 128",
-            "600": "75 85 99",
-            "700": "55 65 81",
-            "800": "31 41 55",
-            "900": "17 24 39",
-            "950": "3 7 18",
+            "50": "240 255 244",  # light green
+            "100": "220 255 220",
+            "200": "190 245 190",
+            "300": CORES_PLACE_HOLDER_INPUT,
+            "400": CORES_PLACE_HOLDER_INPUT,  # cores de placeholder de input e dos emotions da tabela
+            "600": CORES_LINHAS_TABELA,  # cores das linhas de tabela
+            "900": CORES_TITULOS_TABELAS,  # cores das linhas de tabela
+            "950": CORES_TITULOS_TABELAS,  # cores dos titulos de tabela
         },
         "primary": {
-            "50": "250 245 255",
-            "100": "243 232 255",
-            "200": "233 213 255",
-            "300": "216 180 254",
-            "400": "192 132 252",
-            "500": "168 85 247",
-            "600": "147 51 234",
-            "700": "126 34 206",
-            "800": "107 33 168",
-            "900": "88 28 135",
-            "950": "59 7 100",
+            "50": "240 255 244",  # light green
+            "100": "220 255 220",
+            "200": "190 245 190",
+            "300": "160 235 160",
+            "400": "130 225 130",
+            "500": "100 215 100",
+            "600": "80 200 80",
+            "700": "60 180 60",
+            "800": "40 160 40",
+            "900": "20 140 20",
+            "950": "10 120 10",
         },
         "font": {
             "subtle-light": "var(--color-base-500)",  # text-base-500
@@ -415,5 +422,7 @@ UNFOLD_GERENTE_ADMIN = {
             "important-light": "var(--color-base-900)",  # text-base-900
             "important-dark": "var(--color-base-100)",  # text-base-100
         },
+
     },
+
 }

@@ -1,0 +1,134 @@
+Table Usuario {
+  id int [pk] // Herda do AbstractUser
+  username varchar
+  password varchar
+  email varchar
+  telefone varchar [note: "Formato: '+XX (XX) XXXXXXXXX'"]
+  tipo_usuario varchar [note: "Define o tipo do usuário: UNIDADE, EMPRESA ou FUNCIONARIO"]
+  foto varchar [note: "Caminho para fotos_clientes/"]
+  
+  created_at timestamp
+  updated_at timestamp
+
+  // Campos virtuais
+  is_cliente boolean [note: "Campo virtual: True se tipo_usuario == 'CLIENTE'"]
+  is_funcionario boolean [note: "Campo virtual: True se tipo_usuario == 'FUNCIONARIO'"]
+}
+
+
+Table Funcionario {
+  usuario_id int [pk, ref: > Usuario.id, note: "Relacionamento OneToOne com Usuario"]
+  cargo varchar [note: "Cargo do funcionário"]
+  endereco varchar [note: "Endereço do funcionário"]
+  setor varchar [note: "Setor do funcionário: Qualidade, Comercial, Técnico, Administrativo"]
+  cpf varchar [unique, note: "CPF único no formato 'XXX.XXX.XXX-XX'"]
+  assinatura varchar [note: "Caminho para a assinatura do funcionário em 'assinaturas/'"]
+  is_signatario boolean [note: "Indica se o funcionário é signatário"]
+}
+
+Table Cliente {
+  usuario_id int [pk, ref: > Usuario.id, note: "Relacionamento OneToOne com Usuario"]
+  empresa_id int [ref: > Empresa.id, note:"Relacionamento com empresa para separar usuarios de clientes"]
+}
+
+Table Empresa {
+  id int [pk]
+  nome varchar
+  slug varchar
+  email varchar
+  imo varchar
+  foto image
+}
+
+Table Carrinho {
+  id int [pk]
+  identificador varchar
+  slug varchar
+  tipo varchar [note: "offshore ou onshore"]
+  criado_em datetime
+  data_entrada date
+  aprovacao bool
+  prazo_entrega int
+  status varchar [note: 'carrinho, pendente_pagamento, pago, concluido, cancelado']
+  data_da_aprovacao date
+  local varchar
+}
+
+
+Table ItemCarrinho{
+  id int [pk]
+  carrinho_id int [ref: > Carrinho.id, note: "Relacionamentro estrangeiro com Carrinho"]
+  produto_id int [ref: > Produto.produto_id, note:"Relacionamento estrangeiro com Produto"]
+
+}
+
+
+Table Produto {
+  produto_id integer [primary key]
+  categoria_id integer [ref: > Categoria.categoria_id]
+  importado bolean
+  ncm varchar
+  slug varchar [not null]
+  preco decimal
+  estoque integer
+  estoque_minimo integer
+  data timestamp
+  created_at timestamp 
+}
+
+
+Table Categoria {
+  categoria_id integer [primary key]
+  slug varchar [not null]
+}
+
+Table Estoque {
+  estoque_id  integer [primary key]
+  funcionario_id integer [ref: > Funcionario.usuario_id]
+  inventario_id integer [ref: > Inventario.inventario_id, note: "Inventário afetado"]
+  nf integer
+  processado bool
+  data timestamp
+}
+
+Table EstoqueSaida {
+  estoque_saida_id integer [ primary key]
+  estoque_id integer [ref: > Estoque.estoque_id]
+  movimento char [default: "saida"]
+}
+
+Table EstoqueEntrada {
+  estoque_entrada_id integer [ primary key]
+  estoque_id integer [ref: > Estoque.estoque_id]
+  movimento char [default: "entrada"]
+}
+
+Table EstoqueItens {
+  estoque_item_id integer [primary key]
+  inventario_id integer [ref: > Inventario.inventario_id, note: "Inventário afetado"]
+  estoque_id integer [ref: > EstoqueSaida.estoque_id, ref: > EstoqueEntrada.estoque_id]
+  produto_id integer [ref: > Produto.produto_id]
+  quantidade integer [not null]
+  saldo integer 
+}
+
+
+Table Inventario {
+  inventario_id integer [pk]
+  nome varchar [note: "Nome do inventário (ex.: 'Armazém Principal')"]
+  slug varchar [unique]
+  is_ativo boolean [default: true]
+  usuario_id int [default: null , ref: > Usuario.id, note: "Relacionamento opcional para servir como inventário pessoal de determinado usuário."]
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table Transferencia {
+  transferencia_id integer [pk]
+  inventario_origem integer [ref: > Inventario.inventario_id]
+  inventario_destino integer [ref: > Inventario.inventario_id]
+  responsavel integer [ref: > Funcionario.usuario_id]
+  status varchar [note: "pendente, concluida, cancelada"]
+  data_solicitacao timestamp
+  data_conclusao timestamp
+}
