@@ -49,6 +49,9 @@ class InventarioSaldo(models.Model):
 
     class Meta:
         unique_together = ("inventario", "produto")
+        verbose_name = _("Saldo de Inventário")
+        verbose_name_plural = _("Saldos de Inventário")
+        ordering = ("produto",)
 
     def __str__(self):
-        return f"{self.inventario.nome} - {self.produto.nome} - {self.quantidade}"
+        return f"{self.produto.categoria}"

@@ -4,8 +4,10 @@ from logging import getLogger
 from django.db import models
 from django.db import transaction
 
+from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.exceptions import ProdutoSaldoInsuficienteError
 from plataforma_de_servicos.estoque.models.estoque_model import Estoque
+from plataforma_de_servicos.inventario.models import Inventario
 from plataforma_de_servicos.produto.models.produto_model import Produto
 
 log = getLogger("django")
@@ -21,7 +23,7 @@ class EstoqueItens(models.Model):
     quantidade = models.PositiveIntegerField()
     saldo = models.PositiveIntegerField(blank=True, null=True)
     inventario = models.ForeignKey(
-        "inventario.Inventario",
+        Inventario,
         on_delete=models.CASCADE,
         related_name="estoque_itens",
         verbose_name="Inventário",
@@ -39,7 +41,6 @@ class EstoqueItens(models.Model):
         """
         Salva o item de estoque.
         """
-        self.inventario = self.estoque.inventario
         super().save(*args, **kwargs)
 
     def data(self) -> date:
@@ -56,34 +57,28 @@ class EstoqueItens(models.Model):
         """
         Atualiza o saldo do produto relacionado a este item de estoque.
         """
-        if self.estoque.movimento == "e":
+        if self.estoque.movimento == Movimento.ENTRADA.value:
             saldo = self.produto.estoque + self.quantidade
-        elif self.estoque.movimento == "s":
-            log.info("entrei na subtração do saldo")
+
+        elif self.estoque.movimento == Movimento.SAIDA.value:
             saldo = self.produto.estoque - self.quantidade
+
             if saldo < 0:
                 raise ProdutoSaldoInsuficienteError(
                     self.produto.produto, self.quantidade,
                 )
-        elif self.estoque.movimento == "t":
+        elif self.estoque.movimento == Movimento.TRANSFERENCIA.value:
             saldo = self.produto.estoque
+
         self.saldo = saldo
         self.produto.estoque = saldo
         self.produto.save()
         self.save()
 
-    def validate_inventario(self):
-        """
-        Valida se o inventário do item de estoque é o mesmo que o do estoque.
-        """
-        if self.inventario != self.estoque.inventario:
-            self.inventario = self.estoque.inventario
-
     def clean(self):
         """
         Valida o item de estoque antes de salvar.
         """
-        self.validate_inventario()
         if self.quantidade <= 0:
             message = (
                 "A quantidade deve ser maior que zero."

@@ -1,4 +1,3 @@
-
 {% load static i18n compress%}<!DOCTYPE html>
 {% get_current_language as LANGUAGE_CODE %}
 <html lang="{{ LANGUAGE_CODE }}">
@@ -55,6 +54,7 @@
   <script defer src="{% static 'js/project.js' %}"></script>
 {% endcompress %}
 
+<script defer src="https://unpkg.com/htmx.org"></script>
 
 {% endblock javascript %}
 </head>
@@ -72,7 +72,7 @@
                 aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
-        <a class="navbar-brand" href="{% url 'home' %}">plataforma_de_servicos</a>
+        <a class="navbar-brand" href="{% url 'home' %}">Platadorma de Serviços</a>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav mr-auto">
             <li class="nav-item active">

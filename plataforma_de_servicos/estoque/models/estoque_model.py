@@ -7,16 +7,10 @@ from django.db import models
 from django.db import transaction
 
 from plataforma_de_servicos.core.models import TimeStampedModel
+from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.inventario.models import Inventario
 from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.users.models import User
-
-MOVIMENTO = (
-    ("e", "entrada"),
-    ("s", "saída"),
-    ("t", "transferência"),
-)
-
 
 basicConfig(level=DEBUG)
 log = getLogger(__name__)
@@ -25,7 +19,7 @@ log = getLogger(__name__)
 class Estoque(TimeStampedModel):
     funcionario = models.ForeignKey(User, on_delete=models.CASCADE, blank=True)
     nf = models.PositiveIntegerField("nota fiscal", null=True, blank=True)
-    movimento = models.CharField(max_length=1, choices=MOVIMENTO, blank=True)
+    movimento = models.CharField(max_length=1, choices=Movimento.choices, blank=True)
     processado = models.BooleanField(default=False)
     data = models.DateField("data", auto_now_add=True, help_text="Data do movimento")
     inventario_origem = models.ForeignKey(
@@ -49,15 +43,15 @@ class Estoque(TimeStampedModel):
 
     def clean(self):
         """Validação de consistência dos inventários"""
-        if self.movimento == "e" and not self.inventario_destino:
+        if self.movimento == Movimento.ENTRADA.value and not self.inventario_destino:
             message = "Entrada requer inventário de destino"
             raise ValidationError(message=message)
 
-        if self.movimento == "s" and not self.inventario_origem:
+        if self.movimento == Movimento.SAIDA.value and not self.inventario_origem:
             message = "Saída requer inventário de origem"
             raise ValidationError(message=message)
 
-        if self.movimento == "t" and not (self.inventario_origem and self.inventario_destino):
+        if self.movimento == Movimento.TRANSFERENCIA.value and not (self.inventario_origem and self.inventario_destino):
             message = "Transferência requer origem e destino"
             raise ValidationError(message=message)
 
@@ -70,9 +64,13 @@ class Estoque(TimeStampedModel):
 
     def get_movimento_display(self):
         movimento = self.movimento
-        if movimento == "e":
-            return MOVIMENTO[0][1].capitalize()
-        return MOVIMENTO[1][1].capitalize()
+        if movimento == Movimento.ENTRADA.value:
+            return Movimento.ENTRADA.label
+        if movimento == Movimento.SAIDA.value:
+            return Movimento.SAIDA.label
+        if movimento == Movimento.TRANSFERENCIA.value:
+            return Movimento.TRANSFERENCIA.label
+        return "Não definido"
 
     def nf_formated(self):
         if self.nf:
@@ -102,9 +100,9 @@ class Estoque(TimeStampedModel):
         """
         itens = self.estoque_itens.all()
         for item in itens:
-            if self.movimento == "e":
+            if self.movimento == Movimento.ENTRADA.value:
                 item.inventario = self.inventario_destino
-            elif self.movimento == "s" | self.movimento == "t":
+            elif self.movimento == Movimento.SAIDA.value | self.movimento == Movimento.TRANSFERENCIA.value:
                 item.inventario = self.inventario_origem
 
             saldo = item.produto.estoque
@@ -113,32 +111,31 @@ class Estoque(TimeStampedModel):
             log.debug("Novo saldo do produto %s é %s", item.produto.produto, saldo)
 
             self.atualizar_inventario_saldo(item)
+            item.save()
+        log.debug("Estoque %s processado com sucesso", self.pk)
 
     def atualizar_inventario_saldo(self, item):
         """Atualiza o saldo específico por inventário"""
-        if self.movimento == "e":
-            # Entrada - incrementa no destino
-            InventarioSaldo.objects.update_or_create(
-                inventario=self.inventario_destino,
+        with transaction.atomic():
+            if self.movimento == Movimento.ENTRADA.value:
+                self._atualizar_inventario(item, self.inventario_destino, item.quantidade)
+            elif self.movimento == Movimento.SAIDA.value:
+                self._atualizar_inventario(item, self.inventario_origem, -item.quantidade)
+            elif self.movimento == Movimento.TRANSFERENCIA.value:
+                self._atualizar_inventario(item, self.inventario_origem, -item.quantidade)
+                self._atualizar_inventario(item, self.inventario_destino, item.quantidade)
+
+    def _atualizar_inventario(self, item, inventario, quantidade):
+        try:
+            obj = InventarioSaldo.objects.select_for_update().get(
+                inventario=inventario,
                 produto=item.produto,
-                defaults={"quantidade": models.F("quantidade") + item.quantidade},
             )
-        elif self.movimento == "s":
-            # Saída - decrementa na origem
-            InventarioSaldo.objects.update_or_create(
-                inventario=self.inventario_origem,
+            obj.quantidade += quantidade
+            obj.save()
+        except InventarioSaldo.DoesNotExist:
+            InventarioSaldo.objects.create(
+                inventario=inventario,
                 produto=item.produto,
-                defaults={"quantidade": models.F("quantidade") - item.quantidade},
-            )
-        elif self.movimento == "t":
-            # Transferência - decrementa na origem e incrementa no destino
-            InventarioSaldo.objects.update_or_create(
-                inventario=self.inventario_origem,
-                produto=item.produto,
-                defaults={"quantidade": models.F("quantidade") - item.quantidade},
-            )
-            InventarioSaldo.objects.update_or_create(
-                inventario=self.inventario_destino,
-                produto=item.produto,
-                defaults={"quantidade": models.F("quantidade") + item.quantidade},
+                quantidade=max(quantidade, 0),  # Evita valores negativos para novos registros
             )

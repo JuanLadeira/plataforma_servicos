@@ -4,6 +4,7 @@ from django import forms
 from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
 
+from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueItens
 
 
@@ -11,6 +12,16 @@ class EstoqueItensInline(TabularInline):
     model = EstoqueItens
     extra = 0
     readonly_fields = ("saldo", "inventario")
+
+
+def get_inventario(estoque):
+    if estoque.movimento == Movimento.ENTRADA.value:
+        return estoque.inventario_destino
+    if estoque.movimento == Movimento.SAIDA.value:
+        return estoque.inventario_origem
+    if estoque.movimento == Movimento.TRANSFERENCIA.value:
+        return estoque.inventario_destino
+    return None
 
 
 class EstoqueEntradaAdmin(ModelAdmin):
@@ -35,9 +46,9 @@ class EstoqueEntradaAdmin(ModelAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
-        # Definir o valor padrão para o campo 'movimento' como 'entrada', por exemplo
-        form.base_fields["movimento"].initial = "e"
-        # Para ocultar o campo 'movimento' do formulário
+
+        form.base_fields["movimento"].initial = Movimento.ENTRADA.value
+
         if "movimento" in form.base_fields:
             form.base_fields["movimento"].widget = forms.HiddenInput()
         if "processado" in form.base_fields:
@@ -52,10 +63,10 @@ class EstoqueEntradaAdmin(ModelAdmin):
         O método save_related é chamado após o salvamento
         do formulário principal e dos formulários inline.
         Ou seja, após salvar todos os itens de estoque
-        relacionados a esta instancia de entrada de estoque.
+        relacionados a esta instancia de estoque de estoque.
 
         Desta forma, após salvar todos os itens de estoque,
-        chamamos o método processar da instancia de entrada
+        chamamos o método processar da instancia de estoque
         de estoque para atualizar
         o saldo dos produtos relacionados a cada item.
 
@@ -73,6 +84,17 @@ class EstoqueEntradaAdmin(ModelAdmin):
         super().save_related(request, form, formsets, change)
         obj = form.instance
         obj.processar()
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        entrada = form.instance
+
+        inventario = get_inventario(entrada)
+
+        for instance in instances:
+            instance.inventario = inventario
+            instance.save()
+        formset.save_m2m()
 
 
 class EstoqueSaidaAdmin(ModelAdmin):
@@ -97,9 +119,9 @@ class EstoqueSaidaAdmin(ModelAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
-        # Definir o valor padrão para o campo 'movimento' como 'entrada', por exemplo
-        form.base_fields["movimento"].initial = "s"
-        # Para ocultar o campo 'movimento' do formulário
+
+        form.base_fields["movimento"].initial = Movimento.SAIDA.value
+
         if "movimento" in form.base_fields:
             form.base_fields["movimento"].widget = forms.HiddenInput()
         return form
@@ -108,3 +130,14 @@ class EstoqueSaidaAdmin(ModelAdmin):
         super().save_related(request, form, formsets, change)
         obj = form.instance
         obj.processar()
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        saida = form.instance
+
+        inventario = get_inventario(saida)
+
+        for instance in instances:
+            instance.inventario = inventario
+            instance.save()
+        formset.save_m2m()

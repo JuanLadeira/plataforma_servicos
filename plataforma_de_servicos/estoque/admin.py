@@ -3,13 +3,8 @@ from typing import Any
 from django import forms
 from django.contrib import admin
 
+from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueItens
-from plataforma_de_servicos.estoque.models.protocolo_entrega_itens_model import (
-    ProtocoloEntregaItens,
-)
-from plataforma_de_servicos.estoque.models.protocolo_entrega_model import (
-    ProtocoloEntrega,
-)
 from plataforma_de_servicos.estoque.models.proxys.estoque_entrada import EstoqueEntrada
 from plataforma_de_servicos.estoque.models.proxys.estoque_saida import EstoqueSaida
 
@@ -33,7 +28,8 @@ class EstoqueEntradaAdmin(admin.ModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         # Definir o valor padrão para o campo 'movimento' como 'entrada', por exemplo
-        form.base_fields["movimento"].initial = "e"
+        form.base_fields["movimento"].initial = Movimento.ENTRADA.value
+
         # Para ocultar o campo 'movimento' do formulário
         if "movimento" in form.base_fields:
             form.base_fields["movimento"].widget = forms.HiddenInput()
@@ -63,9 +59,9 @@ class EstoqueEntradaAdmin(admin.ModelAdmin):
         instance to update the balance of the products
         related to each item.
         """
+        entrada = form.instance
         super().save_related(request, form, formsets, change)
-        obj = form.instance
-        obj.processar()
+        entrada.processar()
 
 
 @admin.register(EstoqueSaida)
@@ -80,7 +76,7 @@ class EstoqueSaidaAdmin(admin.ModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         # Definir o valor padrão para o campo 'movimento' como 'entrada', por exemplo
-        form.base_fields["movimento"].initial = "s"
+        form.base_fields["movimento"].initial = Movimento.SAIDA.value
         # Para ocultar o campo 'movimento' do formulário
         if "movimento" in form.base_fields:
             form.base_fields["movimento"].widget = forms.HiddenInput()
@@ -90,22 +86,3 @@ class EstoqueSaidaAdmin(admin.ModelAdmin):
         super().save_related(request, form, formsets, change)
         obj = form.instance
         obj.processar()
-
-
-class ProtocoloEntregaItensInline(admin.TabularInline):
-    model = ProtocoloEntregaItens
-    extra = 0
-
-
-@admin.register(ProtocoloEntrega)
-class ProtocoloEntregaAdmin(admin.ModelAdmin):
-    inlines = (ProtocoloEntregaItensInline,)
-    list_display = ("__str__", "estoque_atualizado")
-    list_filter = ("usuario",)
-    date_hierarchy = "created"
-
-    def save_related(self, request: Any, form: Any, formsets: Any, change: Any) -> None:
-        super().save_related(request, form, formsets, change)
-        obj = form.instance
-        user = request.user
-        obj.processar_protocolo(usuario=user)
