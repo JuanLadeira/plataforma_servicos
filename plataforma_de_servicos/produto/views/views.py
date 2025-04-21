@@ -12,14 +12,14 @@ logger = logging.getLogger("django")
 
 def home(request):
     # Obter o ID da categoria do parâmetro GET (se existir)
-    category_id = request.GET.get("category")
-
     # Filtrar produtos por categoria, se fornecido
-    if category_id:
-        logger.info(f"Filtrando produtos pela categoria com ID: {category_id}")
+    if category_id := request.GET.get("category"):
         produtos = Produto.objects.filter(categoria__id=category_id).prefetch_related("images")
     else:
         produtos = Produto.objects.all().prefetch_related("images")
+
+    if search := request.GET.get("search"):
+        produtos = produtos.filter(produto__icontains=search)
 
         logger.info("Nenhum filtro de categoria aplicado, exibindo todos os produtos")
 # Verificar se a requisição é feita via HTMX

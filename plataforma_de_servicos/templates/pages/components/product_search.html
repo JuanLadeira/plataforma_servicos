@@ -1,0 +1,12 @@
+<div class="pb-3">
+    <input
+        type="text"
+        class="form-control"
+        id="searchBar"
+        name="search"
+        placeholder="Search for products..."
+        hx-get="{% url 'home' %}"
+        hx-target="#productList"
+        hx-trigger="keyup changed delay:500ms"
+    >
+</div>

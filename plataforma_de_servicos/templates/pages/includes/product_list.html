@@ -4,12 +4,9 @@
 <div class="album py-5 bg-light">
     <div class="container">
         <!-- Search bar -->
-        <div class="pb-3">
-            <input type="text" class="form-control" id="searchBar" placeholder="Search for products...">
-        </div>
-        
+        {% include "pages/components/product_search.html" %}
         <!-- Filter by category -->
-        {% include "pages/includes/category_filter.html" %}
+        {% include "pages/components/category_filter.html" %}
 
         <div class="pb-3 h5"> All products </div>
         <hr>
