@@ -5,6 +5,7 @@ import ssl
 from pathlib import Path
 
 import environ
+from decouple import config
 from django.templatetags.static import static
 
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
@@ -17,6 +18,7 @@ if READ_DOT_ENV_FILE:
     # OS environment variables take precedence over variables from .env
     env.read_env(str(BASE_DIR / ".env"))
 
+LLM_API_KEY = config("DEEPSEEK_API_KEY")
 # GENERAL
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#debug
@@ -395,11 +397,6 @@ UNFOLD_GERENTE_ADMIN = {
             "50": "240 255 244",  # light green
             "100": "220 255 220",
             "200": "190 245 190",
-            "300": CORES_PLACE_HOLDER_INPUT,
-            "400": CORES_PLACE_HOLDER_INPUT,  # cores de placeholder de input e dos emotions da tabela
-            "600": CORES_LINHAS_TABELA,  # cores das linhas de tabela
-            "900": CORES_TITULOS_TABELAS,  # cores das linhas de tabela
-            "950": CORES_TITULOS_TABELAS,  # cores dos titulos de tabela
         },
         "primary": {
             "50": "240 255 244",  # light green

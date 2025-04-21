@@ -22,6 +22,8 @@ services:
     ports:
       - '8000:8000'
     command: /start
+    networks:
+      - plataforma_network
 
   postgres:
     build:
@@ -34,12 +36,16 @@ services:
       - plataforma_de_servicos_local_postgres_data_backups:/backups
     env_file:
       - ./.envs/.local/.postgres
+    networks:
+      - plataforma_network
 
   mailpit:
     image: docker.io/axllent/mailpit:latest
     container_name: plataforma_de_servicos_local_mailpit
     ports:
       - "8025:8025"
+    networks:
+      - plataforma_network
 
   redis:
     image: docker.io/redis:6
@@ -47,6 +53,8 @@ services:
     
     volumes:
       - plataforma_de_servicos_local_redis_data:/data
+    networks:
+      - plataforma_network
     
 
   celeryworker:
@@ -59,6 +67,8 @@ services:
       - mailpit
     ports: []
     command: /start-celeryworker
+    networks:
+      - plataforma_network
 
   celerybeat:
     <<: *django
@@ -70,6 +80,8 @@ services:
       - mailpit
     ports: []
     command: /start-celerybeat
+    networks:
+      - plataforma_network
 
   flower:
     <<: *django
@@ -78,3 +90,28 @@ services:
     ports:
       - '5555:5555'
     command: /start-flower
+    depends_on:
+      - redis
+      - postgres
+      - mailpit
+    networks:
+      - plataforma_network
+
+  mcp_server:
+    build:
+      context: .
+      dockerfile: ./compose/local/mcp_server/Dockerfile
+    image: plataforma_de_servicos_local_mcp_server
+    container_name: plataforma_de_servicos_local_mcp_server
+    ports:
+      - '8001:8001'
+    env_file:
+      - ./.envs/.local/.django
+    depends_on:
+      - django
+    networks:
+      - plataforma_network
+      
+networks:
+  plataforma_network:
+    driver: bridge

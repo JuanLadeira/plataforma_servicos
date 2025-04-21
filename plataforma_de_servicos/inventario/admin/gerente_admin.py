@@ -27,19 +27,12 @@ class InventarioEntradaInline(TabularInline):
     extra = 0
     max_num = 0
 
-    readonly_fields = ["inventario_destino", "funcionario", "nf"]
+    readonly_fields = ["inventario_destino", "funcionario", "nf", "movimento", "processado"]
     can_delete = False
-    fieldsets = (
-        (
-            "Entrada",
-            {
-                "fields": [
-                    "funcionario",
-                    "nf",
-                ],
-            },
-        ),
-    )
+    show_change_link = True
+    show_full_result_count = True
+    exclude = ["inventario_origem"]
+
     title = "Entradas"
 
     def has_add_permission(self, request, obj):
@@ -54,7 +47,13 @@ class InventarioSaidaInline(TabularInline):
 
     title = "Saídas"
 
+    readonly_fields = ["inventario_destino", "inventario_origem", "funcionario", "nf", "movimento", "processado"]
+
     extra = 0
+    can_delete = False
+
+    def has_add_permission(self, request, obj):
+        return False
 
 
 class InventarioGerenteAdmin(ModelAdmin):
@@ -67,15 +66,13 @@ class InventarioGerenteAdmin(ModelAdmin):
 
     search_fields = ["nome", "slug"]
 
-    inlines = [InventarioSaldoInline, InventarioEntradaInline]
+    inlines = [InventarioSaldoInline, InventarioEntradaInline, InventarioSaidaInline]
 
     compressed_fields = True
     warn_unsaved_form = True
 
     list_filter_submit = True
     list_fullwidth = True
-
-    # list_disable_select_all = True
 
     actions_list = []  # Displayed above the results list
     actions_row = []  # Displayed in a table row in results list
