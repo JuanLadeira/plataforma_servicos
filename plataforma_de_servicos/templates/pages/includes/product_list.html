@@ -1,0 +1,63 @@
+{% load static %}
+
+<!-- All products section -->
+<div class="album py-5 bg-light">
+    <div class="container">
+        <!-- Search bar -->
+        <div class="pb-3">
+            <input type="text" class="form-control" id="searchBar" placeholder="Search for products...">
+        </div>
+        
+        <!-- Filter by category -->
+        {% include "pages/includes/category_filter.html" %}
+
+        <div class="pb-3 h5"> All products </div>
+        <hr>
+        <br>
+        <div id="productList" class="row row-cols-1 row-cols-sm-2 row-cols-md-5 g-3">
+            {% for product in my_products %}
+                {% include "pages/partials/product_item.html" with product=product %} 
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        <nav aria-label="Page navigation example" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if my_products.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ my_products.previous_page_number }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+                {% for page_num in my_products.paginator.page_range %}
+                    <li class="page-item {% if my_products.number == page_num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
+                    </li>
+                {% endfor %}
+                {% if my_products.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ my_products.next_page_number }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<script>
+    // Search products
+    document.getElementById('searchBar').addEventListener('input', function() {
+        const searchText = this.value.toLowerCase();
+        document.querySelectorAll('.product-item').forEach(item => {
+            const productName = item.querySelector('.card-text a').textContent.toLowerCase();
+            if (productName.includes(searchText)) {
+                item.style.display = "block";
+            } else {
+                item.style.display = "none";
+            }
+        });
+    });
+</script>

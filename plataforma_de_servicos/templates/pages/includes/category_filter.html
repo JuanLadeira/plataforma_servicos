@@ -1,0 +1,13 @@
+<div class="pb-3">
+    <select class="form-select" id="categoryFilter" name="category" hx-get="{% url 'home' %}" hx-target="#productList" hx-trigger="change">
+        <option value="">All Categories</option>
+        {% for category in categories %}
+            <option value="{{ category.id }}">{{ category.categoria }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+<script>
+    // Filter products by category
+
+</script>

@@ -158,8 +158,16 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
 ]
 
+MEDIA_ROOT = str(APPS_DIR / "media")
 STORAGES = {
     # ...
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "OPTIONS": {
+            "location": MEDIA_ROOT,  # Diretório onde os arquivos serão armazenados
+        },
+    },
+
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },

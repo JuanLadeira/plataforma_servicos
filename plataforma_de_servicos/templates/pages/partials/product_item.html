@@ -1,0 +1,24 @@
+<div class="col product-item" data-category="{{ product.categoria }}">
+    <div class="card shadow-sm">
+        <img class="img-fluid" alt="Responsive image" src="{{ product.get_image }}">
+        <div class="card-body">
+            <p class="card-text">
+                <a class="text-info text-decoration-none" href="{{ product.get_absolute_url }}">
+                    {{ product.produto | capfirst }}
+                </a>
+            </p>
+            <div class="d-flex justify-content-between align-items-center">
+                <h5> $ {{ product.preco }} </h5>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <h5> {{ product.categoria }} </h5>
+            </div>
+            <div class="d-flex align-items-center justify-content-between">
+                <p>Qtd disponível: <strong>{{ product.estoque }}</strong></p>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-2">
+                <button class="btn btn-primary btn-sm">Add to Cart</button>
+            </div>
+        </div>
+    </div>
+</div>

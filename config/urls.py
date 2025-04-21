@@ -8,10 +8,12 @@ from django.urls import path
 from django.views import defaults as default_views
 from django.views.generic import TemplateView
 from plataforma_de_servicos.core.admin.sites.gerente_admin_site import gerente_site
-
+from plataforma_de_servicos.produto.views import views
 
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="pages/home.html"), name="home"),
+    path("", views.home, name="home"),
+    path("produto/<slug:produto_slug>/", views.produto_detail, name="produto-detail"),
+    path("search/<slug:category_slug>/", views.list_category, name="list-category"),
     path(
         "about/",
         TemplateView.as_view(template_name="pages/about.html"),

@@ -5,7 +5,18 @@ from unfold.admin import TabularInline
 from unfold.contrib.forms.widgets import ArrayWidget
 from unfold.contrib.forms.widgets import WysiwygWidget
 
+from plataforma_de_servicos.produto.models.produto_model import Image
 from plataforma_de_servicos.produto.models.produto_model import Produto
+
+
+class ImageInline(TabularInline):
+    model = Image
+    extra = 0
+    verbose_name = "Imagem"
+    verbose_name_plural = "Imagens"
+    show_change_link = True
+
+    readonly_fields = ["order"]
 
 
 class ProdutoGerenteAdmin(ModelAdmin):
@@ -43,6 +54,7 @@ class ProdutoGerenteAdmin(ModelAdmin):
             },
         ),
     ]
+    inlines = [ImageInline]
     readonly_fields = ["estoque", "data"]
     conditional_fields = {
         "importado": "preco != 0",
@@ -81,6 +93,31 @@ class ProdutoInline(TabularInline):
     verbose_name = "Produto"
     verbose_name_plural = "Produtos"
     show_change_link = True
+    fieldsets = [
+        (
+            "Produto",
+            {
+                "fields": [
+                    "produto",
+                    "importado",
+                    "ncm",
+                    "preco",
+                    "estoque",
+                    "estoque_minimo",
+                    "data",
+                ],
+            },
+        ),
+        (
+            "Categoria",
+            {
+                "fields": [
+                    "categoria",
+                ],
+            },
+        ),
+    ]
+    readonly_fields = ["produto", "estoque", "data", "ncm", "importado"]
 
 
 class CategoriaGerenteAdmin(ModelAdmin):
