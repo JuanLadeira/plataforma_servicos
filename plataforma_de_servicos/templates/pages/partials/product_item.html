@@ -1,9 +1,9 @@
-<div class="col product-item" data-category="{{ product.categoria }}">
+<div class="col product-item" >
     <div class="card shadow-sm">
         <img class="img-fluid" alt="Responsive image" src="{{ product.imagem }}">
         <div class="card-body">
             <p class="card-text">
-                <a class="text-info text-decoration-none" href="{{ product.get_absolute_url }}">
+                <a class="text-info text-decoration-none" href="{{ product.url }}">
                     {{ product.produto | capfirst }}
                 </a>
             </p>

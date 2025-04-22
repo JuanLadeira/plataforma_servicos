@@ -86,3 +86,8 @@ class Produto(models.Model):
         if self.images.exists():
             return self.images.filter(order=1).first().image.url
         return "static/images/no-image.png"
+
+    def get_images(self):
+        if self.images.exists():
+            return [image.image.url for image in self.images.all()]
+        return None

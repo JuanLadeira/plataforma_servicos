@@ -32,6 +32,7 @@ def home(request):
             "categoria": produto.categoria.categoria if produto.categoria else "Sem categoria",
             "preco": produto.preco,
             "estoque": produto.estoque,
+            "url": produto.get_absolute_url(),
         }
         for produto in produtos if produto.estoque > 0
     ]
@@ -67,6 +68,6 @@ def produto_detail(request, produto_slug):
 
     produto = get_object_or_404(Produto, slug=produto_slug)
 
-    context = {"produto": produto}
+    context = {"produto": produto, "imagens": produto.get_images()}
 
     return render(request, "pages/produto-detail.html", context)
