@@ -18,10 +18,10 @@
   {% block css %}
     <!-- Latest compiled and minified Bootstrap CSS -->
     <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css"
-          integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA=="
-          crossorigin="anonymous"
-          referrerpolicy="no-referrer" />
+  href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css"
+  integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA=="
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer" />
 <!-- Your stuff: Third-party CSS libraries go here -->
 <!-- This file stores project-specific CSS -->
 
@@ -40,10 +40,11 @@
 
 <!-- Bootstrap JS -->
 <script defer
-        src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.min.js"
-        integrity="sha512-1/RvZTcCDEUjY/CypiMz+iqqtaoQfAITmNSJY17Myp4Ms5mdxPS5UV7iOfdZoxcGhzFbOm6sntTKJppjvuhg4g=="
-        crossorigin="anonymous"
-        referrerpolicy="no-referrer"></script>
+      src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.bundle.min.js"
+      integrity="sha512-kenU1KFdBIe4zVF0s0G1M1FF6Chtw6vB9Kz0I1sPvHvnsz9fNf2x5w5pX3pG5j0XT+5GFo4lCJZf0oM3rIHcHg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"></script>
+
 <!-- Your stuff: Third-party javascript libraries go here -->
 
 
@@ -75,29 +76,27 @@
         <a class="navbar-brand" href="{% url 'home' %}">Platadorma de Serviços</a>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav mr-auto">
-            <li class="nav-item active">
-              <a class="nav-link" href="{% url 'home' %}">Home <span class="visually-hidden">(current)</span></a>
-            </li>
-            <li class="nav-item">
+            {% include "pages/components/category_filter.html" %}
+            <li class="nav-item my-3">
               <a class="nav-link" href="{% url 'about' %}">About</a>
             </li>
             {% if request.user.is_authenticated %}
-              <li class="nav-item">
+              <li class="nav-item my-3">
                 <a class="nav-link"
                    href="{% url 'users:detail' request.user.pk %}">{% translate "My Profile" %}</a>
               </li>
-              <li class="nav-item">
+              <li class="nav-item my-3">
                 {# URL provided by django-allauth/account/urls.py #}
                 <a class="nav-link" href="{% url 'account_logout' %}">{% translate "Sign Out" %}</a>
               </li>
             {% else %}
               {% if ACCOUNT_ALLOW_REGISTRATION %}
-                <li class="nav-item">
+                <li class="nav-item my-3">
                   {# URL provided by django-allauth/account/urls.py #}
                   <a id="sign-up-link" class="nav-link" href="{% url 'account_signup' %}">{% translate "Sign Up" %}</a>
                 </li>
               {% endif %}
-              <li class="nav-item">
+              <li class="nav-item my-3">
                 {# URL provided by django-allauth/account/urls.py #}
                 <a id="log-in-link" class="nav-link" href="{% url 'account_login' %}">{% translate "Sign In" %}</a>
               </li>

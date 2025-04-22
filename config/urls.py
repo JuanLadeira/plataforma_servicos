@@ -13,7 +13,6 @@ from plataforma_de_servicos.produto.views import views
 urlpatterns = [
     path("", views.home, name="home"),
     path("produto/<slug:produto_slug>/", views.produto_detail, name="produto-detail"),
-    path("search/<slug:category_slug>/", views.list_category, name="list-category"),
     path(
         "about/",
         TemplateView.as_view(template_name="pages/about.html"),

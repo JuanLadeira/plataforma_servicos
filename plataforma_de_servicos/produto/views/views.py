@@ -55,15 +55,6 @@ def home(request):
     return render(request, "pages/home.html", context)
 
 
-def list_category(request, category_slug=None):
-
-    category = get_object_or_404(Categoria, slug=category_slug)
-
-    produtos = Produto.objects.filter(category=category)
-
-    return render(request, "store/list-category.html", {"category": category, "Produtos": produtos})
-
-
 def produto_detail(request, produto_slug):
 
     produto = get_object_or_404(Produto, slug=produto_slug)

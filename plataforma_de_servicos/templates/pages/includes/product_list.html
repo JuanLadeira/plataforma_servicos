@@ -1,12 +1,11 @@
 {% load static %}
 
 <!-- All products section -->
-<div class="album py-5 bg-light">
+<div class="album pb-5 mt-3 bg-light">
+    {% include "pages/components/product_search.html" %}
     <div class="container">
         <!-- Search bar -->
-        {% include "pages/components/product_search.html" %}
         <!-- Filter by category -->
-        {% include "pages/components/category_filter.html" %}
 
         <div class="pb-3 h5"> All products </div>
         <hr>

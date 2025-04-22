@@ -1,4 +1,4 @@
-<div class="pb-3">
+<div class="dropdown py-3">
     <select class="form-select" id="categoryFilter" name="category" hx-get="{% url 'home' %}" hx-target="#productList" hx-trigger="change">
         <option value="">All Categories</option>
         {% for category in categories %}
@@ -7,7 +7,4 @@
     </select>
 </div>
 
-<script>
-    // Filter products by category
 
-</script>
