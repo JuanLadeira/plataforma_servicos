@@ -97,20 +97,7 @@ services:
     networks:
       - plataforma_network
 
-  mcp_server:
-    build:
-      context: .
-      dockerfile: ./compose/local/mcp_server/Dockerfile
-    image: plataforma_de_servicos_local_mcp_server
-    container_name: plataforma_de_servicos_local_mcp_server
-    ports:
-      - '8001:8001'
-    env_file:
-      - ./.envs/.local/.django
-    depends_on:
-      - django
-    networks:
-      - plataforma_network
+
       
 networks:
   plataforma_network:

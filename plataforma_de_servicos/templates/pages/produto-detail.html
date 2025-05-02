@@ -53,7 +53,7 @@
                             <div class="col-6">
                                 <label for="select">Qty</label>
                                 &nbsp;
-                                <select id="select">
+                                <select id="select" name="product_quantity">
                                     <option value="1">1</option>
                                     <option value="2">2</option>
                                     <option value="3">3</option>
@@ -62,7 +62,17 @@
                             </div>
 
                             <div class="col-6 text-end">
-                                <button type="button" id="add-button" value="{{ produto.id }}" class="btn btn-secondary btn-sm">
+                                <button 
+                                    type="button" 
+                                    id="add-button" 
+                                    value="{{ produto.id }}" 
+                                    class="btn btn-secondary btn-sm" 
+                                    hx-post="{% url 'cart:cart-add' %}" 
+                                    hx-include="#select" 
+                                    hx-vals='{"product_id": "{{ produto.id }}", "action": "post"}' 
+                                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' 
+                                    hx-swap="none"
+                                    >
                                     <i class="fa fa-plus" aria-hidden="true"></i> &nbsp; Add to cart
                                 </button>
                             </div>

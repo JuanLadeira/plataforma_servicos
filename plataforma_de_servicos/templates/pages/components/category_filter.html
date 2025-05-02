@@ -1,10 +1,18 @@
 <div class="dropdown py-3">
-    <select class="form-select" id="categoryFilter" name="category" hx-get="{% url 'home' %}" hx-target="#productList" hx-trigger="change">
-        <option value="">All Categories</option>
+    <a class="nav-link dropdown-toggle text-dark" href="#" id="categoryDropdown" role="button"
+       data-bs-toggle="dropdown" aria-expanded="false">
+        Categorias
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
+        <li>
+            <a class="dropdown-item" href="#" hx-get="{% url 'home' %}" hx-target="#productList">Todas</a>
+        </li>
         {% for category in categories %}
-            <option value="{{ category.id }}">{{ category.categoria }}</option>
+        <li>
+            <a class="dropdown-item" href="#" hx-get="{% url 'home' %}?category={{ category.id }}" hx-target="#productList">
+                {{ category.categoria }}
+            </a>
+        </li>
         {% endfor %}
-    </select>
+    </ul>
 </div>
-
-

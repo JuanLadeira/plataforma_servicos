@@ -13,6 +13,7 @@ from plataforma_de_servicos.produto.views import views
 urlpatterns = [
     path("", views.home, name="home"),
     path("produto/<slug:produto_slug>/", views.produto_detail, name="produto-detail"),
+    path("cart/", include("plataforma_de_servicos.cart.urls",  namespace="cart")),
     path(
         "about/",
         TemplateView.as_view(template_name="pages/about.html"),

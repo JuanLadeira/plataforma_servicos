@@ -98,6 +98,7 @@ LOCAL_APPS = [
     "plataforma_de_servicos.produto",
     "plataforma_de_servicos.estoque",
     "plataforma_de_servicos.inventario",
+    "plataforma_de_servicos.cart",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -215,6 +216,8 @@ TEMPLATES = [
                 "django.template.context_processors.tz",
                 "django.contrib.messages.context_processors.messages",
                 "plataforma_de_servicos.users.context_processors.allauth_settings",
+                "plataforma_de_servicos.produto.context_processors.categories",
+                "plataforma_de_servicos.cart.context_processors.cart",
             ],
         },
     },

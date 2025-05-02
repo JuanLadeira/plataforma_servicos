@@ -37,10 +37,7 @@ def home(request):
         for produto in produtos if produto.estoque > 0
     ]
 
-    # Obter todas as categorias
-    categorias = Categoria.objects.all()
-
-    context = {"my_products": produtos_with_images, "categories": categorias}
+    context = {"my_products": produtos_with_images}
     # Verificar se a requisição é feita via HTMX
     logger.info(context)
     if request.headers.get("HX-Request"):
@@ -53,6 +50,11 @@ def home(request):
     # Caso contrário, renderizar a página completa
 
     return render(request, "pages/home.html", context)
+
+
+def categories(request):
+    all_categories = Categoria.objects.all()
+    return {"categories": all_categories}
 
 
 def produto_detail(request, produto_slug):

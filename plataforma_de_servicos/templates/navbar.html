@@ -1,0 +1,64 @@
+{% load static i18n compress%}<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}   
+   <nav class="navbar navbar-expand-md navbar-light bg-light">
+      <div class="container-fluid">
+        <button class="navbar-toggler navbar-toggler-right"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent"
+                aria-expanded="false"
+                aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <a class="navbar-brand" href="{% url 'home' %}">Platadorma de Serviços</a>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto">
+            {% if request.resolver_match.url_name == 'home' %}
+              {% include "pages/components/category_filter.html" %}
+            {% endif %}
+            <li class="nav-item my-3">
+              <a class="nav-link" href="{% url 'about' %}">About</a>
+            </li>
+            {% if request.user.is_authenticated %}
+              <li class="nav-item my-3">
+              <a class="nav-link"
+                 href="{% url 'users:detail' request.user.pk %}">{% translate "My Profile" %}</a>
+              </li>
+              <li class="nav-item my-3">
+              {# URL provided by django-allauth/account/urls.py #}
+              <a class="nav-link" href="{% url 'account_logout' %}">{% translate "Sign Out" %}</a>
+              </li>
+            {% else %}
+              {% if ACCOUNT_ALLOW_REGISTRATION %}
+              <li class="nav-item my-3">
+                {# URL provided by django-allauth/account/urls.py #}
+                <a id="sign-up-link" class="nav-link" href="{% url 'account_signup' %}">{% translate "Sign Up" %}</a>
+              </li>
+              {% endif %}
+              <li class="nav-item my-3">
+              {# URL provided by django-allauth/account/urls.py #}
+              <a id="log-in-link" class="nav-link" href="{% url 'account_login' %}">{% translate "Sign In" %}</a>
+              </li>
+            {% endif %}
+            </ul>
+            <ul class="navbar-nav ms-auto">
+              <li class="nav-item my-3">
+                <a type="button" role="button" href="{% url 'cart:cart-summary' %}" class="btn btn-outline-secondary"> 
+                  <i class="fa fa-shopping-cart" aria-hidden="true"> </i>
+                  &nbsp;
+                  <div id="cart-qty" class="d-inline-flex">
+                    {% with qty_amount=cart|length %}
+                      {% if qty_amount > 0 %}
+                        {{ qty_amount }}
+                        {% else %}
+                          0
+                      {% endif %}
+                    {% endwith %}
+                  </div>
+                </a>
+              </li>
+            </ul>
+        </div>
+      </div>
+    </nav>
