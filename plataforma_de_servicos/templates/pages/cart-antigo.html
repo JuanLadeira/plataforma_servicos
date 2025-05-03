@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+
+{% load static %}
+
+
+
+{% block content %}
+
+<main class="pt-5">
+    
+    <div class="container">
+      
+      <h1 class="h5"> Carrinho de compras </h1>
+
+	    <hr>
+
+      <!-- LP -->
+
+      {% for item in cart %}
+
+      {% with product=item.product %}
+
+
+      <br>
+
+      <div class="row mb-4 border product-item" id="product-item-{{ product.id }}">
+        
+        <div class="col-md-3 col-lg-2 order-md-first bg-light">
+        
+            <img class="img-fluid mx-auto d-block" width="200px" alt="Responsive image" src="{{product.image.url}}"> <!-- Product image -->
+        
+        </div>
+
+        
+        <div class="col-md-9 col-lg-10 ps-md-3 ps-lg-10">
+          
+          <a href="{{product.get_absolute_url}}" class="text-info text-decoration-none"> <!-- Product get absolute url -->
+          
+            <h1 class="h5 pt-2"> {{product.produto}}<!-- Product title --> </h1>
+          
+          </a>
+          
+          <div class="border">
+            
+            <div class="col border-bottom">
+              
+                <div class="row p-3">
+              
+                <div class="col-6"> Product </div>
+              
+                <div class="col-6 text-end"><span class="h6 fw-bold">$ {{product.preco}} </span></div>
+            
+              </div>
+            
+            </div>
+            
+            <div class="col">
+              
+              <div class="row p-3">
+                
+                <div class="col-12">
+                  
+                  <label for="select">Quantidade</label>
+
+                  &nbsp; 
+                  
+                  <select id="select{{product.id}}" name="product_quantity" >
+                  
+                    <option selected>
+                  
+                        {{item.qty}}
+                  
+                    </option>
+                  
+                    <option value="1">1</option>
+                  
+                    <option value="2">2</option>
+                  
+                    <option value="3">3</option>
+                  
+                    <option value="4">4</option>
+                  
+                  </select>
+                  
+                  <br> <br>
+
+          
+                  <button 
+                    type="button" 
+                    data-index="{{ product.id }}" 
+                    class="btn btn-primary btn-sm update-button" 
+                    hx-post="{% url 'cart:cart-update' %}" 
+                    hx-include="#select{{ product.id }}" 
+                    hx-vals='{"product_id": "{{ product.id }}", "action": "post"}' 
+                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' 
+                    hx-swap="none"
+                    hx-on="htmx:afterRequest: document.getElementById('total').textContent = event.detail.xhr.response.total">
+                    Atualizar
+                  </button>
+                  
+                  &nbsp;
+
+                  <button 
+                    type="button" 
+                    data-index="{{ product.id }}" 
+                    class="btn btn-danger btn-sm delete-button" 
+                    hx-post="{% url 'cart:cart-delete' %}" 
+                    hx-vals='{"product_id": "{{ product.id }}", "action": "post"}' 
+                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' 
+                    hx-target="#product-item-{{ product.id }}"
+                    hx-swap="none"
+                    hx-on="htmx:afterRequest: (function(event) { 
+                      const response = JSON.parse(event.detail.xhr.responseText); 
+                      console.log(response);
+                      document.getElementById('total').textContent = response.total;
+                      document.getElementById('product-item-{{ product.id }}').remove(); 
+                    })(event)"
+                    >
+                    Deletar
+                  </button>
+
+                </div>
+        
+            </div>
+        
+            </div>
+    
+            </div>
+    
+        </div>
+      
+    </div>
+    
+    {% endwith %}
+    
+    {% endfor %}
+
+
+    <!-- LP -->
+
+
+      <div class="col-12 text-end">
+ 
+        <div class="h6 fw-bold"> Preço total: $ <div id="total" class="d-inline-flex"> {{cart.get_total}} </div></div>
+
+        <br>
+
+        <a href="" class="btn btn-primary my-2"> <i class="fa fa-chevron-circle-right" aria-hidden="true"></i> &nbsp; Prosseguir com a compra </a>
+        
+      </div>
+
+    </div>
+  
+    <br>
+
+    <br>
+
+ </main>
+
+{% endblock %}

@@ -14,12 +14,15 @@ class Cart:
             cart = self.session["session_key"] = {}
         self.cart = cart
 
-    def add(self, product, product_qty):
+    def add(self, product: Produto, product_qty: int):
         product_id = str(product.id)
         if product_id in self.cart:
             self.cart[product_id]["qty"] = product_qty
         else:
-            self.cart[product_id] = {"preco": str(product.preco), "qty": product_qty}
+            self.cart[product_id] = {
+                "preco": str(product.preco),
+                "qty": product_qty,
+            }
         self.session.modified = True
 
     def delete(self, product):

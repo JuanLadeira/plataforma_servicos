@@ -1,3 +1,16 @@
-{% for product in my_products %}
-    {% include "pages/partials/product_item.html" with product=product %}
-{% endfor %}
+<div id="productList">
+    <div class="col-12">
+        <h5>
+            <strong>
+            {{ categoria }}
+            </strong> 
+        </h5>
+        <br>
+    </div>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-5 g-3">
+        {% for product in my_products %}
+            {% include "pages/partials/product_item.html" with product=product %} 
+        {% endfor %}
+
+    </div>
+</div>

@@ -16,9 +16,10 @@ def home(request):
     # Filtrar produtos por categoria, se fornecido
     if category_id := request.GET.get("category"):
         produtos = Produto.objects.filter(categoria__id=category_id).prefetch_related("images")
+        categoria = Categoria.objects.filter(id=category_id).first()
     else:
         produtos = Produto.objects.all().prefetch_related("images")
-
+        categoria = "Todos os produtos"
     if search := request.GET.get("search"):
         produtos = produtos.filter(produto__icontains=search)
 
@@ -27,6 +28,7 @@ def home(request):
     # Preparar os produtos com imagens e estoque > 0
     produtos_with_images = [
         {
+            "id": produto.id,
             "produto": produto.produto,
             "imagem": produto.get_image(),
             "slug": produto.slug,
@@ -38,7 +40,7 @@ def home(request):
         for produto in produtos if produto.estoque > 0
     ]
 
-    context = {"my_products": produtos_with_images}
+    context = {"my_products": produtos_with_images, "categoria": categoria}
     # Verificar se a requisição é feita via HTMX
     logger.info(context)
     if request.headers.get("HX-Request"):

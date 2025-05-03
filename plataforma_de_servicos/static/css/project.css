@@ -1,18 +1,20 @@
 /* These styles are generated from project.scss. */
 /* Cores principais */
 :root {
-  --primary-color: #4A90E2; /* Azul suave */
-  --secondary-color: #F4F6F8; /* Cinza claro */
-  --text-color: #2C3E50; /* Azul escuro */
-  --text-muted: #95A5A6; /* Cinza médio */
-  --border-color: #DADFE1; /* Cinza muito claro */
-  --hover-color: #3B7DC4; /* Azul mais escuro para hover */
+  --primary-color: #007BFF; /* Azul vibrante */
+  --secondary-color: #F8F9FA; /* Cinza muito claro */
+  --terciary-color: #E9F7FE; /* Azul claro e suave */
+  --text-color: #343A40; /* Cinza escuro */
+  --text-muted: #6C757D; /* Cinza médio */
+  --border-color: #CED4DA; /* Cinza claro */
+  --hover-color: #0056B3; /* Azul mais escuro para hover */
 }
 
 /* Corpo */
+
 body {
   font-family: 'Roboto', sans-serif;
-  background-color: var(--secondary-color);
+  background-color: var(--terciary-color);
   color: var(--text-color);
   line-height: 1.6;
   margin: 0;
@@ -156,20 +158,84 @@ button:hover, .btn:hover {
   color: #0c5460;
 }
 
+.album{
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra mais suave */
+  border-radius: 12px; /* Bordas arredondadas */
+}
+
+/* Search bar */
+.search-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 5px 0; /* Margem superior e inferior */
+  border: 0px solid var(--border-color); /* Borda suave */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* Sombra mais suave */
+}
+
+
 /* Cartões */
+.img .img-fluid{
+  max-width: 100%; /* Garante que a imagem não ultrapasse o tamanho do card */
+  height: auto; /* Mantém a proporção da imagem */
+  border-radius: 12px; /* Bordas arredondadas */
+}
+
+
 .card {
-  border: 1px solid var(--border-color
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  background-color: white;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid var(--border-color); /* Borda suave */
+  border-radius: 6px; /* Bordas mais arredondadas */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra mais suave */
+  padding: 3px; /* Espaçamento interno */
+  background-color: white; /* Fundo branco */
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease; /* Transições suaves */
 }
 
 .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+  transform: translateY(-8px); /* Move o card 8px para cima */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15); /* Sombra mais pronunciada */
+  background-color: var(--secondary-color); /* Fundo cinza claro ao passar o mouse */
 }
+
+/* Texto do Card */
+.card-text {
+  white-space: nowrap; /* Impede que o texto quebre em várias linhas */
+  overflow: hidden; /* Esconde o texto que ultrapassa o limite */
+  text-overflow: ellipsis; /* Adiciona "..." ao final do texto que ultrapassa o limite */
+  max-width: 100%; /* Garante que o texto respeite o tamanho do contêiner */
+  color: var(--text-color); /* Cor do texto */
+  font-size: 0.9rem; /* Tamanho do texto */
+}
+
+/* Corpo do Card */
+.card-body {
+  flex-grow: 1; /* Faz o card-body crescer para ocupar o espaço disponível */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Espaça os elementos dentro do card-body */
+  min-height: 180px; /* Altura mínima para padronizar */
+}
+/* Botão no Card */
+.card .btn {
+  background-color: var(--primary-color); /* Cor primária */
+  color: white; /* Texto branco */
+  border-radius: 8px; /* Bordas arredondadas */
+  padding: 5px 16px; /* Espaçamento interno */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Transições suaves */
+}
+
+.card .btn:hover {
+  background-color: var(--hover-color); /* Cor de hover */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra ao passar o mouse */
+}
+
+.product-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%; /* Garante que o cartão ocupe toda a altura disponível */
+}
+
 
 /* Inputs */
 input, select, textarea {

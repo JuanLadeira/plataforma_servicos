@@ -13,7 +13,29 @@ logger = logging.getLogger("django")
 
 def cart_summary(request):
     cart = Cart(request)
-    return render(request, "pages/cart-summary.html", {"cart": cart})
+
+    # Extrair os produtos do carrinho
+    products = []
+    for product_id, item in cart.cart.items():
+        produto = get_object_or_404(Produto, id=product_id)
+        product = {
+            "id": product_id,
+            "produto": produto.produto,
+            "categoria": produto.categoria,
+            "slug": produto.slug,
+            "preco": item.get("preco"),
+            "qty": item.get("qty"),
+            "imagens": produto.get_images() or [],
+        }
+        products.append(product)
+
+    # Organizar o contexto
+    context = {
+        "cart": cart,
+        "produtos": products,  # Passar os produtos separados
+        "total_price": cart.get_total(),  # Exemplo: Preço total
+    }
+    return render(request, "pages/cart-summary.html", context)
 
 
 def cart_add(request):
