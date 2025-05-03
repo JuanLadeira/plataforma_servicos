@@ -1,64 +1,93 @@
 {% load static i18n compress%}<!DOCTYPE html>
 {% get_current_language as LANGUAGE_CODE %}   
-   <nav class="navbar navbar-expand-md navbar-light bg-light">
-      <div class="container-fluid">
-        <button class="navbar-toggler navbar-toggler-right"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#navbarSupportedContent"
-                aria-controls="navbarSupportedContent"
-                aria-expanded="false"
-                aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <a class="navbar-brand" href="{% url 'home' %}">Platadorma de Serviços</a>
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav me-auto">
-            {% if request.resolver_match.url_name == 'home' %}
-              {% include "pages/components/category_filter.html" %}
+
+   <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
+    <div class="container-fluid">
+      <!-- Botão de Toggle para dispositivos móveis -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+  
+      <!-- Logo -->
+      <a class="navbar-brand fw-bold text-primary" href="{% url 'home' %}">
+        Plataforma de Serviços
+      </a>
+  
+      <!-- Links do Navbar -->
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto">
+          {% if request.resolver_match.url_name == 'home' %}
+            {% include "pages/components/category_filter.html" %}
+          {% endif %}
+          <li class="nav-item my-3">
+            <a class="nav-link text-dark" href="{% url 'about' %}">Sobre</a>
+          </li>
+          {% if request.user.is_authenticated %}
+            <li class="nav-item my-3">
+              <a class="nav-link text-dark" href="{% url 'users:detail' request.user.pk %}">{% translate "Meu Perfil" %}</a>
+            </li>
+            <li class="nav-item my-3">
+              <a class="nav-link text-danger" href="{% url 'account_logout' %}">{% translate "Sair" %}</a>
+            </li>
+          {% else %}
+            {% if ACCOUNT_ALLOW_REGISTRATION %}
+              <li class="nav-item my-3">
+                <a id="sign-up-link" class="nav-link text-dark" href="{% url 'account_signup' %}">{% translate "Registrar" %}</a>
+              </li>
             {% endif %}
             <li class="nav-item my-3">
-              <a class="nav-link" href="{% url 'about' %}">About</a>
+              <a id="log-in-link" class="nav-link text-dark" href="{% url 'account_login' %}">{% translate "Entrar" %}</a>
             </li>
-            {% if request.user.is_authenticated %}
-              <li class="nav-item my-3">
-              <a class="nav-link"
-                 href="{% url 'users:detail' request.user.pk %}">{% translate "My Profile" %}</a>
-              </li>
-              <li class="nav-item my-3">
-              {# URL provided by django-allauth/account/urls.py #}
-              <a class="nav-link" href="{% url 'account_logout' %}">{% translate "Sign Out" %}</a>
-              </li>
+          {% endif %}
+        </ul>
+  
+        <!-- Carrinho -->
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item my-3">
+            <a type="button" role="button" href="{% url 'cart:cart-summary' %}" class="btn btn-outline-primary position-relative">
+              <i class="fa fa-shopping-cart" aria-hidden="true"></i>
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {% with qty_amount=cart|length %}
+                  {% if qty_amount > 0 %}
+                    {{ qty_amount }}
+                  {% else %}
+                    0
+                  {% endif %}
+                {% endwith %}
+              </span>
+            </a>
+          </li>
+        </ul>
+  
+        <!-- Dropdown de Notificações -->
+        <div class="dropdown ms-3">
+           <button class="btn btn-outline-secondary dropdown-toggle position-relative" type="button" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            Notificações
+            {% if messages %}
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {{ messages|length }}
+              </span>
+            {% endif %}
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notificationsDropdown" style="width: 300px;">
+            {% if messages %}
+              {% for message in messages %}
+                <li>
+                  <div class="dropdown-item text-bg-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
+                    {{ message }}
+                  </div>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+              {% endfor %}
             {% else %}
-              {% if ACCOUNT_ALLOW_REGISTRATION %}
-              <li class="nav-item my-3">
-                {# URL provided by django-allauth/account/urls.py #}
-                <a id="sign-up-link" class="nav-link" href="{% url 'account_signup' %}">{% translate "Sign Up" %}</a>
-              </li>
-              {% endif %}
-              <li class="nav-item my-3">
-              {# URL provided by django-allauth/account/urls.py #}
-              <a id="log-in-link" class="nav-link" href="{% url 'account_login' %}">{% translate "Sign In" %}</a>
+              <li>
+                <div class="dropdown-item text-center text-muted">
+                  Nenhuma notificação
+                </div>
               </li>
             {% endif %}
-            </ul>
-            <ul class="navbar-nav ms-auto">
-              <li class="nav-item my-3">
-                <a type="button" role="button" href="{% url 'cart:cart-summary' %}" class="btn btn-outline-secondary"> 
-                  <i class="fa fa-shopping-cart" aria-hidden="true"> </i>
-                  &nbsp;
-                  <div id="cart-qty" class="d-inline-flex">
-                    {% with qty_amount=cart|length %}
-                      {% if qty_amount > 0 %}
-                        {{ qty_amount }}
-                        {% else %}
-                          0
-                      {% endif %}
-                    {% endwith %}
-                  </div>
-                </a>
-              </li>
-            </ul>
+          </ul>
         </div>
       </div>
-    </nav>
+    </div>
+  </nav> 

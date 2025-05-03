@@ -3,6 +3,7 @@ import logging
 
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render
+from django.template.context_processors import csrf
 
 from plataforma_de_servicos.produto.models.categoria_model import Categoria
 from plataforma_de_servicos.produto.models.produto_model import Produto
@@ -62,5 +63,6 @@ def produto_detail(request, produto_slug):
     produto = get_object_or_404(Produto, slug=produto_slug)
 
     context = {"produto": produto, "imagens": produto.get_images()}
+    context.update(csrf(request))  # Adiciona o token CSRF ao contexto
 
     return render(request, "pages/produto-detail.html", context)

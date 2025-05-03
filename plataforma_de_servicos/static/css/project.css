@@ -1,13 +1,199 @@
 /* These styles are generated from project.scss. */
+/* Cores principais */
+:root {
+  --primary-color: #4A90E2; /* Azul suave */
+  --secondary-color: #F4F6F8; /* Cinza claro */
+  --text-color: #2C3E50; /* Azul escuro */
+  --text-muted: #95A5A6; /* Cinza médio */
+  --border-color: #DADFE1; /* Cinza muito claro */
+  --hover-color: #3B7DC4; /* Azul mais escuro para hover */
+}
 
-.alert-debug {
-  color: black;
+/* Corpo */
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: var(--secondary-color);
+  color: var(--text-color);
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+}
+
+/* Links */
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--hover-color);
+}
+
+/* Botões */
+button, .btn {
+  font-family: 'Roboto', sans-serif;
+  font-size: 1rem;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  background-color: var(--primary-color);
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover, .btn:hover {
+  background-color: var(--hover-color);
+}
+
+/* Navbar */
+.navbar {
+  border-bottom: 1px solid #ddd;
   background-color: white;
-  border-color: #d6e9c6;
+}
+
+.navbar-nav .nav-item {
+  margin: 0 5px;
+}
+
+.navbar-nav .nav-link {
+  border-radius: 5px;
+  transition: box-shadow 0.3s ease, background-color 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover {
+  background-color: var(--primary-color);
+  color: white; /* Transição para branco */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+/* Botão do carrinho */
+.navbar-nav .btn-outline-primary {
+  border-radius: 5px;
+  transition: box-shadow 0.3s ease, background-color 0.3s ease;
+}
+
+.navbar-nav .btn-outline-primary:hover {
+  background-color: var(--primary-color);
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Dropdown de Notificações */
+.dropdown-menu {
+  border-radius: 10px; /* Bordas arredondadas */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  padding: 10px; /* Espaçamento interno */
+  max-height: 300px; /* Altura máxima */
+  overflow-y: auto; /* Rolagem para notificações longas */
+  background-color: #fff; /* Fundo branco */
+  word-wrap: break-word; /* Quebra de texto */
+  white-space: normal; /* Permitir quebra de linha */
+}
+
+/* Itens do Dropdown */
+.dropdown-item {
+  border-radius: 5px; /* Bordas arredondadas */
+  padding: 10px; /* Espaçamento interno */
+  margin-bottom: 5px; /* Espaçamento entre itens */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Transições suaves */
+  word-wrap: break-word; /* Quebra de texto */
+  white-space: normal; /* Permitir quebra de linha */
+}
+
+.dropdown-item:hover {
+  background-color: var(--primary-color); /* Cor de fundo ao passar o mouse */
+  color: white; /* Texto branco ao passar o mouse */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra ao passar o mouse */
+}
+
+/* Mensagem de Nenhuma Notificação */
+.dropdown-item.text-muted {
+  font-style: italic; /* Texto em itálico */
+  color: #777; /* Cor cinza */
+  word-wrap: break-word; /* Quebra de texto */
+  white-space: normal; /* Permitir quebra de linha */
+}
+
+/* Divisores */
+.dropdown-divider {
+  margin: 10px 0; /* Espaçamento vertical */
+  border-color: #ddd; /* Cor do divisor */
+}
+
+/* Botão de Notificações */
+#notificationsDropdown {
+  border-radius: 5px; /* Bordas arredondadas */
+  transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Transições suaves */
+}
+
+#notificationsDropdown:hover {
+  background-color: var(--primary-color); /* Fundo ao passar o mouse */
+  color: white; /* Texto branco ao passar o mouse */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra ao passar o mouse */
+}
+
+/* Alertas */
+.alert {
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
 }
 
 .alert-error {
-  color: #b94a48;
-  background-color: #f2dede;
-  border-color: #eed3d7;
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.alert-info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+/* Cartões */
+.card {
+  border: 1px solid var(--border-color
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  background-color: white;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Inputs */
+input, select, textarea {
+  font-family: 'Roboto', sans-serif;
+  font-size: 1rem;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+/* Rodapé */
+footer {
+  background-color: var(--primary-color);
+  color: white;
+  text-align: center;
+  padding: 20px;
+  margin-top: 20px;
+  font-size: 0.9rem;
 }
