@@ -1,0 +1,7 @@
+<label for="select{{ product.id }}">Quantidade</label>
+<select id="select{{ product.id }}" name="product_quantity">
+    <option selected>{{ produto.qty }}</option>
+    {% for quantidade in estoque_range %}
+        <option value="{{ quantidade }}">{{ quantidade }}</option>
+    {% endfor %}
+</select>

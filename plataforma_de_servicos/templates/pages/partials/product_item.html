@@ -1,7 +1,9 @@
 
-<div class="col product-item" >
+<div class="card shadow-sm">
     <div class="card shadow-sm">
-        <img class="img-fluid" alt="Responsive image" src="{{ product.imagem }}">
+        <a href="{{ product.url }}">
+            <img class="img-fluid" alt="Responsive image" src="{{ product.imagem }}">
+        </a>
         <div class="card-body">
             <a class="text-info text-decoration-none" href="{{ product.url }}">
                 {{ product.produto|truncatechars:19 }}
@@ -17,7 +19,7 @@
                 <p>Qtd disponível: <strong>{{ product.estoque }}</strong></p>
             </div>
             <div class="d-flex justify-content-between align-items-center mt-2">
-                <!-- <a href="{% url 'cart:cart-summary' %}"> -->
+                <a href="{% url 'cart:cart-summary' %}">
                     <button 
                         type="button" 
                         id="add-button" 
@@ -31,7 +33,7 @@
                         <i class="fa fa-plus" aria-hidden="true"></i>
                         Add ao carrinho
                     </button>
-                <!-- </a> -->
+                </a>
             </div>
         </div>
     </div>

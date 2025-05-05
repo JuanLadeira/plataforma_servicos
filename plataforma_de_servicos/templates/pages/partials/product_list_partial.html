@@ -8,6 +8,7 @@
         <br>
     </div>
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-5 g-3">
+        
         {% for product in my_products %}
             {% include "pages/partials/product_item.html" with product=product %} 
         {% endfor %}

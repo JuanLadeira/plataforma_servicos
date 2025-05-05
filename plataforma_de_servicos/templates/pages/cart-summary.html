@@ -14,14 +14,14 @@
                   <!-- Galeria de imagens -->
                   <div class="col-2 d-flex flex-column justify-content-center align-produtos-center bg-light">
                     {% if product.imagens %}
-                      <img id="mainImage-{{ product.id }}" class="img-fluid mb-3" alt="Imagem principal" src="{{ product.imagens.0 }}">
+                      <img id="mainImage-{{ product.id }}" class="img-fluid mb-3" alt="Imagem principal" src="{{ product.imagens.0 }}" style="object-fit: cover; width: 100%; height: 150px;">
                       <div class="d-flex justify-content-center overflow-auto w-100" style="white-space: nowrap;">
                         {% for imagem in product.imagens %}
                           <img 
                             src="{{ imagem }}" 
                             alt="Imagem {{ forloop.counter }}" 
                             class="img-thumbnail me-2" 
-                            style="width: 60px; height: 60px; cursor: pointer;" 
+                            style="width: 60px; height: 60px; object-fit: cover; cursor: pointer;" 
                             onclick="document.getElementById('mainImage-{{ product.id }}').src = this.src">
                         {% endfor %}
                       </div>
@@ -39,15 +39,7 @@
                             <span class="text-muted">Categoria: {{ product.categoria }}</span>
                         </div>
                         <div class="d-flex justify-content-between align-produtos-center mt-3">
-                            <label for="select{{ product.id }}">Quantidade</label>
-                            <select id="select{{ product.id }}" name="product_quantity">
-                              <!-- Quantidade disponível: {{ product.estoque }} -->
-                                <option selected>{{ produto.qty }}</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                            </select>
+                                                           {% include "pages/components/select_product_range.html" with product=product estoque_range=product.estoque_range %} 
 
                             <button 
                                 type="button" 
@@ -61,7 +53,6 @@
                                 hx-on="htmx:afterRequest: (function(event) { 
                                     const response = JSON.parse(event.detail.xhr.responseText); 
                                     document.getElementById('total').textContent = response.total;
-                                    document.getElementById('product-produto-{{ product.id }}').remove(); 
                                 })(event)">
                                 Atualizar
                             </button>

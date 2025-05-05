@@ -159,7 +159,7 @@ button:hover, .btn:hover {
 }
 
 .album{
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra mais suave */
+  /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); Sombra mais suave */
   border-radius: 12px; /* Bordas arredondadas */
 }
 
@@ -176,8 +176,7 @@ button:hover, .btn:hover {
 
 /* Cartões */
 .img .img-fluid{
-  max-width: 100%; /* Garante que a imagem não ultrapasse o tamanho do card */
-  height: auto; /* Mantém a proporção da imagem */
+  min-height: 300px; 
   border-radius: 12px; /* Bordas arredondadas */
 }
 
@@ -189,11 +188,21 @@ button:hover, .btn:hover {
   padding: 3px; /* Espaçamento interno */
   background-color: white; /* Fundo branco */
   transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease; /* Transições suaves */
+  min-height: 190px; /* Altura mínima para padronizar */
 }
+
+/* Padronizar o tamanho das imagens nos cards */
+.card img {
+  width: 100%; /* Garante que a imagem ocupe toda a largura do card */
+  height: 200px; /* Define uma altura fixa para as imagens */
+  object-fit: contain; /* Mantém a proporção da imagem e preenche o espaço */
+  border-top-left-radius: 6px; /* Bordas arredondadas para combinar com o card */
+  border-top-right-radius: 6px;
+}
+
 
 .card:hover {
   transform: translateY(-8px); /* Move o card 8px para cima */
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15); /* Sombra mais pronunciada */
   background-color: var(--secondary-color); /* Fundo cinza claro ao passar o mouse */
 }
 
@@ -213,7 +222,7 @@ button:hover, .btn:hover {
   display: flex;
   flex-direction: column;
   justify-content: space-between; /* Espaça os elementos dentro do card-body */
-  min-height: 180px; /* Altura mínima para padronizar */
+  min-height: 200px; /* Altura mínima para padronizar */
 }
 /* Botão no Card */
 .card .btn {

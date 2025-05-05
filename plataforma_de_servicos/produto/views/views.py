@@ -64,7 +64,11 @@ def produto_detail(request, produto_slug):
 
     produto = get_object_or_404(Produto, slug=produto_slug)
 
-    context = {"produto": produto, "imagens": produto.get_images()}
+    context = {
+        "produto": produto,
+        "imagens": produto.get_images(),
+        "estoque_range": produto.get_stock_range(),
+        }
     context.update(csrf(request))  # Adiciona o token CSRF ao contexto
 
     return render(request, "pages/produto-detail.html", context)

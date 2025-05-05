@@ -91,3 +91,6 @@ class Produto(models.Model):
         if self.images.exists():
             return [image.image.url for image in self.images.all()]
         return None
+
+    def get_stock_range(self):
+        return [str(i) for i in range(1, min(self.estoque, 20) + 1)]

@@ -26,6 +26,7 @@ def cart_summary(request):
             "preco": item.get("preco"),
             "qty": item.get("qty"),
             "imagens": produto.get_images() or [],
+            "estoque_range": produto.get_stock_range(),
         }
         products.append(product)
 

@@ -31,18 +31,3 @@
         </nav>
     </div>
 </div>
-
-<script>
-    // Search products
-    document.getElementById('searchBar').addEventListener('input', function() {
-        const searchText = this.value.toLowerCase();
-        document.querySelectorAll('.product-item').forEach(item => {
-            const productName = item.querySelector('.card-text a').textContent.toLowerCase();
-            if (productName.includes(searchText)) {
-                item.style.display = "block";
-            } else {
-                item.style.display = "none";
-            }
-        });
-    });
-</script>
