@@ -12,15 +12,13 @@ class CategoriaFactory(DjangoModelFactory):
     @factory.lazy_attribute
     def categoria(self):
         instances = [
-                "Motos",
-                "Carros",
-                "SUVs",
-                "Caminhões",
-                "Utilitários",
-                "Vans",
-                "Pickups",
-                "Outros",
-            ]
+            "Pizzas Salgadas Tradicionais",
+            "Pizzas Salgadas Especiais",
+            "Pizzas Doces",
+            "Bebidas",
+            "Acompanhamentos",
+            "Outros",
+        ]
         for instance in instances:
             categorias = Categoria.objects.filter(categoria=instance)
             if categorias.exists():

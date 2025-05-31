@@ -7,7 +7,13 @@
         </h5>
         <br>
     </div>
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-5 g-3">
+    <div class="row row-cols-1 p-1 row-cols-sm-2 row-cols-md-5 g-3 justify-content-center align-items-center">
+
+        {% if my_products|length == 0 %}
+            <div class="col-12">
+                <p class="text-center">Nenhum produto encontrado nesta categoria.</p>
+            </div>
+        {% endif %}
         
         {% for product in my_products %}
             {% include "pages/partials/product_item.html" with product=product %} 
