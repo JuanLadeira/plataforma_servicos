@@ -195,7 +195,7 @@ dependencies = [
     "humanize==4.12.1",
     "idna==3.10",
     "ipdb==0.13.13",
-    "kombu==5.5.0",
+    "kombu==5.5.4",
     "mypy==1.13.0",
     "packaging==24.2",
     "pillow==11.1.0",
