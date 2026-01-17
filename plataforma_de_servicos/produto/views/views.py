@@ -72,3 +72,17 @@ def produto_detail(request, produto_slug):
     context.update(csrf(request))  # Adiciona o token CSRF ao contexto
 
     return render(request, "pages/produto-detail.html", context)
+
+
+def category_search(request):
+    search_text = request.POST.get("search")
+    
+    # Realiza a busca case-insensitive e retorna os resultados
+    if search_text:
+        results = Categoria.objects.filter(categoria__icontains=search_text)
+    else:
+        results = Categoria.objects.none()
+        
+    return render(
+        request, "pages/partials/category_results.html", {"categories": results}
+    )

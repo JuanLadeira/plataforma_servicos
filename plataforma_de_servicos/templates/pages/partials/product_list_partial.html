@@ -1,14 +1,21 @@
 <div id="productList">
-    <div class="col-12">
-        <h5>
-            <strong>
-            {{ categoria }}
-            </strong> 
-        </h5>
-        <br>
+    <div class="col-12 mb-4">
+        <div class="category-search-container">
+            <label for="category-search-input" class="form-label fw-bold">Buscar por Categoria:</label>
+            <input class="form-control" 
+                   type="search" 
+                   id="category-search-input"
+                   name="search"
+                   placeholder="Digite para buscar uma categoria..."
+                   hx-post="{% url 'category-search' %}"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#category-results"
+                   hx-indicator=".htmx-indicator">
+            <div id="category-results"></div>
+        </div>
     </div>
-    <div class="row row-cols-1 p-1 row-cols-sm-2 row-cols-md-5 g-3 justify-content-center align-items-center">
 
+    <div class="row row-cols-1 p-1 row-cols-sm-2 row-cols-md-5 g-3 justify-content-center align-items-center">
         {% if my_products|length == 0 %}
             <div class="col-12">
                 <p class="text-center">Nenhum produto encontrado nesta categoria.</p>
@@ -18,6 +25,6 @@
         {% for product in my_products %}
             {% include "pages/partials/product_item.html" with product=product %} 
         {% endfor %}
-
     </div>
 </div>
+

@@ -5,11 +5,21 @@
     </a>
     <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
         <li>
-            <a class="dropdown-item" href="#" hx-get="{% url 'home' %}" hx-target="#productList">Todas</a>
+            <a class="dropdown-item" 
+               href="#" 
+               hx-get="{% url 'home' %}" 
+               hx-target="#productList"
+               hx-on::after-request="document.getElementById('productList').scrollIntoView({ behavior: 'smooth' })">
+               Todas
+            </a>
         </li>
         {% for category in categories %}
         <li>
-            <a class="dropdown-item" href="#" hx-get="{% url 'home' %}?category={{ category.id }}" hx-target="#productList">
+            <a class="dropdown-item" 
+               href="#" 
+               hx-get="{% url 'home' %}?category={{ category.id }}" 
+               hx-target="#productList"
+               hx-on::after-request="document.getElementById('productList').scrollIntoView({ behavior: 'smooth' })">
                 {{ category.categoria }}
             </a>
         </li>

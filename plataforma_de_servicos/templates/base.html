@@ -6,7 +6,7 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>
       {% block title %}
-      plataforma_de_servicos
+      Bella Pizza
     {% endblock title %}
   </title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,6 +15,9 @@
   <meta name="author"
         content="Juan" />
   <link rel="icon" href="{% static 'images/favicons/favicon.ico' %}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
   {% block css %}
     <!-- Latest compiled and minified Bootstrap CSS -->
     <link rel="stylesheet"
@@ -30,6 +33,7 @@
 
 {% compress css %}
   <link href="{% static 'css/project.css' %}" rel="stylesheet" />
+  <link id="dark-theme-style" rel="stylesheet" href="{% static 'css/black-theme.css' %}" disabled />
 {% endcompress %}
 
 
@@ -80,15 +84,37 @@
   {% block modal %}
   {% endblock modal %}
   {% block inline_javascript %}
-    {% comment %}
-    Script tags with only code, no src (defer by default). To run
-    with a "defer" so that you run inline code:
     <script>
-      window.addEventListener('DOMContentLoaded', () => {
-        /* Run whatever you want */
+      document.addEventListener('DOMContentLoaded', () => {
+        const themeSwitch = document.getElementById('theme-switch');
+        const darkThemeStyle = document.getElementById('dark-theme-style');
+        const body = document.body;
+
+        const applyTheme = (theme) => {
+          if (theme === 'dark') {
+            body.classList.add('dark-mode');
+            darkThemeStyle.removeAttribute('disabled');
+            if(themeSwitch) themeSwitch.checked = true;
+          } else {
+            body.classList.remove('dark-mode');
+            darkThemeStyle.setAttribute('disabled', 'true');
+            if(themeSwitch) themeSwitch.checked = false;
+          }
+        };
+
+        // Apply theme on initial load
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        applyTheme(savedTheme);
+
+        if(themeSwitch) {
+            themeSwitch.addEventListener('change', () => {
+                const newTheme = themeSwitch.checked ? 'dark' : 'light';
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+            });
+        }
       });
     </script>
-    {% endcomment %}
   {% endblock inline_javascript %}
 </body>
 </html>

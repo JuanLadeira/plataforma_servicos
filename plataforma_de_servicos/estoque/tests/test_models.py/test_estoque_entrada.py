@@ -13,22 +13,27 @@ class TestEstoqueEntrada:
         estoque_itens_factory,
         produto_factory,
         user_factory,
+        inventario_factory,
     ):
         produto = produto_factory(estoque=0)
         produto_2 = produto_factory(estoque=0)
         funcionario = user_factory()
+        inventario = inventario_factory()
         dados_entrada = {
             "nf": 1,
             "movimento": "e",
             "funcionario": funcionario.pk,
+            "inventario_destino": inventario.pk,
             "itens": [
                 {
                     "produto": produto.pk,
                     "quantidade": 1,
+                    "inventario": inventario.pk,
                 },
                 {
                     "produto": produto_2.pk,
                     "quantidade": 2,
+                    "inventario": inventario.pk,
                 },
             ],
         }
@@ -36,7 +41,7 @@ class TestEstoqueEntrada:
         # Usar o serializer
         estoque_entrada_serializer_class = EstoqueEntradaPostSerializer
         serializer = estoque_entrada_serializer_class(data=dados_entrada)
-        assert serializer.is_valid()
+        assert serializer.is_valid(raise_exception=True)
         estoque_entrada = serializer.save()
         produto_2.refresh_from_db()
         produto.refresh_from_db()

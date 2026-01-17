@@ -1,53 +1,25 @@
 
-{% include "store/base.html" %}
-
+{% extends "base.html" %}
 {% load static %}
 
 {% block content %}
-
-<style>
-
-
-    body{
-
-
-        background-color: gray;
-
-    }
-
-
-
-</style>
-
-<body>
-
-    <br>
-
-    <div class="container bg-white shadow-md p-5 form-layout">
-
-        <div class="text-center">
-            
-            <i class="text-success fa fa-credit-card-alt fa-3x" aria-hidden="true"></i>
-
-            <br> <br>
-   
-
-            <h5> <strong> Payment success! </strong> </h5>
-
-            <hr>
-
-            <p> Your order was processed successfully. </p>
-
-
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0 text-center my-5">
+                <div class="card-body p-5">
+                    <i class="fa fa-check-circle fa-4x text-success mb-4"></i>
+                    <h1 class="h3 fw-bold">Pagamento Realizado com Sucesso!</h1>
+                    <p class="text-muted">Seu pedido foi processado e em breve será preparado para envio. Obrigado por comprar conosco!</p>
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="{% url 'home' %}" class="btn btn-primary">Continuar Comprando</a>
+                        <a href="#" class="btn btn-outline-secondary">Ver Meus Pedidos</a>
+                    </div>
+                </div>
+            </div>
         </div>
-
-
     </div>
-
-
-</body>
-
-
+</div>
 {% endblock %}
 
 

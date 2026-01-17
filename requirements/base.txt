@@ -122,3 +122,4 @@ langchain-community>=0.3.21
 langchain-deepseek==0.1.3
 python-decouple>=3.8
 psycopg2-binary>=2.9.10
+pytest-cov

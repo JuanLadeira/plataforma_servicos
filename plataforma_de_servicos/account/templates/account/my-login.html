@@ -1,91 +1,41 @@
 
-{% include "store/base.html" %}
-
+{% extends "base.html" %}
 {% load static %}
-
 {% load crispy_forms_tags %}
 
-
 {% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg border-0 my-5">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <h1 class="h3 fw-bold">Bem-vindo de volta!</h1>
+                        <p class="text-muted">Faça login para continuar.</p>
+                    </div>
+                    
+                    <form method="POST" autocomplete="off">
+                        {% csrf_token %}
+                        
+                        {{ form|crispy }}
 
-    <style>
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-key" aria-hidden="true"></i> &nbsp; Login
+                            </button>
+                        </div>
 
-
-        body{
-
-
-            background-color: gray;
-
-        }
-
-
-
-    </style>
-
-
-
-
-    <body>
-
-        <br>
-
-        <div class="container bg-white shadow-md p-5 form-layout">
-
-            <h3> Login to your account </h3>
-
-            <hr>
-
-            <br>
-
-            <form method="POST" autocomplete="off">
-
-                {% csrf_token %}
-
-                {{form.username|as_crispy_field}}
-
-
-                <br> 
-
-
-                {{form.password|as_crispy_field}}
-
-                <br> 
-
-                
-                <button type="submit" class="btn btn-primary navbar-btn text-white w-100 p-2"> <i class="fa fa-key" aria-hidden="true"></i> &nbsp; Login </button>
-
-                <br> <br>
-
-                {{form.non_field_errors}}
-
-                <div class="text-center">
-
-                    <a href="{% url 'register' %}"> Don't have an account? </a>
-
-
-                    <br> <br>
-
-                    <a href="{% url 'reset_password' %}"> Forgotten your password? </a>
-
-
+                        <div class="text-center mt-4">
+                            <a class="small" href="{% url 'register' %}">Não tem uma conta? Cadastre-se!</a>
+                            <br>
+                            <a class="small" href="{% url 'reset_password' %}">Esqueceu sua senha?</a>
+                        </div>
+                    </form>
                 </div>
-
-
-            </form>
-
-
-
-
-
+            </div>
         </div>
-
-
-
-    </body>
-
-    <br> <br>
-
-
+    </div>
+</div>
 {% endblock %}
 
 

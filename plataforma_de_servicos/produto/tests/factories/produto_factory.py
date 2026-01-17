@@ -1,14 +1,15 @@
 import factory
-
 from django.utils import timezone
-from factory import Faker, LazyFunction, SubFactory
+from factory import Faker
+from factory import LazyFunction
 from factory.django import DjangoModelFactory
 
-from plataforma_de_servicos.produto.models.produto_model import Produto
 from plataforma_de_servicos.produto.models.categoria_model import Categoria
+from plataforma_de_servicos.produto.models.produto_model import Produto
 from plataforma_de_servicos.produto.tests.factories.categoria_factory import (
     CategoriaFactory,
 )
+
 _pizza_salgadas_tradicionais = [
     "Pizza Calabresa", "Pizza Margherita", "Pizza Portuguesa",
     "Pizza Quatro Queijos", "Pizza Frango com Catupiry",
@@ -29,12 +30,13 @@ _bebidas = [
     "Refrigerante Lata 350ml", "Refrigerante 2 Litros",
     "Água Mineral 500ml", "Suco Natural Laranja 300ml", "Cerveja Long Neck",
 ]
+_acompanhamentos = []
 # This combined list will be used by the 'produto' lazy_attribute to pick a name.
 _all_products = (
     _pizza_salgadas_tradicionais +
     _pizza_salgadas_especiais +
     _pizzas_doces +
-    _bebidas 
+    _bebidas
 )
 
 class ProdutoFactory(DjangoModelFactory):
@@ -43,8 +45,6 @@ class ProdutoFactory(DjangoModelFactory):
 
     importado = Faker("boolean")
     ncm = Faker("numerify", text="12345678")  # Exemplo de NCM fixo ou padrão
-    preco = Faker("pydecimal", left_digits=4, right_digits=2, positive=True)  # Preço com 2 casas decimais
-    estoque = Faker("random_int", min=0, max=2)  # Estoque entre 10 e 100
     estoque_minimo = Faker("random_int", min=1, max=10)  # Estoque mínimo entre 1 e 10
     data = LazyFunction(timezone.now)
 
@@ -76,7 +76,7 @@ class ProdutoFactory(DjangoModelFactory):
             category_name = "Acompanhamentos"
         else:
             category_name = "Outros" # Fallback
-        
+
         categoria = Categoria.objects.filter(categoria=category_name).first()
         if not categoria:
             # If the category does not exist, create it

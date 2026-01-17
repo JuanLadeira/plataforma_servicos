@@ -3,84 +3,85 @@
 {% load static %}
 
 {% block content %}
-
-<div class="container">
-    <main class="pt-5">
-        <div class="row g-3">
-            <!-- Galeria de imagens -->
-            <div class="col-md-5 col-lg-5 order-md-first bg-light d-flex flex-column justify-content-center align-items-center">
-                <!-- Imagem principal -->
-                {% if imagens %}
-                    <img id="mainImage" class="img-fluid mb-3" alt="Responsive image" src="{{ imagens.0 }}" />
-                {% else %}
-                    <img id="mainImage" class="img-fluid mb-3" alt="Foto não disponível" src="{% static 'images/no-image.png' %}" />
-                {% endif %}
-                 
-
-                <!-- Miniaturas -->
-                <div class="d-flex justify-content-center">
-                    {% for imagem in imagens %}
-                        <img 
-                            src="{{ imagem }}" 
-                            alt="Produto imagem {{ forloop.counter }}" 
-                            class="img-thumbnail me-2" 
-                            style="width: 80px; height: 80px; cursor: pointer;" 
-                            onclick="document.getElementById('mainImage').src = this.src"
-                        />
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- Detalhes do produto -->
-            <div class="col-md-7 col-lg-7 ps-md-3 ps-lg-5">
-                <h1 class="mb-0 h4"> {{ produto.produto }} </h1>
-                <strong> {{ produto.categoria }} </strong>
-                <hr>
-                <br>
-                <p> {{ produto.produto }} </p>
-
-                <div class="border">
-                    <div class="col border-bottom">
-                        <div class="row p-3">
-                            <div class="col-6"> Preço </div>
-                            <div class="col-6 text-end">
-                                <span class="h4 fw-bold">$ {{ produto.preco }} </span>
+<div class="container my-5">
+    <main>
+        <div class="card product-detail-card">
+            <div class="card-body">
+                <div class="row g-5">
+                    <!-- Galeria de imagens -->
+                    <div class="col-lg-6">
+                        <div class="image-gallery">
+                            <div class="main-image mb-3">
+                                {% if imagens %}
+                                    <img id="mainImage" class="img-fluid rounded shadow-sm" alt="Imagem principal de {{ produto.produto }}" src="{{ imagens.0 }}" />
+                                {% else %}
+                                    <img id="mainImage" class="img-fluid rounded shadow-sm" alt="Foto não disponível" src="{% static 'images/no-image.png' %}" />
+                                {% endif %}
+                            </div>
+                            <div class="thumbnails d-flex justify-content-center">
+                                {% for imagem in imagens %}
+                                    <img src="{{ imagem }}" 
+                                         alt="Miniatura {{ forloop.counter }}" 
+                                         class="img-thumbnail me-2" 
+                                         onclick="document.getElementById('mainImage').src = this.src">
+                                {% endfor %}
                             </div>
                         </div>
                     </div>
 
-                    <div class="col">
-                        <div class="row p-3">
-                            <div class="col-6">
-                                {% include "pages/components/select_product_range.html" with product=produto estoque_range=estoque_range %}
+                    <!-- Detalhes do produto -->
+                    <div class="col-lg-6">
+                        <span class="badge bg-primary mb-2">{{ produto.categoria }}</span>
+                        <h1 class="h2 fw-bold">{{ produto.produto }}</h1>
+                        <p class="text-muted">Uma breve descrição do produto, destacando seus principais benefícios e características. Feito com ingredientes frescos e muito cuidado.</p>
+                        
+                        <div class="action-box my-4 p-4 rounded">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="h5 text-muted">Preço</span>
+                                <span class="h2 fw-bold text-primary">R$ {{ produto.preco }}</span>
                             </div>
-
-                            <div class="col-6 text-end">
-                                <a href="{% url 'cart:cart-summary' %}" class="btn btn-secondary btn-sm">
-                                    <i class="fa fa-plus" aria-hidden="true">
-                                        <button 
-                                            type="button" 
-                                            id="add-button" 
-                                            value="{{ produto.id }}" 
-                                            class="btn btn-secondary btn-sm" 
-                                            hx-post="{% url 'cart:cart-add' %}" 
-                                            hx-include="#select" 
-                                            hx-vals='{"product_id": "{{ produto.id }}", "action": "post"}' 
-                                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                                            hx-swap="none"
-                                            >
-                                            &nbsp; Adicionar ao carrinho
-                                        </button>
-                                    </i>
-                                </a>
+                            <div class="row g-2 align-items-center">
+                                <div class="col-md-5">
+                                    {% include "pages/components/select_product_range.html" with product=produto estoque_range=estoque_range %}
+                                </div>
+                                <div class="col-md-7">
+                                    <button 
+                                        type="button" 
+                                        id="add-button" 
+                                        class="btn btn-primary w-100" 
+                                        hx-post="{% url 'cart:cart-add' %}" 
+                                        hx-include="#select-{{ produto.id }}"
+                                        hx-vals='{"product_id": "{{ produto.id }}", "action": "post"}' 
+                                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                        hx-swap="none"
+                                        hx-on="htmx:afterRequest: (function(event) {
+                                            const qtyEl = document.getElementById('cart-qty');
+                                            const currentQty = parseInt(qtyEl.textContent);
+                                            const response = JSON.parse(event.detail.xhr.responseText);
+                                            qtyEl.textContent = response.qty;
+                                            
+                                            // Animação simples no botão
+                                            const button = document.getElementById('add-button');
+                                            button.classList.add('btn-success');
+                                            button.innerHTML = '<i class=&quot;fa fa-check&quot;></i> Adicionado!';
+                                            setTimeout(() => {
+                                                button.classList.remove('btn-success');
+                                                button.innerHTML = '<i class=&quot;fa fa-plus&quot;></i> Adicionar ao Carrinho';
+                                            }, 2000);
+                                        })(event)">
+                                        <i class="fa fa-plus"></i> Adicionar ao Carrinho
+                                    </button>
+                                </div>
                             </div>
+                        </div>
+                        <div class="d-flex align-items-center text-muted">
+                            <i class="fa fa-archive me-2"></i>
+                            <span>Estoque disponível: {{ produto.estoque }}</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </main>
-    <br>
 </div>
-
 {% endblock content %}

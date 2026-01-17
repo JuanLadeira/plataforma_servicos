@@ -1,100 +1,61 @@
 
-{% include "store/base.html" %}
-
+{% extends "base.html" %}
 {% load static %}
 
-{% load crispy_forms_tags %}
-
-
 {% block content %}
-
-<style>
-
-
-    body{
-
-
-        background-color: gray;
-
-    }
-
-
-
-</style>
-
-
-<body>
-
-    <br>
-
-    <div class="container bg-white shadow-md p-5 form-layout">
-
-        <h4> <i class="fa fa-hand-paper-o" aria-hidden="true"></i> &nbsp; Welcome, {{user}} </h4>
-
-        <hr>
-
-        <p> This is your dashboard where you can perform any of the following: </p>
-
-        <li> Track your orders </li>
-        <li> Manage your account </li>
-
-
+<div class="container my-5">
+    <div class="text-center mb-5">
+        <h1 class="h2 fw-bold">Bem-vindo ao seu Painel, {{ user.name|default:user.email }}!</h1>
+        <p class="text-muted">Aqui você pode gerenciar seus pedidos, informações de conta e mais.</p>
     </div>
 
-    <br>
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body d-flex flex-column text-center p-5">
+                    <div class="mb-3">
+                        <i class="fa fa-list-alt fa-3x text-primary"></i>
+                    </div>
+                    <h4 class="card-title">Meus Pedidos</h4>
+                    <p class="card-text text-muted">Acompanhe o status dos seus pedidos atuais e veja seu histórico de compras.</p>
+                    <div class="mt-auto">
+                        <a class="btn btn-primary" href="{% url 'track-orders' %}">Ver Meus Pedidos</a>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <div class="container bg-white shadow-md p-5 form-layout">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body d-flex flex-column text-center p-5">
+                    <div class="mb-3">
+                        <i class="fa fa-user-circle fa-3x text-primary"></i>
+                    </div>
+                    <h4 class="card-title">Gerenciar Perfil</h4>
+                    <p class="card-text text-muted">Atualize seu nome, e-mail e outras informações da sua conta.</p>
+                    <div class="mt-auto">
+                        <a class="btn btn-primary" href="{% url 'profile-management' %}">Editar Perfil</a>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        <h4> <i class="fa fa-list-alt" aria-hidden="true"></i> &nbsp; Track your orders </h4>
-
-        <hr>
-
-        <p> Track all of your orders here... </p>
-
-        <a class="btn btn-primary navbar-btn text-white" type="button"  href="{% url 'track-orders' %}"> My orders </a>
-
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body d-flex flex-column text-center p-5">
+                    <div class="mb-3">
+                        <i class="fa fa-truck fa-3x text-primary"></i>
+                    </div>
+                    <h4 class="card-title">Endereço de Entrega</h4>
+                    <p class="card-text text-muted">Adicione ou atualize seu endereço de entrega para agilizar suas compras.</p>
+                    <div class="mt-auto">
+                        <a class="btn btn-primary" href="{% url 'manage-shipping' %}">Gerenciar Endereço</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <br>
-
-
-    <div class="container bg-white shadow-md p-5 form-layout">
-
-        <h4> <i class="fa fa-address-book" aria-hidden="true"></i> &nbsp; Manage your account </h4>
-
-        <hr>
-
-        <p> Update or delete your account </p>
-
-
-        
-        
-
-        <a class="btn btn-primary navbar-btn text-white" type="button"  href="{% url 'profile-management' %}"> Profile management </a>
-
-    </div>
-
-    <br>
-
-
-    <div class="container bg-white shadow-md p-5 form-layout">
-
-        <h4> <i class="fa fa-chevron-circle-right" aria-hidden="true"></i> &nbsp; Manage shipping </h4>
-
-        <hr>
-
-        <p> Enter in a shipping address </p>
-
-
-        <a class="btn btn-primary navbar-btn text-white" type="button"  href="{% url 'manage-shipping' %}"> Manage shipping </a>
-
-    </div>
-
-    <br>
-
-
-
-
+</div>
 {% endblock %}
 
 

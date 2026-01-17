@@ -214,6 +214,7 @@ dependencies = [
     "psycopg[c]==3.2.4",
     "pycparser==2.22",
     "pytest==8.3.4",
+    "pytest-cov",
     "pytest-django==4.9.0",
     "pytest-factoryboy>=2.7.0",
     "pytest-sugar==1.0.0",

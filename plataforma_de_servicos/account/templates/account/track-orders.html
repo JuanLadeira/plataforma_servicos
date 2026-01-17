@@ -1,70 +1,57 @@
 
-{% include "store/base.html" %}
-
+{% extends "base.html" %}
 {% load static %}
 
-{% load crispy_forms_tags %}
-
-
 {% block content %}
-
-    <style>
-
-
-        body{
-
-
-            background-color: gray;
-
-        }
-        
-
-
-
-    </style>
-
-    <br>
-
-    <div class="container bg-white shadow-md p-5 form-layout ">
-
-        <h3> <i class="fa fa-list-alt" aria-hidden="true"></i> &nbsp; My orders </h3>
-
-        <p> View all of your orders. </p>
-
-        <hr>
-
-
+<div class="container my-5">
+    <div class="text-center mb-5">
+        <h1 class="h2 fw-bold">Meus Pedidos</h1>
+        <p class="text-muted">Acompanhe todos os seus pedidos aqui.</p>
     </div>
 
-    <br>
-
-    <div class="container bg-white shadow-md p-5 form-layout ">
-
-        {% for order in orders %}
-
-            <strong> <i class="fa fa-list-alt" aria-hidden="true"></i> &nbsp;  Order ID # {{order.id}} </strong>
-            
-            <br> <br>
-
-            {{order.product}}
-
-            <br> <br>
-
-            Quantity x {{order.quantity}}
-
-            <br> <br>
-
-            $ {{order.price}}
-
-            <br> <br>
-
-            <hr>
-
-
-        {% endfor %}
-
-    </div>
-
-    <br>
-
+    {% for item in orders %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <span class="fw-bold">Pedido #{{ item.order.id }}</span>
+                <span class="text-muted">{{ item.order.date_ordered|date:"d/m/Y" }}</span>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-2">
+                        {% if item.product.image %}
+                            <img src="{{ item.product.image.url }}" class="img-fluid rounded" alt="{{ item.product.title }}">
+                        {% else %}
+                            <img src="{% static 'images/no-image.png' %}" class="img-fluid rounded" alt="Sem imagem">
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <h5 class="mb-0">{{ item.product.title }}</h5>
+                        <small class="text-muted">{{ item.product.category }}</small>
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <span class="fw-bold">Preço</span><br>
+                        R$ {{ item.price }}
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <span class="fw-bold">Quantidade</span><br>
+                        {{ item.quantity }}
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <span class="fw-bold">Subtotal</span><br>
+                        R$ {% widthratio item.price 1 item.quantity %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="card shadow-sm text-center p-5">
+            <div class="card-body">
+                <i class="fa fa-list-alt fa-4x text-muted mb-3"></i>
+                <h3 class="mb-3">Nenhum Pedido Encontrado</h3>
+                <p class="text-muted">Você ainda não fez nenhum pedido. Que tal começar agora?</p>
+                <a href="{% url 'home' %}" class="btn btn-primary mt-3">Ver Produtos</a>
+            </div>
+        </div>
+    {% endfor %}
+</div>
 {% endblock %}

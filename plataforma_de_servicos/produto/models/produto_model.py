@@ -2,6 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.urls import reverse
 from django_extensions.db.models import AutoSlugField
+from django.templatetags.static import static
 
 from plataforma_de_servicos.produto.models.categoria_model import Categoria
 
@@ -59,8 +60,8 @@ class Produto(models.Model):
     ncm = models.CharField("NCM", max_length=8)
     produto = models.CharField(max_length=100, unique=True)
     slug = AutoSlugField(populate_from="produto", unique=True)
-    preco = models.DecimalField("preço", max_digits=7, decimal_places=2)
-    estoque = models.IntegerField("estoque atual", default=0)
+    preco = models.DecimalField("preço", max_digits=7, decimal_places=2, null=True, blank=True)
+    estoque = models.IntegerField("estoque atual", default=0, null=True, blank=True)
     estoque_minimo = models.PositiveIntegerField("estoque mínimo", default=0)
     data = models.DateField(null=True, blank=True)
     categoria = models.ForeignKey(
@@ -85,7 +86,17 @@ class Produto(models.Model):
     def get_image(self):
         if self.images.exists():
             return self.images.filter(order=1).first().image.url
-        return "static/images/no-image.png"
+        
+        if self.categoria:
+            cat_name = self.categoria.categoria.lower()
+            if 'pizza' in cat_name:
+                return static('images/default-pizza.svg')
+            if 'doce' in cat_name:
+                return static('images/default-doce.svg')
+            if 'bebida' in cat_name:
+                return static('images/default-bebida.svg')
+        
+        return static('images/default-outro.svg')
 
     def get_images(self):
         if self.images.exists():

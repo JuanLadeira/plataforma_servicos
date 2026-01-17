@@ -1,0 +1,11 @@
+<div class="list-group mt-2">
+    {% for category in categories %}
+        <a href="#" 
+           class="list-group-item list-group-item-action"
+           hx-get="{% url 'home' %}?category={{ category.id }}"
+           hx-target="#productList"
+           hx-swap="outerHTML">
+            {{ category.categoria }}
+        </a>
+    {% endfor %}
+</div>
