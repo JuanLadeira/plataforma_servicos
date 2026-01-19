@@ -6,8 +6,12 @@ from plataforma_de_servicos.estoque.models.proxys.estoque_entrada import Estoque
 from plataforma_de_servicos.estoque.models.proxys.estoque_saida import EstoqueSaida
 from plataforma_de_servicos.inventario.admin.gerente_admin import InventarioGerenteAdmin
 from plataforma_de_servicos.inventario.models import Inventario
+from plataforma_de_servicos.produto.admin.gerente_admin import AtributoGerenteAdmin
 from plataforma_de_servicos.produto.admin.gerente_admin import CategoriaGerenteAdmin
 from plataforma_de_servicos.produto.admin.gerente_admin import ProdutoGerenteAdmin
+from plataforma_de_servicos.produto.admin.gerente_admin import ValorAtributoGerenteAdmin
+from plataforma_de_servicos.produto.models.atributos import Atributo
+from plataforma_de_servicos.produto.models.atributos import ValorAtributo
 from plataforma_de_servicos.produto.models.categoria_model import Categoria
 from plataforma_de_servicos.produto.models.produto_model import Produto
 
@@ -37,6 +41,8 @@ gerente_site = GerenteAdminSite(name="gerentes")
 
 gerente_site.register(Produto, ProdutoGerenteAdmin)
 gerente_site.register(Categoria, CategoriaGerenteAdmin)
+gerente_site.register(Atributo, AtributoGerenteAdmin)
+gerente_site.register(ValorAtributo, ValorAtributoGerenteAdmin)
 gerente_site.register(EstoqueEntrada, EstoqueEntradaAdmin)
 gerente_site.register(EstoqueSaida, EstoqueSaidaAdmin)
 gerente_site.register(Inventario, InventarioGerenteAdmin)

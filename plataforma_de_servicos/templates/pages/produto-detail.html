@@ -55,19 +55,20 @@
                                         hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                                         hx-swap="none"
                                         hx-on="htmx:afterRequest: (function(event) {
-                                            const qtyEl = document.getElementById('cart-qty');
-                                            const currentQty = parseInt(qtyEl.textContent);
                                             const response = JSON.parse(event.detail.xhr.responseText);
-                                            qtyEl.textContent = response.qty;
                                             
-                                            // Animação simples no botão
-                                            const button = document.getElementById('add-button');
-                                            button.classList.add('btn-success');
-                                            button.innerHTML = '<i class=&quot;fa fa-check&quot;></i> Adicionado!';
-                                            setTimeout(() => {
-                                                button.classList.remove('btn-success');
-                                                button.innerHTML = '<i class=&quot;fa fa-plus&quot;></i> Adicionar ao Carrinho';
-                                            }, 2000);
+                                            if (response.error) {
+                                                // Se houve erro, redirecionar para carrinho para ver mensagens
+                                                window.location.href = response.redirect;
+                                            } else if (response.redirect) {
+                                                // Sucesso - animação rápida e redirecionamento
+                                                const button = document.getElementById('add-button');
+                                                button.classList.add('btn-success');
+                                                button.innerHTML = '<i class=&quot;fa fa-check&quot;></i> Adicionado!';
+                                                setTimeout(() => {
+                                                    window.location.href = response.redirect;
+                                                }, 1000);
+                                            }
                                         })(event)">
                                         <i class="fa fa-plus"></i> Adicionar ao Carrinho
                                     </button>

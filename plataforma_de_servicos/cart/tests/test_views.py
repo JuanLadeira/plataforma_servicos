@@ -26,7 +26,7 @@ class TestCartViews:
                 "product_quantity": 2,
                 "action": "post",
             },
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            HTTP_HX_REQUEST="true",
         )
 
         assert response.status_code == 200
@@ -42,7 +42,7 @@ class TestCartViews:
         delete_url = reverse("cart:cart-delete")
 
         session = client.session
-        session["session_key"] = {
+        session["cart"] = {
             str(variacao.id): {"preco": str(variacao.preco), "qty": 1}
         }
         session.save()
@@ -50,7 +50,7 @@ class TestCartViews:
         response = client.post(
             delete_url,
             {"variation_id": variacao.id, "action": "post"},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            HTTP_HX_REQUEST="true",
         )
 
         assert response.status_code == 200
@@ -65,7 +65,7 @@ class TestCartViews:
         update_url = reverse("cart:cart-update")
 
         session = client.session
-        session["session_key"] = {
+        session["cart"] = {
             str(variacao.id): {"preco": str(variacao.preco), "qty": 1}
         }
         session.save()
@@ -77,7 +77,7 @@ class TestCartViews:
                 "product_quantity": 4,
                 "action": "post",
             },
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            HTTP_HX_REQUEST="true",
         )
 
         assert response.status_code == 200
@@ -96,7 +96,7 @@ class TestCartViews:
         client.post(
             add_url,
             {"variation_id": variacao.id, "product_quantity": 1, "action": "post"},
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            HTTP_HX_REQUEST="true",
         )
 
         response = client.get(summary_url)

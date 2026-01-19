@@ -18,7 +18,7 @@ if READ_DOT_ENV_FILE:
     # OS environment variables take precedence over variables from .env
     env.read_env(str(BASE_DIR / ".env"))
 
-LLM_API_KEY = config("DEEPSEEK_API_KEY")
+LLM_API_KEY = config("DEEPSEEK_API_KEY", default="")
 # GENERAL
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#debug
@@ -99,6 +99,7 @@ LOCAL_APPS = [
     "plataforma_de_servicos.estoque",
     "plataforma_de_servicos.inventario",
     "plataforma_de_servicos.cart",
+    "plataforma_de_servicos.payment",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps

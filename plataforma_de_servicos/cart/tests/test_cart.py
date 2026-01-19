@@ -1,7 +1,8 @@
-from django.test import RequestFactory
-from django.contrib.sessions.backends.db import SessionStore
-import pytest
 from decimal import Decimal
+
+import pytest
+from django.contrib.sessions.backends.db import SessionStore
+from django.test import RequestFactory
 
 from plataforma_de_servicos.cart.cart import Cart
 from plataforma_de_servicos.produto.tests.factories import VariacaoProdutoFactory
@@ -32,8 +33,8 @@ class TestCart:
         assert len(cart) == 1
 
         cart.add(variation=variacao, product_qty=3)
-        assert cart.cart[str(variacao.id)]["qty"] == 3
-        assert len(cart) == 3
+        assert cart.cart[str(variacao.id)]["qty"] == 4  # 1 + 3 = 4
+        assert len(cart) == 4  # total de itens no carrinho
 
     def test_cart_delete_variation(self, variacao_factory):
         variacao = variacao_factory()
@@ -41,8 +42,8 @@ class TestCart:
         factory = RequestFactory()
         request = factory.get("/")
         request.session = SessionStore()
-        request.session["session_key"] = {
-            str(variacao.id): {"preco": str(variacao.preco), "qty": 2}
+        request.session["cart"] = {
+            str(variacao.id): {"preco": str(variacao.preco), "qty": 2},
         }
         request.session.save()
 
@@ -59,8 +60,8 @@ class TestCart:
         factory = RequestFactory()
         request = factory.get("/")
         request.session = SessionStore()
-        request.session["session_key"] = {
-            str(variacao.id): {"preco": str(variacao.preco), "qty": 1}
+        request.session["cart"] = {
+            str(variacao.id): {"preco": str(variacao.preco), "qty": 1},
         }
         request.session.save()
 
@@ -78,7 +79,7 @@ class TestCart:
         factory = RequestFactory()
         request = factory.get("/")
         request.session = SessionStore()
-        request.session["session_key"] = {
+        request.session["cart"] = {
             str(variacao1.id): {"preco": str(variacao1.preco), "qty": 2},  # 31.00
             str(variacao2.id): {"preco": str(variacao2.preco), "qty": 3},  # 30.00
         }
@@ -94,7 +95,7 @@ class TestCart:
         factory = RequestFactory()
         request = factory.get("/")
         request.session = SessionStore()
-        request.session["session_key"] = {
+        request.session["cart"] = {
             str(variacao1.id): {"preco": str(variacao1.preco), "qty": 1},
             str(variacao2.id): {"preco": str(variacao2.preco), "qty": 4},
         }

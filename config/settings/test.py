@@ -2,9 +2,21 @@
 With these settings, tests run faster.
 """
 
+import os
+import environ
+from pathlib import Path
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
+APPS_DIR = BASE_DIR / "plataforma_de_servicos"
+env = environ.Env()
+
+# Override da configuração problemática para testes
+LLM_API_KEY = "test-key"
+
+# Importar o resto das configurações após definir variáveis necessárias
 from .base import *  # noqa: F403
 from .base import TEMPLATES
-from .base import env
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -33,7 +45,7 @@ TEMPLATES[0]["OPTIONS"]["debug"] = True  # type: ignore[index]
 # MEDIA
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#media-url
-MEDIA_URL = "http://media.testserver"
+MEDIA_URL = "http://media.testserver/"
 
 # STORAGES
 # ------------------------------------------------------------------------------

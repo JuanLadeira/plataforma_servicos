@@ -26,6 +26,22 @@ class ValorAtributo(models.Model):
     """
     atributo = models.ForeignKey(Atributo, on_delete=models.CASCADE, related_name="valores")
     valor = models.CharField(max_length=50, help_text="Ex: Vermelho, P, 42")
+    
+    # Modificadores de preço
+    preco_adicional = models.DecimalField(
+        "Preço adicional", 
+        max_digits=10, 
+        decimal_places=2, 
+        default=0,
+        help_text="Valor fixo a ser adicionado ao preço base (ex: R$ 5,00)"
+    )
+    percentual_adicional = models.DecimalField(
+        "Percentual adicional", 
+        max_digits=5, 
+        decimal_places=2, 
+        default=0,
+        help_text="Percentual a ser adicionado ao preço base (ex: 10,00 para 10%)"
+    )
 
     class Meta:
         verbose_name = "Valor de Atributo"
@@ -44,7 +60,7 @@ class VariacaoProduto(models.Model):
     """
     produto = models.ForeignKey(Produto, on_delete=models.CASCADE, related_name="variacoes")
     sku = models.CharField(max_length=50, unique=True, blank=True, null=True, help_text="Stock Keeping Unit. Se deixado em branco, será gerado automaticamente.")
-    preco = models.DecimalField("preço", max_digits=10, decimal_places=2)
+    preco = models.DecimalField("preço", max_digits=10, decimal_places=2, null=True, blank=True)
     estoque = models.PositiveIntegerField("estoque atual", default=0)
     valores = models.ManyToManyField(ValorAtributo, related_name="variacoes")
 
@@ -80,7 +96,51 @@ class VariacaoProduto(models.Model):
         Deve ser chamado após os valores ManyToMany serem adicionados.
         """
         if not self.sku and self.pk:
-            valores_ids = sorted(self.valores.all().values_list("id", flat=True))
+            # Otimização: usar select_related para evitar query adicional no produto.slug
+            # e prefetch_related para valores se necessário
+            valores_ids = sorted(
+                self.valores.only('id').values_list("id", flat=True)
+            )
             if valores_ids:
-                self.sku = f"{self.produto.slug}-" + "-".join(map(str, valores_ids))
-                self.save(update_fields=['sku'])
+                produto_slug = self.produto.slug if hasattr(self.produto, 'slug') else str(self.produto.pk)
+                new_sku = f"{produto_slug}-" + "-".join(map(str, valores_ids))
+                
+                # Proteção contra loop infinito: só salvar se o SKU realmente mudou
+                if self.sku != new_sku:
+                    self.sku = new_sku
+                    # Usar update em vez de save para evitar disparo de signals/hooks
+                    VariacaoProduto.objects.filter(pk=self.pk).update(sku=self.sku)
+
+    def calcular_preco_final(self):
+        """
+        Calcula o preço final baseado no preço da variação + modificadores dos atributos.
+        Se a variação não tiver preço definido, usa o preço base do produto.
+        """
+        from decimal import Decimal
+        
+        # Preço base (da variação ou do produto)
+        preco_base = self.preco or self.produto.preco or Decimal('0')
+        
+        if not preco_base:
+            return Decimal('0')
+        
+        # Aplicar modificadores dos valores de atributo
+        preco_final = preco_base
+        
+        for valor_atributo in self.valores.all():
+            # Adicionar valor fixo
+            if valor_atributo.preco_adicional:
+                preco_final += valor_atributo.preco_adicional
+            
+            # Adicionar percentual sobre o preço base original
+            if valor_atributo.percentual_adicional:
+                preco_final += preco_base * (valor_atributo.percentual_adicional / Decimal('100'))
+        
+        return preco_final.quantize(Decimal('0.01'))
+
+    def get_preco_display(self):
+        """
+        Retorna o preço formatado para exibição.
+        """
+        preco = self.calcular_preco_final()
+        return f"R$ {preco:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')

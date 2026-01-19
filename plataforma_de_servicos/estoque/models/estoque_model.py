@@ -8,6 +8,7 @@ from django.db import transaction
 
 from plataforma_de_servicos.core.models import TimeStampedModel
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
+from plataforma_de_servicos.estoque.choices.origem_saida import OrigemSaida
 from plataforma_de_servicos.inventario.models import Inventario
 from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.users.models import User
@@ -17,9 +18,29 @@ log = getLogger(__name__)
 
 
 class Estoque(TimeStampedModel):
-    funcionario = models.ForeignKey(User, on_delete=models.CASCADE, blank=True)
+    funcionario = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     nf = models.PositiveIntegerField("nota fiscal", null=True, blank=True)
     movimento = models.CharField(max_length=1, choices=Movimento.choices, blank=True)
+    origem_saida = models.CharField(
+        "Origem da Saída", 
+        max_length=15, 
+        choices=OrigemSaida.choices, 
+        null=True, 
+        blank=True,
+        help_text="Motivo/origem da saída de estoque"
+    )
+    pedido_id = models.PositiveIntegerField(
+        "ID do Pedido", 
+        null=True, 
+        blank=True,
+        help_text="ID do pedido quando a saída é originada de uma venda"
+    )
+    observacao = models.TextField(
+        "Observações",
+        null=True,
+        blank=True,
+        help_text="Observações adicionais sobre o movimento"
+    )
     processado = models.BooleanField(default=False)
     data = models.DateField("data", auto_now_add=True, help_text="Data do movimento")
     inventario_origem = models.ForeignKey(
@@ -47,9 +68,18 @@ class Estoque(TimeStampedModel):
             message = "Entrada requer inventário de destino"
             raise ValidationError(message=message)
 
-        if self.movimento == Movimento.SAIDA.value and not self.inventario_origem:
-            message = "Saída requer inventário de origem"
-            raise ValidationError(message=message)
+        if self.movimento == Movimento.SAIDA.value:
+            if not self.inventario_origem:
+                message = "Saída requer inventário de origem"
+                raise ValidationError(message=message)
+            
+            if not self.origem_saida:
+                message = "Saída requer especificação da origem/motivo"
+                raise ValidationError(message=message)
+            
+            if self.origem_saida == OrigemSaida.PEDIDO.value and not self.pedido_id:
+                message = "Saída por pedido requer ID do pedido"
+                raise ValidationError(message=message)
 
         if self.movimento == Movimento.TRANSFERENCIA.value and not (self.inventario_origem and self.inventario_destino):
             message = "Transferência requer origem e destino"

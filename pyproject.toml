@@ -1,9 +1,11 @@
 # ==== pytest ====
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ds=config.settings.test --reuse-db --import-mode=importlib"
+addopts = "--ds=config.settings.test --import-mode=importlib --tb=short --timeout=15 --timeout-method=thread"
+timeout = 15  # 15 segundos por teste
+faulthandler_timeout = 15  # 15 segundos timeout nativo do pytest
 python_files = [
-    "tests.py",
+    "tests.py", 
     "test_*.py",
 ]
 
@@ -143,6 +145,7 @@ up = "docker compose -f docker-compose.local.yml up -d"
 down = "docker compose -f docker-compose.local.yml down"
 build = "docker compose -f docker-compose.local.yml build"
 test = "docker compose -f docker-compose.local.yml run --rm django pytest -vv -s"
+test-ui = "docker compose -f docker-compose.local.yml run --rm django pytest plataforma_de_servicos/cart/tests/test_ui_selenium.py -vv -s --tb=short"
 logs = "docker compose -f docker-compose.local.yml logs django --follow"
 manage = "docker compose -f docker-compose.local.yml run --rm django python manage.py"
 
@@ -218,12 +221,15 @@ dependencies = [
     "pytest-django==4.9.0",
     "pytest-factoryboy>=2.7.0",
     "pytest-sugar==1.0.0",
+    "pytest-timeout",
     "python-crontab==3.2.0",
     "python-dateutil==2.9.0.post0",
     "python-decouple>=3.8",
     "python-dotenv==1.0.1",
     "python-slugify==8.0.4",
     "pytz==2025.1",
+    "selenium>=4.15.0",
+    "webdriver-manager>=4.0.0",
     "pyyaml==6.0.2",
     "qrcode==8.0",
     "rcssmin==1.1.2",

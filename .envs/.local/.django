@@ -3,6 +3,10 @@
 PYTHONPATH=/app
 USE_DOCKER=yes
 IPYTHONDIR=/app/.ipython
+# Database
+# ------------------------------------------------------------------------------
+DATABASE_URL=postgres://debug:debug@postgres:5432/plataforma_de_servicos
+
 # Redis
 # ------------------------------------------------------------------------------
 REDIS_URL=redis://redis:6379/0

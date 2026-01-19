@@ -47,39 +47,21 @@ class ProdutoFactory(DjangoModelFactory):
     ncm = Faker("numerify", text="12345678")  # Exemplo de NCM fixo ou padrão
     estoque_minimo = Faker("random_int", min=1, max=10)  # Estoque mínimo entre 1 e 10
     data = LazyFunction(timezone.now)
+    categoria = factory.SubFactory(CategoriaFactory)
 
-
-
-
-    @factory.lazy_attribute
+    @factory.lazy_attribute 
     def produto(self):
+        # Otimização: buscar todos os produtos existentes de uma vez
+        # em vez de fazer uma query por produto  
+        existing_produtos = set(
+            Produto.objects.values_list('produto', flat=True)
+        )
+        
         # Select a product name that doesn't exist yet.
         for instance_name in _all_products:
-            if not Produto.objects.filter(produto=instance_name).exists():
+            if instance_name not in existing_produtos:
                 return instance_name
-        raise ValueError("All pizza products already exist in the database.")
-
-
-    @factory.lazy_attribute
-    def categoria(self):
-        # Use the 'produto' field that has already been generated
-        # to determine the correct category.
-        if self.produto in _pizza_salgadas_tradicionais:
-            category_name = "Pizzas Salgadas Tradicionais"
-        elif self.produto in _pizza_salgadas_especiais:
-            category_name = "Pizzas Salgadas Especiais"
-        elif self.produto in _pizzas_doces:
-            category_name = "Pizzas Doces"
-        elif self.produto in _bebidas:
-            category_name = "Bebidas"
-        elif self.produto in _acompanhamentos:
-            category_name = "Acompanhamentos"
-        else:
-            category_name = "Outros" # Fallback
-
-        categoria = Categoria.objects.filter(categoria=category_name).first()
-        if not categoria:
-            # If the category does not exist, create it
-            categoria = CategoriaFactory.create(categoria=category_name)
-
-        return categoria
+        
+        # Fallback: usar timestamp para garantir unicidade
+        import time
+        return f"Produto-Test-{int(time.time() * 1000000) % 1000000}"

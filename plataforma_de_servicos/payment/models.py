@@ -1,8 +1,9 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 
-from django.contrib.auth.models import User
+from plataforma_de_servicos.produto.models import Produto, VariacaoProduto
 
-from store.models import Product
+User = get_user_model()
 
 
 class ShippingAddress(models.Model):
@@ -76,27 +77,18 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-
-    # FK -> 
-
     order = models.ForeignKey(Order, on_delete=models.CASCADE, null=True)
-
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True)
-
-
+    produto = models.ForeignKey(Produto, on_delete=models.CASCADE, null=True)
+    variacao_produto = models.ForeignKey(VariacaoProduto, on_delete=models.CASCADE, null=True, blank=True)
     quantity = models.PositiveBigIntegerField(default=1)
-
     price = models.DecimalField(max_digits=8, decimal_places=2)    
-
-
-    # FK
-
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
 
-
     def __str__(self):
-
-        return 'Order Item - #' + str(self.id)
+        if self.variacao_produto:
+            return f'Order Item #{self.id} - {self.variacao_produto}'
+        else:
+            return f'Order Item #{self.id} - {self.produto}'
 
 
 
