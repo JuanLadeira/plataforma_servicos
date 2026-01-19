@@ -1,9 +1,12 @@
+import pytest
+
+pytestmark = [pytest.mark.cart, pytest.mark.slow]
+
 # import time
 # from decimal import Decimal
 # from unittest.mock import MagicMock
 # from unittest.mock import patch
 
-# import pytest
 # from django.contrib.sessions.middleware import SessionMiddleware
 # from django.db import IntegrityError
 # from django.db import OperationalError
@@ -17,7 +20,6 @@
 # from plataforma_de_servicos.produto.models import VariacaoProduto
 
 
-# @pytest.mark.network_failures
 # class NetworkFailuresTest(TestCase):
 #     """
 #     Testes para simular cenários de falha de rede e problemas de conectividade

@@ -3,6 +3,7 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import Client
@@ -22,6 +23,8 @@ from plataforma_de_servicos.payment.views import complete_order
 from plataforma_de_servicos.produto.models import Categoria
 from plataforma_de_servicos.produto.models import Produto
 from plataforma_de_servicos.produto.models import VariacaoProduto
+
+pytestmark = [pytest.mark.payment, pytest.mark.integration]
 
 User = get_user_model()
 

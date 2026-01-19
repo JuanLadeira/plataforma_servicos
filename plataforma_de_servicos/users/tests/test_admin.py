@@ -10,6 +10,8 @@ from pytest_django.asserts import assertRedirects
 
 from plataforma_de_servicos.users.models import User
 
+pytestmark = pytest.mark.users
+
 
 class TestUserAdmin:
     def test_changelist(self, admin_client):

@@ -1,3 +1,4 @@
+import pytest
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
@@ -8,6 +9,8 @@ from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.choices.origem_saida import OrigemSaida
 from plataforma_de_servicos.produto.models import Produto, Categoria
 from plataforma_de_servicos.inventario.models import Inventario
+
+pytestmark = pytest.mark.estoque
 
 User = get_user_model()
 

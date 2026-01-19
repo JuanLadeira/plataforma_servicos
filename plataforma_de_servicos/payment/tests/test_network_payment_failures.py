@@ -23,6 +23,8 @@ from plataforma_de_servicos.produto.models import Categoria
 from plataforma_de_servicos.produto.models import Produto
 from plataforma_de_servicos.produto.models import VariacaoProduto
 
+pytestmark = [pytest.mark.payment, pytest.mark.slow]
+
 User = get_user_model()
 
 

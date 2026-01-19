@@ -8,7 +8,7 @@ from .factories import (
     VariacaoProdutoFactory,
 )
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db, pytest.mark.produto]
 
 
 def test_atributo_creation():

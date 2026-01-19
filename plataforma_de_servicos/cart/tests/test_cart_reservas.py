@@ -2,6 +2,7 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+import pytest
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import RequestFactory
 from django.test import TestCase
@@ -11,6 +12,8 @@ from plataforma_de_servicos.cart.models import ReservaEstoque
 from plataforma_de_servicos.produto.models import Categoria
 from plataforma_de_servicos.produto.models import Produto
 from plataforma_de_servicos.produto.models import VariacaoProduto
+
+pytestmark = pytest.mark.cart
 
 
 class CartComReservasTest(TestCase):

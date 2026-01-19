@@ -1,3 +1,7 @@
+import pytest
+
+pytestmark = [pytest.mark.cart, pytest.mark.ui, pytest.mark.slow]
+
 # """
 # Testes de UI para funcionalidades do carrinho usando Selenium.
 

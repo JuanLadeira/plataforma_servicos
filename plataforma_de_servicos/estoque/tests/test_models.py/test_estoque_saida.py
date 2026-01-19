@@ -5,8 +5,9 @@ from plataforma_de_servicos.estoque.serializers.estoque_saida_serializer import 
     EstoqueSaidaPostSerializer,
 )
 
+pytestmark = [pytest.mark.django_db(transaction=True), pytest.mark.estoque]
 
-@pytest.mark.django_db(transaction=True)
+
 class TestEstoquesaida:
     def test_estoque_saida(self, produto_factory, user_factory, inventario_factory):
         produto = produto_factory(estoque=1)

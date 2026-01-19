@@ -5,8 +5,9 @@ from django.core.management import call_command
 
 from plataforma_de_servicos.users.models import User
 
+pytestmark = [pytest.mark.django_db, pytest.mark.users]
 
-@pytest.mark.django_db
+
 class TestUserManager:
     def test_create_user(self):
         user = User.objects.create_user(

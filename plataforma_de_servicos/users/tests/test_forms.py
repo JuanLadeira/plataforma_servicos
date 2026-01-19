@@ -1,12 +1,14 @@
 """Module for all Form Tests."""
 
+import pytest
 from django.utils.translation import gettext_lazy as _
 
 from plataforma_de_servicos.users.forms import UserAdminCreationForm
 from plataforma_de_servicos.users.models import User
-import pytest
 
-@pytest.mark.django_db
+pytestmark = [pytest.mark.django_db, pytest.mark.users]
+
+
 class TestUserAdminCreationForm:
     """
     Test class for all tests related to the UserAdminCreationForm

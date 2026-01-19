@@ -1,3 +1,7 @@
+import pytest
+
+pytestmark = [pytest.mark.cart, pytest.mark.slow]
+
 # import threading
 # import time
 # from decimal import Decimal

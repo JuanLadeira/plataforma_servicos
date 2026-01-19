@@ -10,7 +10,7 @@ from plataforma_de_servicos.produto.tests.factories import VariacaoProdutoFactor
 
 from ..cart import Cart
 
-pytestmark = [pytest.mark.django_db(transaction=True)]
+pytestmark = [pytest.mark.django_db(transaction=True), pytest.mark.cart]
 
 
 class TestCartPricing:

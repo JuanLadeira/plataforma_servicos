@@ -6,6 +6,9 @@ from decimal import Decimal
 from plataforma_de_servicos.cart.cart import Cart
 from plataforma_de_servicos.produto.tests.factories import VariacaoProdutoFactory
 
+pytestmark = [pytest.mark.django_db, pytest.mark.cart]
+
+
 @pytest.fixture
 def variacao_factory(db):
     def factory(*args, **kwargs):
@@ -13,7 +16,6 @@ def variacao_factory(db):
     return factory
 
 
-@pytest.mark.django_db
 class TestCartViews:
     def test_cart_add_view(self, variacao_factory, client: Client):
         variacao = variacao_factory(preco=Decimal("25.00"))

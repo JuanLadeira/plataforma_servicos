@@ -9,6 +9,8 @@ from django.test import TestCase
 from ..models import Produto, Atributo, ValorAtributo, VariacaoProduto
 from ..models.categoria_model import Categoria
 
+pytestmark = pytest.mark.produto
+
 
 class TestPriceModifiersCore(TestCase):
     """Testes core para modificadores de preço sem dependências externas"""

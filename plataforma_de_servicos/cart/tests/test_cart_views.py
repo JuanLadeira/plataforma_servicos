@@ -3,6 +3,7 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.sessions.middleware import SessionMiddleware
@@ -16,6 +17,8 @@ from plataforma_de_servicos.cart.views import cart_add
 from plataforma_de_servicos.produto.models import Categoria
 from plataforma_de_servicos.produto.models import Produto
 from plataforma_de_servicos.produto.models import VariacaoProduto
+
+pytestmark = pytest.mark.cart
 
 User = get_user_model()
 

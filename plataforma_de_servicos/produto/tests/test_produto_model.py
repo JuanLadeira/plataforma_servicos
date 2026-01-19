@@ -2,7 +2,7 @@ import pytest
 from .factories import ProdutoFactory
 from ..models import Image
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db, pytest.mark.produto]
 
 
 def test_produto_str():

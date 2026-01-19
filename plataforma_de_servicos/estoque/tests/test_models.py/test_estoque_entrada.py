@@ -4,8 +4,9 @@ from plataforma_de_servicos.estoque.serializers.estoque_entrada_serializer impor
     EstoqueEntradaPostSerializer,
 )
 
+pytestmark = [pytest.mark.django_db(transaction=True), pytest.mark.estoque]
 
-@pytest.mark.django_db(transaction=True)
+
 class TestEstoqueEntrada:
     def test_estoque_entrada(
         self,

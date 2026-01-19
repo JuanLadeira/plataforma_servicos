@@ -1,3 +1,4 @@
+import pytest
 from django.test import TestCase
 from django.utils import timezone
 from datetime import timedelta
@@ -5,6 +6,8 @@ from decimal import Decimal
 
 from plataforma_de_servicos.cart.models import ReservaEstoque
 from plataforma_de_servicos.produto.models import Produto, VariacaoProduto, Categoria
+
+pytestmark = pytest.mark.cart
 
 
 class ReservaEstoqueModelTest(TestCase):

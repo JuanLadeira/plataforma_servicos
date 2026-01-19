@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 
 from ..admin.atributos_admin import AtributoAdmin, ValorAtributoAdmin
 from ..admin.gerente_admin import (
-    VariacaoProdutoInline, 
+    VariacaoProdutoInline,
     ValorAtributoGerenteAdmin,
     ProdutoGerenteAdmin
 )
@@ -19,7 +19,7 @@ from .factories import (
 )
 
 User = get_user_model()
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db, pytest.mark.produto]
 
 
 class TestPricingAdminInterface:

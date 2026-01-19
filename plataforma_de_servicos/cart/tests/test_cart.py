@@ -7,6 +7,8 @@ from django.test import RequestFactory
 from plataforma_de_servicos.cart.cart import Cart
 from plataforma_de_servicos.produto.tests.factories import VariacaoProdutoFactory
 
+pytestmark = [pytest.mark.django_db, pytest.mark.cart]
+
 
 @pytest.fixture
 def variacao_factory(db):
@@ -15,7 +17,6 @@ def variacao_factory(db):
     return factory
 
 
-@pytest.mark.django_db
 class TestCart:
     def test_cart_add_variation(self, variacao_factory):
         variacao = variacao_factory(preco=Decimal("19.99"))

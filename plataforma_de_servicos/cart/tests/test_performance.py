@@ -1,9 +1,12 @@
+import pytest
+
+pytestmark = [pytest.mark.cart, pytest.mark.slow]
+
 # import statistics
 # import time
 # from decimal import Decimal
 # from unittest.mock import MagicMock
 
-# import pytest
 # from django.contrib.sessions.middleware import SessionMiddleware
 # from django.db import connection
 # from django.test import RequestFactory
@@ -17,7 +20,6 @@
 # from plataforma_de_servicos.produto.models import VariacaoProduto
 
 
-# @pytest.mark.performance
 # class PerformanceTest(TestCase):
 #     """
 #     Testes de performance para operações em massa e benchmarks
