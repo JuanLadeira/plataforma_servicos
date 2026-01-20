@@ -1,0 +1,27 @@
+<div class="attribute-selector mb-3">
+    <label for="attr-{{ atributo.id }}" class="form-label fw-semibold">
+        {{ atributo.nome }}
+    </label>
+    <select
+        id="attr-{{ atributo.id }}"
+        name="valores[]"
+        class="form-select attribute-select"
+        data-atributo-id="{{ atributo.id }}"
+        required
+    >
+        <option value="">Selecione {{ atributo.nome }}</option>
+        {% for valor in valores %}
+            <option value="{{ valor.id }}"
+                    data-preco-adicional="{{ valor.preco_adicional }}"
+                    data-percentual="{{ valor.percentual_adicional }}">
+                {{ valor.valor }}
+                {% if valor.preco_adicional > 0 %}
+                    (+R$ {{ valor.preco_adicional }})
+                {% endif %}
+                {% if valor.percentual_adicional > 0 %}
+                    (+{{ valor.percentual_adicional }}%)
+                {% endif %}
+            </option>
+        {% endfor %}
+    </select>
+</div>

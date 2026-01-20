@@ -9,71 +9,167 @@
         {% if cart %}
             <div class="row">
                 <!-- Coluna dos Itens do Carrinho -->
-                <div class="col-lg-8">
+                <div class="col-lg-8" id="cart-items-container">
                     {% for item in cart %}
-                        {% with product=item.product %}
-                            <div class="card mb-3 cart-item" id="cart-item-{{ product.id }}">
-                                <div class="row g-0">
-                                    <div class="col-md-3">
-                                        <img src="{{ product.get_image }}" class="img-fluid rounded-start h-100" alt="{{ product.produto }}" style="object-fit: cover; min-height: 120px;">
-                                    </div>
-                                    <div class="col-md-9">
-                                        <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-start">
-                                                <div>
-                                                    <h5 class="card-title mb-1">{{ product.produto }}</h5>
-                                                    <p class="card-text text-muted small mb-2">{{ product.categoria }}</p>
+                        {% if item.variation %}
+                            {# Item é uma variação de produto #}
+                            {% with variation=item.variation produto=item.variation.produto %}
+                                <div class="card mb-3 cart-item" id="cart-item-{{ variation.id }}">
+                                    <div class="row g-0">
+                                        <div class="col-md-3">
+                                            <img src="{{ produto.get_image }}" class="img-fluid rounded-start h-100" alt="{{ produto.produto }}" style="object-fit: cover; min-height: 150px;">
+                                        </div>
+                                        <div class="col-md-9">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div>
+                                                        <h5 class="card-title mb-1">
+                                                            <a href="{{ produto.get_absolute_url }}" class="text-decoration-none text-dark">
+                                                                {{ produto.produto }}
+                                                            </a>
+                                                        </h5>
+                                                        <p class="card-text text-muted small mb-1">{{ produto.categoria }}</p>
+                                                        {% if produto.descricao %}
+                                                            <p class="card-text small text-muted mb-2">{{ produto.descricao|truncatechars:80 }}</p>
+                                                        {% endif %}
+                                                        {# Mostrar atributos selecionados #}
+                                                        <div class="mb-2">
+                                                            {% for valor in variation.valores.all %}
+                                                                <span class="badge bg-secondary me-1">
+                                                                    {{ valor.atributo.nome }}: {{ valor.valor }}
+                                                                </span>
+                                                            {% endfor %}
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <h5 class="card-price text-primary mb-0" id="item-price-{{ variation.id }}">R$ {{ item.preco }}</h5>
+                                                        <small class="text-muted">unidade</small>
+                                                    </div>
                                                 </div>
-                                                <h5 class="card-price text-primary">R$ {{ item.preco }}</h5>
-                                            </div>
-                                            
-                                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                                <div class="d-flex align-items-center">
-                                                    <label for="select{{product.id}}" class="me-2">Qtd:</label>
-                                                    <input type="number" id="select{{product.id}}" class="form-control form-control-sm quantity-input" value="{{ item.qty }}" min="1" max="{{ product.estoque }}">
-                                                    <button 
-                                                        type="button" 
-                                                        class="btn btn-outline-primary btn-sm ms-2 update-button"
-                                                        hx-post="{% url 'cart:cart-update' %}"
-                                                        hx-include="#select{{product.id}}"
-                                                        hx-vals='{"product_id": "{{ product.id }}", "action": "post", "product_quantity": document.getElementById("select{{product.id}}").value}'
-                                                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                                                        hx-swap="none"
-                                                        hx-on="htmx:afterRequest: (function(event) { 
-                                                            const response = JSON.parse(event.detail.xhr.responseText); 
-                                                            document.getElementById('subtotal').textContent = response.total;
-                                                            document.getElementById('total').textContent = response.total;
-                                                        })(event)">
-                                                        <i class="fa fa-refresh"></i>
-                                                    </button>
+
+                                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                                    <div class="d-flex align-items-center">
+                                                        <label for="qty-{{ variation.id }}" class="me-2 fw-semibold">Qtd:</label>
+                                                        <div class="input-group input-group-sm" style="width: 130px;">
+                                                            <button class="btn btn-outline-secondary" type="button" onclick="updateQty('{{ variation.id }}', -1, {{ variation.estoque }})">
+                                                                <i class="fa fa-minus"></i>
+                                                            </button>
+                                                            <input type="number"
+                                                                   id="qty-{{ variation.id }}"
+                                                                   name="product_quantity"
+                                                                   class="form-control text-center quantity-input"
+                                                                   value="{{ item.qty }}"
+                                                                   min="1"
+                                                                   max="{{ variation.estoque }}"
+                                                                   data-variation-id="{{ variation.id }}"
+                                                                   data-max-stock="{{ variation.estoque }}"
+                                                                   onchange="validateAndUpdate('{{ variation.id }}', {{ variation.estoque }})">
+                                                            <button class="btn btn-outline-secondary" type="button" onclick="updateQty('{{ variation.id }}', 1, {{ variation.estoque }})">
+                                                                <i class="fa fa-plus"></i>
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted ms-2">(máx: {{ variation.estoque }})</small>
+                                                    </div>
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="fw-bold me-3" id="item-total-{{ variation.id }}">R$ {{ item.total }}</span>
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-outline-danger btn-sm delete-button"
+                                                            hx-post="{% url 'cart:cart-delete' %}"
+                                                            hx-vals='{"variation_id": "{{ variation.id }}", "action": "post"}'
+                                                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                                            hx-target="#cart-item-{{ variation.id }}"
+                                                            hx-swap="outerHTML swap:0.3s"
+                                                            hx-confirm="Remover este item do carrinho?"
+                                                            hx-on::after-request="updateCartTotals(event)">
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <button 
-                                                    type="button" 
-                                                    class="btn btn-outline-danger btn-sm delete-button"
-                                                    hx-post="{% url 'cart:cart-delete' %}"
-                                                    hx-vals='{"product_id": "{{ product.id }}", "action": "post"}'
-                                                    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                                                    hx-target="#cart-item-{{ product.id }}"
-                                                    hx-swap="outerHTML"
-                                                    hx-on="htmx:afterRequest: (function(event) { 
-                                                        const response = JSON.parse(event.detail.xhr.responseText); 
-                                                        document.getElementById('subtotal').textContent = response.total;
-                                                        document.getElementById('total').textContent = response.total;
-                                                    })(event)">
-                                                    <i class="fa fa-trash"></i>
-                                                </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        {% endwith %}
+                            {% endwith %}
+                        {% elif item.produto %}
+                            {# Item é um produto simples (sem variação) #}
+                            {% with produto=item.produto %}
+                                <div class="card mb-3 cart-item" id="cart-item-produto_{{ produto.id }}">
+                                    <div class="row g-0">
+                                        <div class="col-md-3">
+                                            <img src="{{ produto.get_image }}" class="img-fluid rounded-start h-100" alt="{{ produto.produto }}" style="object-fit: cover; min-height: 150px;">
+                                        </div>
+                                        <div class="col-md-9">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div>
+                                                        <h5 class="card-title mb-1">
+                                                            <a href="{{ produto.get_absolute_url }}" class="text-decoration-none text-dark">
+                                                                {{ produto.produto }}
+                                                            </a>
+                                                        </h5>
+                                                        <p class="card-text text-muted small mb-1">{{ produto.categoria }}</p>
+                                                        {% if produto.descricao %}
+                                                            <p class="card-text small text-muted mb-2">{{ produto.descricao|truncatechars:80 }}</p>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <h5 class="card-price text-primary mb-0" id="item-price-produto_{{ produto.id }}">R$ {{ item.preco }}</h5>
+                                                        <small class="text-muted">unidade</small>
+                                                    </div>
+                                                </div>
+
+                                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                                    <div class="d-flex align-items-center">
+                                                        <label for="qty-produto_{{ produto.id }}" class="me-2 fw-semibold">Qtd:</label>
+                                                        <div class="input-group input-group-sm" style="width: 130px;">
+                                                            <button class="btn btn-outline-secondary" type="button" onclick="updateQty('produto_{{ produto.id }}', -1, {{ produto.estoque }})">
+                                                                <i class="fa fa-minus"></i>
+                                                            </button>
+                                                            <input type="number"
+                                                                   id="qty-produto_{{ produto.id }}"
+                                                                   name="product_quantity"
+                                                                   class="form-control text-center quantity-input"
+                                                                   value="{{ item.qty }}"
+                                                                   min="1"
+                                                                   max="{{ produto.estoque }}"
+                                                                   data-variation-id="produto_{{ produto.id }}"
+                                                                   data-max-stock="{{ produto.estoque }}"
+                                                                   onchange="validateAndUpdate('produto_{{ produto.id }}', {{ produto.estoque }})">
+                                                            <button class="btn btn-outline-secondary" type="button" onclick="updateQty('produto_{{ produto.id }}', 1, {{ produto.estoque }})">
+                                                                <i class="fa fa-plus"></i>
+                                                            </button>
+                                                        </div>
+                                                        <small class="text-muted ms-2">(máx: {{ produto.estoque }})</small>
+                                                    </div>
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="fw-bold me-3" id="item-total-produto_{{ produto.id }}">R$ {{ item.total }}</span>
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-outline-danger btn-sm delete-button"
+                                                            hx-post="{% url 'cart:cart-delete' %}"
+                                                            hx-vals='{"variation_id": "produto_{{ produto.id }}", "action": "post"}'
+                                                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                                            hx-target="#cart-item-produto_{{ produto.id }}"
+                                                            hx-swap="outerHTML swap:0.3s"
+                                                            hx-confirm="Remover este item do carrinho?"
+                                                            hx-on::after-request="updateCartTotals(event)">
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endwith %}
+                        {% endif %}
                     {% endfor %}
                 </div>
 
                 <!-- Coluna do Resumo do Pedido -->
                 <div class="col-lg-4">
-                    <div class="card shadow">
+                    <div class="card shadow sticky-top" style="top: 20px;">
                         <div class="card-body">
                             <h5 class="card-title">Resumo do Pedido</h5>
                             <hr>
@@ -83,16 +179,20 @@
                             </div>
                             <div class="d-flex justify-content-between">
                                 <span>Frete</span>
-                                <strong>Grátis</strong>
+                                <strong class="text-success">Grátis</strong>
                             </div>
                             <hr>
                             <div class="d-flex justify-content-between fw-bold h5">
                                 <span>Total</span>
-                                <span>R$ <span id="total">{{ cart.get_total }}</span></span>
+                                <span class="text-primary">R$ <span id="total">{{ cart.get_total }}</span></span>
                             </div>
                             <div class="d-grid gap-2 mt-4">
-                                <a href="#" class="btn btn-primary">Finalizar Compra</a>
-                                <a href="{% url 'home' %}" class="btn btn-outline-secondary">Continuar Comprando</a>
+                                <a href="{% url 'payment:checkout' %}" class="btn btn-primary btn-lg">
+                                    <i class="fa fa-credit-card me-2"></i>Finalizar Compra
+                                </a>
+                                <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                                    <i class="fa fa-arrow-left me-2"></i>Continuar Comprando
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -109,4 +209,134 @@
     </div>
     <br><br>
 </main>
+{% endblock %}
+
+{% block inline_javascript %}
+{{ block.super }}
+<script>
+// Atualizar quantidade com botões +/-
+function updateQty(itemId, delta, maxStock) {
+    const input = document.getElementById('qty-' + itemId);
+    let newValue = parseInt(input.value) + delta;
+
+    // Validar limites
+    if (newValue < 1) newValue = 1;
+    if (newValue > maxStock) newValue = maxStock;
+
+    input.value = newValue;
+
+    // Disparar atualização no servidor
+    sendCartUpdate(itemId, newValue);
+}
+
+// Validar entrada manual e atualizar
+function validateAndUpdate(itemId, maxStock) {
+    const input = document.getElementById('qty-' + itemId);
+    let value = parseInt(input.value);
+
+    // Validar limites
+    if (isNaN(value) || value < 1) value = 1;
+    if (value > maxStock) value = maxStock;
+
+    input.value = value;
+    sendCartUpdate(itemId, value);
+}
+
+// Enviar atualização para o servidor
+function sendCartUpdate(itemId, quantity) {
+    const csrfToken = '{{ csrf_token }}';
+
+    fetch('{% url "cart:cart-update" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken
+        },
+        body: `variation_id=${itemId}&product_quantity=${quantity}&action=post`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            window.showToast(data.error, 'error');
+            // Recarregar a página para resetar os valores
+            location.reload();
+            return;
+        }
+
+        // Atualizar totais na página
+        document.getElementById('subtotal').textContent = data.total;
+        document.getElementById('total').textContent = data.total;
+
+        // Atualizar total do item
+        if (data.item_total) {
+            const itemTotalEl = document.getElementById('item-total-' + itemId);
+            if (itemTotalEl) {
+                itemTotalEl.textContent = 'R$ ' + data.item_total;
+                itemTotalEl.classList.add('updated');
+                setTimeout(() => itemTotalEl.classList.remove('updated'), 500);
+            }
+        }
+
+        // Atualizar badge do carrinho
+        const badge = document.getElementById('cart-badge');
+        if (badge && data.qty !== undefined) {
+            badge.textContent = data.qty;
+        }
+
+        window.showToast('Carrinho atualizado!', 'success');
+    })
+    .catch(error => {
+        console.error('Erro ao atualizar carrinho:', error);
+        window.showToast('Erro ao atualizar carrinho', 'error');
+    });
+}
+
+// Atualizar totais após deletar item via HTMX
+function updateCartTotals(event) {
+    try {
+        const response = JSON.parse(event.detail.xhr.responseText);
+        document.getElementById('subtotal').textContent = response.total;
+        document.getElementById('total').textContent = response.total;
+
+        // Atualizar badge do carrinho
+        const badge = document.getElementById('cart-badge');
+        if (badge && response.qty !== undefined) {
+            badge.textContent = response.qty;
+        }
+
+        // Se carrinho vazio, recarregar página
+        if (response.qty === 0 || response.total === '0.00') {
+            setTimeout(() => location.reload(), 500);
+        }
+    } catch (e) {
+        console.error('Erro ao processar resposta:', e);
+    }
+}
+</script>
+<style>
+.cart-item {
+    transition: all 0.3s ease;
+}
+.cart-item:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.quantity-input {
+    width: 50px !important;
+}
+.quantity-input::-webkit-inner-spin-button,
+.quantity-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.quantity-input {
+    -moz-appearance: textfield;
+}
+.updated {
+    animation: highlight 0.5s ease;
+}
+@keyframes highlight {
+    0% { background-color: #d4edda; }
+    100% { background-color: transparent; }
+}
+</style>
 {% endblock %}

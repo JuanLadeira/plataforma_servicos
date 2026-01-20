@@ -81,14 +81,18 @@ class TestPricingAdminInterface:
     def test_valor_atributo_gerente_admin_displays_price_fields(self, admin_site, admin_request):
         """Testa admin do gerente para ValorAtributo"""
         admin_instance = ValorAtributoGerenteAdmin(ValorAtributo, admin_site)
-        
-        # Verifica campos na listagem
-        assert 'preco_adicional' in admin_instance.list_display
-        assert 'percentual_adicional' in admin_instance.list_display
-        
-        # Verifica edição inline
-        assert 'preco_adicional' in admin_instance.list_editable
-        assert 'percentual_adicional' in admin_instance.list_editable
+
+        # Verifica campos na listagem (modificador_display substitui campos individuais)
+        assert 'atributo' in admin_instance.list_display
+        assert 'valor' in admin_instance.list_display
+        assert 'modificador_display' in admin_instance.list_display
+
+        # Verifica que os campos de preço estão nos fieldsets
+        all_fields = []
+        for fieldset in admin_instance.fieldsets:
+            all_fields.extend(fieldset[1]['fields'])
+        assert 'preco_adicional' in all_fields
+        assert 'percentual_adicional' in all_fields
 
     def test_variacao_produto_inline_shows_calculated_price(self, admin_site, admin_request):
         """Testa se o inline da variação mostra preço calculado"""

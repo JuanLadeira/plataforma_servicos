@@ -60,6 +60,12 @@ class Produto(models.Model):
     ncm = models.CharField("NCM", max_length=8)
     produto = models.CharField(max_length=100, unique=True)
     slug = AutoSlugField(populate_from="produto", unique=True)
+    descricao = models.TextField(
+        "descrição",
+        blank=True,
+        null=True,
+        help_text="Descrição detalhada do produto"
+    )
     preco = models.DecimalField("preço", max_digits=7, decimal_places=2, null=True, blank=True)
     estoque = models.IntegerField("estoque atual", default=0, null=True, blank=True)
     estoque_minimo = models.PositiveIntegerField("estoque mínimo", default=0)

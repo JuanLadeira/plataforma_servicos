@@ -36,6 +36,23 @@
   <link id="dark-theme-style" rel="stylesheet" href="{% static 'css/black-theme.css' %}" disabled />
 {% endcompress %}
 
+<!-- HTMX indicator styles -->
+<style>
+  .htmx-indicator { display: none; }
+  .htmx-request .htmx-indicator { display: inline-block; }
+  .htmx-request .htmx-hide-on-request { display: none; }
+  .htmx-show-on-request { display: none; }
+  .htmx-request .htmx-show-on-request { display: inline; }
+
+  /* Toast container */
+  .toast-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1050;
+  }
+</style>
+
 
 {% endblock css %}
 <!-- Le javascript
@@ -70,6 +87,10 @@
   <div class="mb-1">
       {% include "navbar.html" %}
   </div>
+
+  <!-- Toast container para notificações -->
+  <div class="toast-container" id="toast-container"></div>
+
   <div class="container">
 
     {% block main %}
@@ -113,6 +134,50 @@
                 applyTheme(newTheme);
             });
         }
+
+        // Toast notification system
+        function showToast(message, type = 'success', redirect = null) {
+          const container = document.getElementById('toast-container');
+          const toastId = 'toast-' + Date.now();
+          const bgClass = type === 'error' ? 'bg-danger' : 'bg-success';
+          const icon = type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle';
+
+          const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+              <div class="d-flex">
+                <div class="toast-body">
+                  <i class="fa ${icon} me-2"></i>
+                  ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+              </div>
+            </div>
+          `;
+
+          container.insertAdjacentHTML('beforeend', toastHtml);
+          const toastEl = document.getElementById(toastId);
+          const toast = new bootstrap.Toast(toastEl, { delay: redirect ? 1500 : 4000 });
+          toast.show();
+
+          // Redirecionar após o toast ser mostrado (se redirect fornecido)
+          if (redirect) {
+            setTimeout(() => {
+              window.location.href = redirect;
+            }, 1500);
+          }
+
+          // Remove from DOM after hidden
+          toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+        }
+
+        // Listen for HTMX showToast event
+        document.body.addEventListener('showToast', (event) => {
+          const { message, type, redirect } = event.detail;
+          showToast(message, type, redirect);
+        });
+
+        // Make showToast globally available
+        window.showToast = showToast;
       });
     </script>
   {% endblock inline_javascript %}

@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
@@ -11,6 +12,25 @@ from plataforma_de_servicos.produto.models import Image
 from plataforma_de_servicos.produto.models import Produto
 from plataforma_de_servicos.produto.models import ValorAtributo
 from plataforma_de_servicos.produto.models import VariacaoProduto
+
+
+class ValorAtributoGerenteForm(forms.ModelForm):
+    """Formulário com validação de exclusividade para modificadores de preço."""
+
+    class Meta:
+        model = ValorAtributo
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        preco = cleaned_data.get('preco_adicional') or 0
+        percentual = cleaned_data.get('percentual_adicional') or 0
+
+        if preco > 0 and percentual > 0:
+            raise forms.ValidationError(
+                "Escolha apenas uma opção: preço adicional OU percentual adicional, não ambos."
+            )
+        return cleaned_data
 
 
 class ImageInline(TabularInline):
@@ -27,7 +47,10 @@ class VariacaoProdutoInline(TabularInline):
     model = VariacaoProduto
     extra = 1
     autocomplete_fields = ("valores",)
-    readonly_fields = ("preco_final_calculado",)
+    readonly_fields = ("sku", "valores_display", "preco_final_calculado")
+    fields = ("valores", "valores_display", "preco", "estoque", "preco_final_calculado", "sku")
+    verbose_name = "Variação"
+    verbose_name_plural = "Variações do Produto"
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "valores":
@@ -36,8 +59,24 @@ class VariacaoProdutoInline(TabularInline):
             ).order_by("atributo__nome", "valor")
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
-    @admin.display(description="Preço Final")
+    @admin.display(description="Atributos Selecionados")
+    def valores_display(self, obj):
+        """Mostra os atributos selecionados com seus modificadores de preço."""
+        if not obj.pk:
+            return "-"
+        partes = []
+        for valor in obj.valores.select_related("atributo").all():
+            texto = f"{valor.atributo.nome}: {valor.valor}"
+            if valor.preco_adicional and valor.preco_adicional > 0:
+                texto += f" (+R$ {valor.preco_adicional:,.2f})".replace(',', 'X').replace('.', ',').replace('X', '.')
+            elif valor.percentual_adicional and valor.percentual_adicional > 0:
+                texto += f" (+{valor.percentual_adicional}%)"
+            partes.append(texto)
+        return " | ".join(partes) if partes else "-"
+
+    @admin.display(description="Preço Final Calculado")
     def preco_final_calculado(self, obj):
+        """Calcula o preço final baseado no preço base + modificadores."""
         if obj.pk:
             preco_final = obj.calcular_preco_final()
             return f"R$ {preco_final:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
@@ -45,7 +84,7 @@ class VariacaoProdutoInline(TabularInline):
 
 
 class ProdutoGerenteAdmin(ModelAdmin):
-    list_display = ["produto", "categoria", "count_variations"]
+    list_display = ["produto", "preco", "categoria", "count_variations"]
     list_display_links = ["produto"]
     list_per_page = 30
     list_select_related = ["categoria"]
@@ -54,23 +93,36 @@ class ProdutoGerenteAdmin(ModelAdmin):
     search_fields = ["produto"]
     fieldsets = [
         (
-            "Produto",
+            "Informações Básicas",
             {
                 "fields": [
                     "produto",
+                    "descricao",
+                    "categoria",
+                ],
+                "description": "Dados principais do produto que aparecem na listagem e página de detalhe."
+            },
+        ),
+        (
+            "Preço Base",
+            {
+                "fields": [
+                    "preco",
+                ],
+                "description": "Este é o preço base do produto. As variações podem ter preços diferentes ou usar modificadores (valor fixo ou percentual) definidos nos atributos."
+            },
+        ),
+        (
+            "Dados Fiscais e Estoque",
+            {
+                "fields": [
                     "importado",
                     "ncm",
                     "estoque_minimo",
                     "data",
                 ],
-            },
-        ),
-        (
-            "Categoria",
-            {
-                "fields": [
-                    "categoria",
-                ],
+                "classes": ["collapse"],
+                "description": "Informações fiscais e controle de estoque mínimo."
             },
         ),
     ]
@@ -165,34 +217,69 @@ class CategoriaGerenteAdmin(ModelAdmin):
 
 class ValorAtributoGerenteInline(TabularInline):
     model = ValorAtributo
+    form = ValorAtributoGerenteForm
     extra = 1
+    fields = ['valor', 'preco_adicional', 'percentual_adicional']
+    verbose_name = "Valor do Atributo"
+    verbose_name_plural = "Valores do Atributo (escolha preço OU percentual, não ambos)"
 
 
 class AtributoGerenteAdmin(ModelAdmin):
-    list_display = ["nome"]
+    list_display = ["nome", "count_valores"]
     search_fields = ["nome"]
     list_order_by = ["nome"]
     inlines = [ValorAtributoGerenteInline]
     compressed_fields = True
     warn_unsaved_form = True
+    fieldsets = [
+        (
+            "Atributo",
+            {
+                "fields": ["nome"],
+                "description": (
+                    "Atributos são características do produto (ex: Cor, Tamanho, Sabor). "
+                    "Abaixo você pode adicionar os valores possíveis para este atributo."
+                )
+            },
+        ),
+    ]
+
+    @admin.display(description="Valores Cadastrados")
+    def count_valores(self, obj):
+        return obj.valores.count()
 
 
 class ValorAtributoGerenteAdmin(ModelAdmin):
-    list_display = ["atributo", "valor", "preco_adicional", "percentual_adicional"]
+    form = ValorAtributoGerenteForm
+    list_display = ["atributo", "valor", "modificador_display"]
     list_filter = ["atributo"]
     search_fields = ["valor", "atributo__nome"]
     autocomplete_fields = ["atributo"]
     list_select_related = ["atributo"]
     list_order_by = ["atributo__nome", "valor"]
-    list_editable = ["preco_adicional", "percentual_adicional"]
     compressed_fields = True
     warn_unsaved_form = True
     fieldsets = [
-        ("Atributo", {
-            "fields": ["atributo", "valor"]
+        ("Identificação", {
+            "fields": ["atributo", "valor"],
+            "description": "Selecione o atributo (ex: Cor) e digite o valor (ex: Vermelho)."
         }),
-        ("Modificadores de Preço", {
+        ("Modificador de Preço (escolha apenas um)", {
             "fields": ["preco_adicional", "percentual_adicional"],
-            "description": "Configure modificações no preço base quando este atributo for selecionado"
+            "description": (
+                "Quando o cliente selecionar este valor, o preço será ajustado. Exemplos:\n"
+                "- Preço adicional de R$ 5,00: produto de R$ 30 vira R$ 35\n"
+                "- Percentual de 10%: produto de R$ 30 vira R$ 33\n\n"
+                "IMPORTANTE: Use apenas UM dos campos (preço OU percentual)."
+            )
         })
     ]
+
+    @admin.display(description="Modificador")
+    def modificador_display(self, obj):
+        """Mostra o modificador de preço de forma legível."""
+        if obj.preco_adicional and obj.preco_adicional > 0:
+            return f"+R$ {obj.preco_adicional:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        elif obj.percentual_adicional and obj.percentual_adicional > 0:
+            return f"+{obj.percentual_adicional}%"
+        return "-"

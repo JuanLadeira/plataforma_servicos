@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django_extensions.db.models import AutoSlugField
 
@@ -26,21 +27,23 @@ class ValorAtributo(models.Model):
     """
     atributo = models.ForeignKey(Atributo, on_delete=models.CASCADE, related_name="valores")
     valor = models.CharField(max_length=50, help_text="Ex: Vermelho, P, 42")
-    
-    # Modificadores de preço
+
+    # Modificadores de preço (mutuamente exclusivos)
     preco_adicional = models.DecimalField(
-        "Preço adicional", 
-        max_digits=10, 
-        decimal_places=2, 
+        "Preço adicional",
+        max_digits=10,
+        decimal_places=2,
         default=0,
-        help_text="Valor fixo a ser adicionado ao preço base (ex: R$ 5,00)"
+        blank=True,
+        help_text="Valor fixo a ser adicionado ao preço base. Não pode ser usado junto com percentual."
     )
     percentual_adicional = models.DecimalField(
-        "Percentual adicional", 
-        max_digits=5, 
-        decimal_places=2, 
+        "Percentual adicional",
+        max_digits=5,
+        decimal_places=2,
         default=0,
-        help_text="Percentual a ser adicionado ao preço base (ex: 10,00 para 10%)"
+        blank=True,
+        help_text="Percentual a ser adicionado ao preço base (ex: 10 para 10%). Não pode ser usado junto com preço adicional."
     )
 
     class Meta:
@@ -52,6 +55,17 @@ class ValorAtributo(models.Model):
     def __str__(self):
         return f"{self.atributo.nome}: {self.valor}"
 
+    def clean(self):
+        """Valida que apenas preco_adicional OU percentual_adicional seja preenchido."""
+        super().clean()
+        preco = self.preco_adicional or 0
+        percentual = self.percentual_adicional or 0
+
+        if preco > 0 and percentual > 0:
+            raise ValidationError(
+                "Escolha apenas uma opção: preço adicional OU percentual adicional, não ambos."
+            )
+
 
 class VariacaoProduto(models.Model):
     """
@@ -60,7 +74,14 @@ class VariacaoProduto(models.Model):
     """
     produto = models.ForeignKey(Produto, on_delete=models.CASCADE, related_name="variacoes")
     sku = models.CharField(max_length=50, unique=True, blank=True, null=True, help_text="Stock Keeping Unit. Se deixado em branco, será gerado automaticamente.")
-    preco = models.DecimalField("preço", max_digits=10, decimal_places=2, null=True, blank=True)
+    preco = models.DecimalField(
+        "preço",
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Deixe vazio para usar o preço base do produto. Se preenchido, SUBSTITUI o preço base (não soma)."
+    )
     estoque = models.PositiveIntegerField("estoque atual", default=0)
     valores = models.ManyToManyField(ValorAtributo, related_name="variacoes")
 

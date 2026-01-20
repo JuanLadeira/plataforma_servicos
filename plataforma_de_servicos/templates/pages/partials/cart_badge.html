@@ -1,0 +1,5 @@
+<span id="cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" hx-swap-oob="true">
+    {% with qty_amount=cart|length %}
+        {{ qty_amount }}
+    {% endwith %}
+</span>

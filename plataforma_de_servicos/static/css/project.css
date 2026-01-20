@@ -358,9 +358,22 @@ footer {
     box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
 
-.image-gallery .main-image img {
+.image-gallery .main-image {
+    position: relative;
     width: 100%;
-    object-fit: cover;
+    padding-bottom: 100%; /* Aspect ratio 1:1 */
+    overflow: hidden;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+}
+
+.image-gallery .main-image img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Manter proporção, mostrar imagem inteira */
     border-radius: 10px;
 }
 
@@ -386,4 +399,71 @@ footer {
 
 .badge.bg-primary {
     background-color: var(--primary-color) !important;
+}
+
+/* Attribute Selector Styles */
+.attribute-selector {
+    margin-bottom: 1rem;
+}
+
+.attribute-selector .form-label {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.attribute-selector .form-select {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.attribute-selector .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.2);
+}
+
+/* Price Display Animation */
+#price-display {
+    transition: opacity 0.3s ease;
+}
+
+#price-display.loading {
+    opacity: 0.5;
+}
+
+#preco-valor {
+    transition: color 0.3s ease;
+}
+
+#preco-valor.updated {
+    color: var(--primary-color);
+    animation: pulse 0.5s ease;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Stock availability indicators */
+.stock-available {
+    color: #28a745;
+}
+
+.stock-low {
+    color: #ffc107;
+}
+
+.stock-unavailable {
+    color: #dc3545;
+}
+
+/* Product description */
+.product-description {
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
 }

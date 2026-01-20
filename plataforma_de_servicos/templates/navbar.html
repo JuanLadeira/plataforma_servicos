@@ -44,16 +44,10 @@
         <!-- Carrinho -->
         <ul class="navbar-nav ms-auto">
           <li class="nav-item my-3">
-            <a type="button" role="button" href="{% url 'cart:cart-summary' %}" class="btn btn-outline-primary position-relative">
+            <a type="button" role="button" href="{% url 'cart:cart-summary' %}" class="btn btn-outline-primary position-relative" id="cart-link">
               <i class="fa fa-shopping-cart" aria-hidden="true"></i>
-              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                {% with qty_amount=cart|length %}
-                  {% if qty_amount > 0 %}
-                    {{ qty_amount }}
-                  {% else %}
-                    0
-                  {% endif %}
-                {% endwith %}
+              <span id="cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {% with qty_amount=cart|length %}{{ qty_amount }}{% endwith %}
               </span>
             </a>
           </li>

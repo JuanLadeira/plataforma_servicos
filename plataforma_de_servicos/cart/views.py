@@ -1,9 +1,10 @@
 import logging
 
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.shortcuts import render
+from django.template.loader import render_to_string
 from django.urls import reverse
 
 from plataforma_de_servicos.cart.cart import Cart
@@ -11,6 +12,16 @@ from plataforma_de_servicos.cart.models import ReservaEstoque
 from plataforma_de_servicos.produto.models import VariacaoProduto, Produto
 
 logger = logging.getLogger("django")
+
+
+def _render_cart_badge(request):
+    """Renderiza o badge do carrinho para atualização via HTMX."""
+    cart = Cart(request)
+    return render_to_string(
+        "pages/partials/cart_badge.html",
+        {"cart": cart},
+        request=request
+    )
 
 
 def cart_summary(request):
@@ -89,23 +100,20 @@ def cart_add(request):
         if quantidade_total_solicitada > estoque_disponivel:
             disponivel_para_adicionar = estoque_disponivel - quantidade_no_carrinho
             if disponivel_para_adicionar <= 0:
-                messages.error(
-                    request, 
-                    f"Este produto já está no seu carrinho e não há mais estoque disponível!"
-                )
+                error_msg = "Este produto já está no seu carrinho e não há mais estoque disponível!"
             else:
-                messages.error(
-                    request, 
+                error_msg = (
                     f"Estoque insuficiente! Você já tem {quantidade_no_carrinho} unidades no carrinho. "
                     f"Disponível para adicionar: {disponivel_para_adicionar} unidades."
                 )
-            
+
+            messages.error(request, error_msg)
+
             # Retornar resposta apropriada baseada no tipo de requisição
             if request.headers.get("HX-Request"):
-                return JsonResponse({
-                    "error": "Estoque insuficiente",
-                    "redirect": reverse("cart:cart-summary")
-                })
+                response = HttpResponse(_render_cart_badge(request))
+                response["HX-Trigger"] = '{"showToast": {"message": "' + error_msg + '", "type": "error"}}'
+                return response
             else:
                 return redirect("cart:cart-summary")
 
@@ -113,18 +121,26 @@ def cart_add(request):
         if variation_id:
             cart.add(variation=variation, product_qty=product_quantity)
         else:
-            # Para produtos simples, criar método no cart.py
             cart.add_product(produto=produto, product_qty=product_quantity)
 
-        cart_quantity = len(cart)
-        messages.success(request, f"{produto_nome} adicionado ao carrinho com sucesso!")
-        
-        # Redirecionamento baseado no tipo de requisição
+        success_msg = f"{produto_nome} adicionado ao carrinho!"
+        messages.success(request, success_msg)
+
+        # Retornar resposta apropriada baseada no tipo de requisição
         if request.headers.get("HX-Request"):
-            return JsonResponse({
-                "qty": cart_quantity,
-                "redirect": reverse("cart:cart-summary")
+            redirect_url = reverse("cart:cart-summary")
+            response = HttpResponse(_render_cart_badge(request))
+            # Incluir redirect no evento para JavaScript redirecionar após mostrar toast
+            import json
+            trigger_data = json.dumps({
+                "showToast": {
+                    "message": success_msg,
+                    "type": "success",
+                    "redirect": redirect_url
+                }
             })
+            response["HX-Trigger"] = trigger_data
+            return response
         else:
             return redirect("cart:cart-summary")
     
@@ -134,25 +150,58 @@ def cart_add(request):
 def cart_delete(request):
     cart = Cart(request)
     if request.POST.get("action") == "post":
-        variation_id = int(request.POST.get("variation_id"))
+        variation_id = request.POST.get("variation_id")
         cart.delete(variation=variation_id)
 
+        cart_quantity = len(cart)
         cart_total = cart.get_total()
         messages.success(request, "Item removido do carrinho com sucesso!")
-        return JsonResponse({"total": cart_total})
+        return JsonResponse({
+            "qty": cart_quantity,
+            "total": f"{cart_total:.2f}"
+        })
     return JsonResponse({"error": "Invalid request"}, status=400)
 
 
 def cart_update(request):
     cart = Cart(request)
     if request.POST.get("action") == "post":
-        variation_id = int(request.POST.get("variation_id"))
+        variation_id = request.POST.get("variation_id")
         product_quantity = int(request.POST.get("product_quantity"))
 
+        # Validar quantidade máxima baseada no estoque
+        if variation_id.startswith("produto_"):
+            produto_id = int(variation_id.replace("produto_", ""))
+            produto = get_object_or_404(Produto, id=produto_id)
+            max_estoque = produto.estoque
+            preco_unitario = produto.preco
+        else:
+            variation = get_object_or_404(VariacaoProduto, id=variation_id)
+            max_estoque = variation.estoque
+            preco_unitario = variation.calcular_preco_final()
+
+        # Limitar quantidade ao estoque disponível
+        if product_quantity > max_estoque:
+            return JsonResponse({
+                "error": f"Quantidade máxima disponível: {max_estoque}"
+            }, status=400)
+
+        if product_quantity < 1:
+            return JsonResponse({
+                "error": "Quantidade mínima: 1"
+            }, status=400)
+
         cart.update(variation=variation_id, qty=product_quantity)
+
+        # Calcular total do item
+        item_total = preco_unitario * product_quantity
 
         cart_quantity = len(cart)
         cart_total = cart.get_total()
         messages.success(request, "Carrinho atualizado com sucesso!")
-        return JsonResponse({"qty": cart_quantity, "total": cart_total})
+        return JsonResponse({
+            "qty": cart_quantity,
+            "total": f"{cart_total:.2f}",
+            "item_total": f"{item_total:.2f}"
+        })
     return JsonResponse({"error": "Invalid request"}, status=400)
