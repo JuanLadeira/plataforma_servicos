@@ -123,7 +123,7 @@
             return actions.order.capture().then(details => {
                 $.ajax({
                     type: 'POST',
-                    url: '{% url "complete-order" %}',
+                    url: '{% url "payment:complete-order" %}',
                     data: {
                         name: $('#name').val(),
                         email: $('#email').val(),
@@ -136,10 +136,10 @@
                         action: 'post'
                     },
                     success: function(json) {
-                        window.location.replace("{% url 'payment-success' %}");
+                        window.location.replace("{% url 'payment:payment-success' %}");
                     },
                     error: function(xhr, errmsg, err) {
-                        window.location.replace("{% url 'payment-failed' %}");
+                        window.location.replace("{% url 'payment:payment-failed' %}");
                     }
                 });
             });

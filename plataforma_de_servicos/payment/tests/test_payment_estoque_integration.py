@@ -11,7 +11,6 @@ from django.test import RequestFactory
 from django.test import TestCase
 
 from plataforma_de_servicos.cart.cart import Cart
-from plataforma_de_servicos.cart.models import ReservaEstoque
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.choices.origem_saida import OrigemSaida
 from plataforma_de_servicos.estoque.models import Estoque
@@ -148,29 +147,6 @@ class PaymentEstoqueIntegrationTest(TestCase):
         self.assertEqual(self.produto1.estoque, estoque_inicial_p1 - 3)  # 2 + 1
         self.assertEqual(self.produto2.estoque, estoque_inicial_p2 - 3)
 
-    def test_complete_order_limpa_reservas(self):
-        """Testar que finalizar pedido limpa as reservas do carrinho"""
-        request, cart = self.create_request_with_session_and_cart()
-        request.user = self.user
-
-        # Verificar que há reservas antes
-        self.assertEqual(ReservaEstoque.objects.filter(session_key=cart.session_key).count(), 3)
-
-        request.POST = {
-            "action": "post",
-            "name": "Test User",
-            "email": "test@example.com",
-            "address1": "Test Address",
-            "address2": "",
-            "city": "Test City",
-            "state": "TS",
-            "zipcode": "12345",
-        }
-
-        response = complete_order(request)
-
-        # Verificar que reservas foram limpas
-        self.assertEqual(ReservaEstoque.objects.filter(session_key=cart.session_key).count(), 0)
 
     def test_complete_order_guest_user(self):
         """Testar finalização de pedido com usuário não autenticado"""
@@ -295,55 +271,10 @@ class PaymentEstoqueIntegrationTest(TestCase):
 
     def test_payment_service_clear_reservations(self):
         """Testar que PaymentService.clear_cart_reservations funciona corretamente"""
-        from plataforma_de_servicos.payment.services import PaymentService
-
-        # Criar reservas
-        session_key = "test_session_123"
-        ReservaEstoque.objects.create(
-            session_key=session_key,
-            produto=self.produto1,
-            quantidade=2,
-        )
-        ReservaEstoque.objects.create(
-            session_key=session_key,
-            produto=self.produto2,
-            quantidade=1,
-        )
-
-        # Verificar que há reservas antes
-        self.assertEqual(ReservaEstoque.objects.filter(session_key=session_key).count(), 2)
-
-        # Limpar reservas via service
-        PaymentService.clear_cart_reservations(session_key)
-
-        # Verificar que reservas foram limpas
-        self.assertEqual(ReservaEstoque.objects.filter(session_key=session_key).count(), 0)
+        # Teste desativado pois a lógica de ReservaEstoque foi removida.
+        pass
 
     def test_payment_success_limpa_reservas_fallback(self):
         """Testar que payment_success limpa reservas como fallback"""
-        from plataforma_de_servicos.payment.views import payment_success
-
-        # Criar reservas
-        session_key = "test_session_456"
-        ReservaEstoque.objects.create(
-            session_key=session_key,
-            produto=self.produto1,
-            quantidade=2,
-        )
-
-        request = self.factory.get("/payment/success/")
-        middleware = SessionMiddleware(MagicMock())
-        middleware.process_request(request)
-
-        # Simular sessão existente sem sobrescrever o session_key
-        request.session._session_key = session_key
-        request.session.modified = True
-
-        # Verificar que há reservas antes
-        self.assertEqual(ReservaEstoque.objects.filter(session_key=session_key).count(), 1)
-
-        response = payment_success(request)
-
-        # Verificar que reservas foram limpas pelo fallback
-        self.assertEqual(ReservaEstoque.objects.filter(session_key=session_key).count(), 0)
-        self.assertEqual(response.status_code, 200)
+        # Teste desativado pois a lógica de ReservaEstoque foi removida.
+        pass

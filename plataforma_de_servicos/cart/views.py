@@ -1,27 +1,44 @@
 import logging
 
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.http import HttpResponse
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse
 
 from plataforma_de_servicos.cart.cart import Cart
-from plataforma_de_servicos.cart.models import ReservaEstoque
-from plataforma_de_servicos.produto.models import VariacaoProduto, Produto
+from plataforma_de_servicos.produto.models import Produto
+from plataforma_de_servicos.produto.models import VariacaoProduto
 
 logger = logging.getLogger("django")
 
 
-def _render_cart_badge(request):
+def _render_cart_badge(request, cart):
     """Renderiza o badge do carrinho para atualização via HTMX."""
-    cart = Cart(request)
     return render_to_string(
         "pages/partials/cart_badge.html",
         {"cart": cart},
-        request=request
+        request=request,
     )
+
+
+def _render_cart_offcanvas(request, cart):
+    """Renderiza o conteúdo do mini-carrinho (offcanvas)."""
+    from django.middleware.csrf import get_token
+    return render_to_string(
+        "pages/partials/cart_offcanvas.html",
+        {"cart": cart, "csrf_token": get_token(request)},
+        request=request,
+    )
+
+
+def cart_mini(request):
+    """Retorna o HTML do mini-carrinho para HTMX."""
+    cart = Cart(request)
+    return HttpResponse(_render_cart_offcanvas(request, cart))
 
 
 def cart_summary(request):
@@ -35,90 +52,35 @@ def cart_summary(request):
 def cart_add(request):
     cart = Cart(request)
     if request.POST.get("action") == "post":
-        # Verificar se é produto simples ou variação
         product_id = request.POST.get("product_id")
         variation_id = request.POST.get("variation_id")
         product_quantity = int(request.POST.get("product_quantity", 1))
 
         if variation_id:
-            # Produto com variações
             variation = get_object_or_404(VariacaoProduto, id=variation_id)
             produto = variation.produto
-            estoque_atual = variation.estoque
+            estoque_disponivel = variation.estoque
             produto_nome = f"{produto.produto} ({variation})"
         else:
-            # Produto simples
             produto = get_object_or_404(Produto, id=product_id)
-            estoque_atual = produto.estoque
+            estoque_disponivel = produto.estoque
             produto_nome = produto.produto
+            variation = None  # Para uso no método add_product
 
-        # Verificar quantidade já no carrinho
         cart_key = str(variation_id) if variation_id else f"produto_{product_id}"
         quantidade_no_carrinho = cart.cart.get(cart_key, {}).get("qty", 0)
         quantidade_total_solicitada = quantidade_no_carrinho + product_quantity
 
-        # Verificar quantidade reservada por outros usuários
-        if variation_id:
-            # Buscar o objeto variação para passar ao método
-            try:
-                variacao_obj = variation_id  # Se for objeto
-                if hasattr(variation_id, 'id'):  # Se for instância de VariacaoProduto
-                    variacao_obj = variation_id
-                else:  # Se for ID
-                    variacao_obj = VariacaoProduto.objects.get(id=variation_id)
-                
-                quantidade_reservada_outros = ReservaEstoque.get_quantidade_reservada(variacao_produto=variacao_obj)
-            except:
-                quantidade_reservada_outros = 0
-                
-            # Subtrair nossa própria reserva se existir
-            nossa_reserva = ReservaEstoque.objects.filter(
-                session_key=cart.session_key,
-                variacao_produto_id=variation_id
-            ).first()
-            if nossa_reserva:
-                quantidade_reservada_outros -= nossa_reserva.quantidade
-        else:
-            # Passar o objeto produto ao método
-            try:
-                quantidade_reservada_outros = ReservaEstoque.get_quantidade_reservada(produto=produto)
-            except:
-                quantidade_reservada_outros = 0
-            
-            # Subtrair nossa própria reserva se existir
-            nossa_reserva = ReservaEstoque.objects.filter(
-                session_key=cart.session_key,
-                produto_id=product_id
-            ).first()
-            if nossa_reserva:
-                quantidade_reservada_outros -= nossa_reserva.quantidade
-
-        # Estoque disponível = estoque atual - reservas de outros usuários
-        estoque_disponivel = estoque_atual - quantidade_reservada_outros
-
-        # Verificar se há estoque suficiente
         if quantidade_total_solicitada > estoque_disponivel:
-            disponivel_para_adicionar = estoque_disponivel - quantidade_no_carrinho
-            if disponivel_para_adicionar <= 0:
-                error_msg = "Este produto já está no seu carrinho e não há mais estoque disponível!"
-            else:
-                error_msg = (
-                    f"Estoque insuficiente! Você já tem {quantidade_no_carrinho} unidades no carrinho. "
-                    f"Disponível para adicionar: {disponivel_para_adicionar} unidades."
-                )
-
+            error_msg = f"Estoque insuficiente para {produto_nome}. Disponível: {estoque_disponivel}."
             messages.error(request, error_msg)
-
-            # Retornar resposta apropriada baseada no tipo de requisição
             if request.headers.get("HX-Request"):
-                response = HttpResponse(_render_cart_badge(request))
+                response = HttpResponse(_render_cart_badge(request, cart))
                 response["HX-Trigger"] = '{"showToast": {"message": "' + error_msg + '", "type": "error"}}'
                 return response
-            else:
-                return redirect("cart:cart-summary")
+            return redirect("cart:cart-summary")
 
-        # Adicionar ao carrinho
-        if variation_id:
+        if variation:
             cart.add(variation=variation, product_qty=product_quantity)
         else:
             cart.add_product(produto=produto, product_qty=product_quantity)
@@ -126,24 +88,16 @@ def cart_add(request):
         success_msg = f"{produto_nome} adicionado ao carrinho!"
         messages.success(request, success_msg)
 
-        # Retornar resposta apropriada baseada no tipo de requisição
         if request.headers.get("HX-Request"):
-            redirect_url = reverse("cart:cart-summary")
-            response = HttpResponse(_render_cart_badge(request))
-            # Incluir redirect no evento para JavaScript redirecionar após mostrar toast
+            response = HttpResponse(_render_cart_badge(request, cart))
             import json
-            trigger_data = json.dumps({
-                "showToast": {
-                    "message": success_msg,
-                    "type": "success",
-                    "redirect": redirect_url
-                }
-            })
-            response["HX-Trigger"] = trigger_data
+            toast_data = {"message": success_msg, "type": "success"}
+            triggers = {"showToast": toast_data, "openCartOffcanvas": True}
+            response["HX-Trigger"] = json.dumps(triggers)
             return response
-        else:
-            return redirect("cart:cart-summary")
-    
+        
+        return redirect("cart:cart-summary")
+
     return JsonResponse({"error": "Invalid request"}, status=400)
 
 
@@ -158,8 +112,28 @@ def cart_delete(request):
         messages.success(request, "Item removido do carrinho com sucesso!")
         return JsonResponse({
             "qty": cart_quantity,
-            "total": f"{cart_total:.2f}"
+            "total": f"{cart_total:.2f}",
         })
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+def cart_delete_mini(request):
+    """Remove item do carrinho e retorna o offcanvas atualizado."""
+    cart = Cart(request)
+    if request.POST.get("action") == "post":
+        variation_id = request.POST.get("variation_id")
+        cart.delete(variation=variation_id)
+
+        # Retorna o offcanvas atualizado com toast
+        import json
+        response = HttpResponse(_render_cart_offcanvas(request, cart))
+        response["HX-Trigger"] = json.dumps({
+            "showToast": {
+                "message": "Item removido do carrinho!",
+                "type": "success",
+            },
+        })
+        return response
     return JsonResponse({"error": "Invalid request"}, status=400)
 
 
@@ -183,12 +157,12 @@ def cart_update(request):
         # Limitar quantidade ao estoque disponível
         if product_quantity > max_estoque:
             return JsonResponse({
-                "error": f"Quantidade máxima disponível: {max_estoque}"
+                "error": f"Quantidade máxima disponível: {max_estoque}",
             }, status=400)
 
         if product_quantity < 1:
             return JsonResponse({
-                "error": "Quantidade mínima: 1"
+                "error": "Quantidade mínima: 1",
             }, status=400)
 
         cart.update(variation=variation_id, qty=product_quantity)
@@ -202,6 +176,6 @@ def cart_update(request):
         return JsonResponse({
             "qty": cart_quantity,
             "total": f"{cart_total:.2f}",
-            "item_total": f"{item_total:.2f}"
+            "item_total": f"{item_total:.2f}",
         })
     return JsonResponse({"error": "Invalid request"}, status=400)

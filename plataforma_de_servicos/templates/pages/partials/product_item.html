@@ -20,7 +20,7 @@
             value="{{ product.id }}"
             class="btn btn-primary btn-sm mt-3 w-100"
             hx-post="{% url 'cart:cart-add' %}"
-            hx-vals='{"product_id": "{{ product.id }}", "action": "post", "product_quantity": 1}'
+            hx-vals='{"product_id": "{{ product.id }}", "action": "post", "product_quantity": 1, "no_redirect": "true"}'
             hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
             hx-target="#cart-badge"
             hx-swap="outerHTML"

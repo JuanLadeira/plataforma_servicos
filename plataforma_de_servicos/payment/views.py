@@ -1,5 +1,6 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
+from django.contrib import messages
 import logging
 
 from .models import ShippingAddress
@@ -10,35 +11,35 @@ logger = logging.getLogger("django")
 
 
 def checkout(request):
+    cart = Cart(request)
 
-    # Users with accounts -- Pre-fill the form
+    # Verificar estoque antes de prosseguir para o checkout
+    for item in cart:
+        produto_real = item.get('variation') or item.get('produto')
+        if not produto_real:
+            messages.error(request, "Um item no seu carrinho não foi encontrado e foi removido.")
+            cart.delete(item.get('variation_id') or item.get('produto_id'))
+            return redirect('cart:cart-summary')
 
+        estoque_disponivel = produto_real.estoque
+        if item['qty'] > estoque_disponivel:
+            messages.error(
+                request,
+                f"Estoque insuficiente para '{produto_real}'. "
+                f"Disponível: {estoque_disponivel}, no seu carrinho: {item['qty']}. "
+                "Ajuste a quantidade para continuar."
+            )
+            return redirect('cart:cart-summary')
+
+    # Se todos os itens têm estoque, continuar para o checkout
     if request.user.is_authenticated:
-
         try:
-
-            # Authenticated users WITH shipping information 
-
-            shipping_address = ShippingAddress.objects.get(user=request.user.id)
-
+            shipping_address = ShippingAddress.objects.get(user=request.user)
             context = {'shipping': shipping_address}
-
-            
-
-
             return render(request, 'payment/checkout.html', context=context)
-
-
-        except:
-
-            # Authenticated users with NO shipping information
-
+        except ShippingAddress.DoesNotExist:
             return render(request, 'payment/checkout.html')
-
     else:
-            
-        # Guest users
-
         return render(request, 'payment/checkout.html')
 
 

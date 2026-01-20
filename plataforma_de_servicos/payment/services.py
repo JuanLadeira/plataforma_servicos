@@ -2,7 +2,6 @@ import logging
 from django.db import transaction
 
 from .models import Order, OrderItem
-from plataforma_de_servicos.cart.models import ReservaEstoque
 from plataforma_de_servicos.estoque.services import EstoqueService
 
 logger = logging.getLogger("django")
@@ -89,31 +88,7 @@ class PaymentService:
             logger.error(f"Erro ao criar saída de estoque para pedido {order.id}: {e}")
             # O pedido continua, mas registra o erro
         
-        # Limpar reservas do carrinho
-        PaymentService.clear_cart_reservations(cart.session_key)
-        
         return order
-    
-    @staticmethod
-    def clear_cart_reservations(session_key):
-        """
-        Limpa as reservas de estoque de uma sessão específica
-        
-        Args:
-            session_key: Chave da sessão para limpar
-        """
-        if not session_key:
-            logger.warning("Session key não fornecida para limpeza de reservas")
-            return
-            
-        try:
-            deleted_count = ReservaEstoque.objects.filter(session_key=session_key).delete()[0]
-            if deleted_count > 0:
-                logger.info(f"Limpas {deleted_count} reservas de estoque para sessão {session_key}")
-            else:
-                logger.debug(f"Nenhuma reserva encontrada para sessão {session_key}")
-        except Exception as e:
-            logger.error(f"Erro ao limpar reservas para sessão {session_key}: {e}")
     
     @staticmethod
     def clear_session_cart_data(request):
@@ -123,16 +98,6 @@ class PaymentService:
         Args:
             request: Request object do Django
         """
-        session_key = (
-            getattr(request.session, '_session_key', None) or
-            request.session.session_key
-        )
-        
-        # Limpar reservas de estoque se necessário (fallback)
-        if session_key:
-            PaymentService.clear_cart_reservations(session_key)
-        
         # Limpar dados do carrinho da sessão
-        for key in list(request.session.keys()):
-            if key == 'session_key':
-                del request.session[key]
+        if 'cart' in request.session:
+            del request.session['cart']

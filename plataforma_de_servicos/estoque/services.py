@@ -1,10 +1,12 @@
-from django.db import transaction
 from django.contrib.auth import get_user_model
+from django.db import transaction
 
-from .models import Estoque, EstoqueItens
+from plataforma_de_servicos.inventario.models import Inventario
+
 from .choices.movimento import Movimento
 from .choices.origem_saida import OrigemSaida
-from plataforma_de_servicos.inventario.models import Inventario
+from .models import Estoque
+from .models import EstoqueItens
 
 User = get_user_model()
 
@@ -13,7 +15,7 @@ class EstoqueService:
     """
     Serviço para gerenciar operações de estoque de forma consistente
     """
-    
+
     @staticmethod
     def criar_saida_por_pedido(pedido_id: int, itens_pedido: list, funcionario: User = None, inventario_origem: Inventario = None):
         """
@@ -30,7 +32,7 @@ class EstoqueService:
         """
         if not inventario_origem:
             inventario_origem = Inventario.objects.first()  # Ou lógica para inventário padrão
-        
+
         with transaction.atomic():
             # Criar registro de saída
             saida = Estoque.objects.create(
@@ -39,23 +41,23 @@ class EstoqueService:
                 origem_saida=OrigemSaida.PEDIDO.value,
                 pedido_id=pedido_id,
                 inventario_origem=inventario_origem,
-                observacao=f"Saída automática para pedido #{pedido_id}"
+                observacao=f"Saída automática para pedido #{pedido_id}",
             )
-            
+
             # Criar itens da saída
             for item in itens_pedido:
                 EstoqueItens.objects.create(
                     estoque=saida,
-                    produto=item['produto'],
-                    quantidade=item['quantidade'],
-                    inventario=inventario_origem
+                    produto=item["produto"],
+                    quantidade=item["quantidade"],
+                    inventario=inventario_origem,
                 )
-            
+
             # Processar a saída automaticamente
             saida.processar()
-            
+
             return saida
-    
+
     @staticmethod
     def criar_saida_manual(origem: str, itens: list, funcionario: User, inventario_origem: Inventario = None, observacao: str = ""):
         """
@@ -70,26 +72,26 @@ class EstoqueService:
         """
         if not inventario_origem:
             inventario_origem = Inventario.objects.first()
-            
+
         with transaction.atomic():
             saida = Estoque.objects.create(
                 funcionario=funcionario,
                 movimento=Movimento.SAIDA.value,
                 origem_saida=origem,
                 inventario_origem=inventario_origem,
-                observacao=observacao
+                observacao=observacao,
             )
-            
+
             for item in itens:
                 EstoqueItens.objects.create(
                     estoque=saida,
-                    produto=item['produto'],
-                    quantidade=item['quantidade'],
-                    inventario=inventario_origem
+                    produto=item["produto"],
+                    quantidade=item["quantidade"],
+                    inventario=inventario_origem,
                 )
-            
+
             return saida
-    
+
     @staticmethod
     def liberar_reserva_para_saida(reservas_carrinho: list, pedido_id: int, funcionario: User = None):
         """
@@ -100,24 +102,23 @@ class EstoqueService:
             pedido_id: ID do pedido gerado
             funcionario: Usuário (opcional)
         """
-        from plataforma_de_servicos.produto.models import Produto, VariacaoProduto
-        
+
         itens_pedido = []
-        
+
         for reserva in reservas_carrinho:
             if reserva.variacao_produto:
                 produto = reserva.variacao_produto.produto
             else:
                 produto = reserva.produto
-                
+
             itens_pedido.append({
-                'produto': produto,
-                'quantidade': reserva.quantidade,
-                'variacao': reserva.variacao_produto if reserva.variacao_produto else None
+                "produto": produto,
+                "quantidade": reserva.quantidade,
+                "variacao": reserva.variacao_produto if reserva.variacao_produto else None,
             })
-        
+
         return EstoqueService.criar_saida_por_pedido(
             pedido_id=pedido_id,
             itens_pedido=itens_pedido,
-            funcionario=funcionario
+            funcionario=funcionario,
         )

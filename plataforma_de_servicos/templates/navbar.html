@@ -44,12 +44,21 @@
         <!-- Carrinho -->
         <ul class="navbar-nav ms-auto">
           <li class="nav-item my-3">
-            <a type="button" role="button" href="{% url 'cart:cart-summary' %}" class="btn btn-outline-primary position-relative" id="cart-link">
+            <button type="button"
+                    class="btn btn-outline-primary position-relative"
+                    id="cart-link"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#cartOffcanvas"
+                    aria-controls="cartOffcanvas"
+                    hx-get="{% url 'cart:cart-mini' %}"
+                    hx-target="#cart-offcanvas-content"
+                    hx-swap="innerHTML"
+                    hx-trigger="click">
               <i class="fa fa-shopping-cart" aria-hidden="true"></i>
               <span id="cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                 {% with qty_amount=cart|length %}{{ qty_amount }}{% endwith %}
               </span>
-            </a>
+            </button>
           </li>
         </ul>
   

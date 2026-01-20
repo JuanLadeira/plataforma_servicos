@@ -79,10 +79,26 @@
 {% endcompress %}
 
 <script defer src="https://unpkg.com/htmx.org"></script>
+<script>
+  // Configurar HTMX para incluir CSRF token em todas as requisições
+  document.addEventListener('DOMContentLoaded', function() {
+    document.body.addEventListener('htmx:configRequest', function(event) {
+      // Pegar CSRF token do cookie
+      const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+      if (csrfToken) {
+        event.detail.headers['X-CSRFToken'] = csrfToken;
+      }
+    });
+  });
+</script>
 
 {% endblock javascript %}
 </head>
 <body class="{% block bodyclass %}{% endblock bodyclass %}">
+  {% csrf_token %}
   {% block body %}
   <div class="mb-1">
       {% include "navbar.html" %}
@@ -102,6 +118,22 @@
   </div>
   {% endblock body %}
   <!-- /container -->
+
+  <!-- Mini-carrinho Offcanvas -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="cartOffcanvas" aria-labelledby="cartOffcanvasLabel">
+    <div id="cart-offcanvas-content"
+         hx-get="{% url 'cart:cart-mini' %}"
+         hx-trigger="load, cartUpdated from:body"
+         hx-swap="innerHTML">
+      <!-- Conteúdo carregado via HTMX -->
+      <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Carregando...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   {% block modal %}
   {% endblock modal %}
   {% block inline_javascript %}
@@ -174,6 +206,17 @@
         document.body.addEventListener('showToast', (event) => {
           const { message, type, redirect } = event.detail;
           showToast(message, type, redirect);
+        });
+
+        // Listen for HTMX openCartOffcanvas event
+        document.body.addEventListener('openCartOffcanvas', () => {
+          const offcanvasEl = document.getElementById('cartOffcanvas');
+          if (offcanvasEl) {
+            const offcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl);
+            // Trigger content update before opening
+            htmx.trigger('#cart-offcanvas-content', 'cartUpdated');
+            offcanvas.show();
+          }
         });
 
         // Make showToast globally available

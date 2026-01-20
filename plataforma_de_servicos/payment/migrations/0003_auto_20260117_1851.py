@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('payment', '0002_order'),
-        ('produto', '0001_initial'),
+        ('produto', '0005_atributo_alter_produto_estoque_alter_produto_preco_and_more'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
