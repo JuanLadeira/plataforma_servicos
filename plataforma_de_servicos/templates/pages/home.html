@@ -1,3 +1,15 @@
 {% extends "base.html" %}
+{% block content %}
+
+<section class="hero">
+    <div class="hero-content">
+        <h1>Pizzas Artesanais, Sabor Inesquecível</h1>
+        <p>Feitas com os melhores ingredientes, direto do forno para sua casa.</p>
+        <a href="#productList" class="btn btn-primary">Ver o Cardápio</a>
+    </div>
+</section>
+
+{% include 'pages/includes/product_list.html' %}
+{% endblock content %}
 
 

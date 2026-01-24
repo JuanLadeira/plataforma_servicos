@@ -1,0 +1,6 @@
+<label for="select-{{ product.id }}" class="form-label">Quantidade</label>
+<select id="select-{{ product.id }}" name="product_quantity" class="form-select">
+    {% for i in estoque_range %}
+        <option value="{{ i }}">{{ i }}</option>
+    {% endfor %}
+</select>

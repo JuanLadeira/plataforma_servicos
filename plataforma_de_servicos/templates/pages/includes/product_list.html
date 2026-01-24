@@ -1,0 +1,69 @@
+{% load static %}
+
+<!-- All products section -->
+<div class="album pb-5 mt-3 bg-light">
+    {% include "pages/components/product_search.html" %}
+    <div class="container">
+        {% include "pages/partials/product_list_partial.html" %} 
+        <!-- Pagination -->
+        <nav aria-label="Page navigation example" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if my_products.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ my_products.previous_page_number }}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+                {% for page_num in my_products.paginator.page_range %}
+                    <li class="page-item {% if my_products.number == page_num %}active{% endif %}">
+                        <a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a>
+                    </li>
+                {% endfor %}
+                {% if my_products.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ my_products.next_page_number }}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<script>
+function initCategorySearch() {
+    const searchInput = document.getElementById('category-search-input');
+    if (searchInput && !searchInput.dataset.initialized) {
+        searchInput.dataset.initialized = 'true';
+        searchInput.addEventListener('input', function(e) {
+            const inputValue = e.target.value;
+            const options = document.getElementById('category-options').options;
+            
+            for (let i = 0; i < options.length; i++) {
+                if (options[i].value === inputValue) {
+                    const categoryId = options[i].getAttribute('data-id');
+                    if (categoryId) {
+                        const url = `{% url 'home' %}?category=${categoryId}`;
+                        htmx.ajax('GET', url, {
+                            target: '#productList',
+                            swap: 'outerHTML'
+                        });
+                    }
+                    break;
+                }
+            }
+        });
+    }
+}
+
+// Initialize on first page load
+document.addEventListener('DOMContentLoaded', initCategorySearch);
+
+// Re-initialize after HTMX swaps content
+document.body.addEventListener('htmx:afterSwap', function(event) {
+    // We need to re-run the script on the new content
+    initCategorySearch();
+});
+</script>

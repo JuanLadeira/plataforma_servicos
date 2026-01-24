@@ -9,5 +9,6 @@ class EstoqueSaida(Estoque):
 
     class Meta:
         proxy = True
-        verbose_name = "registro de saída de estoque"
-        verbose_name_plural = "registros de saída de estoque"
+        verbose_name = "Saída de estoque"
+        verbose_name_plural = "Saídas de estoque"
+        ordering = ("-created",)

@@ -5,6 +5,8 @@ import ssl
 from pathlib import Path
 
 import environ
+from decouple import config
+from django.templatetags.static import static
 
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 # plataforma_de_servicos/
@@ -16,6 +18,7 @@ if READ_DOT_ENV_FILE:
     # OS environment variables take precedence over variables from .env
     env.read_env(str(BASE_DIR / ".env"))
 
+LLM_API_KEY = config("DEEPSEEK_API_KEY", default="")
 # GENERAL
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#debug
@@ -94,6 +97,10 @@ LOCAL_APPS = [
     "plataforma_de_servicos.servico",
     "plataforma_de_servicos.produto",
     "plataforma_de_servicos.estoque",
+    "plataforma_de_servicos.inventario",
+    "plataforma_de_servicos.cart",
+    "plataforma_de_servicos.payment",
+    "plataforma_de_servicos.corretor",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -154,8 +161,16 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
 ]
 
+MEDIA_ROOT = str(APPS_DIR / "media")
 STORAGES = {
     # ...
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "OPTIONS": {
+            "location": MEDIA_ROOT,  # Diretório onde os arquivos serão armazenados
+        },
+    },
+
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
@@ -203,6 +218,8 @@ TEMPLATES = [
                 "django.template.context_processors.tz",
                 "django.contrib.messages.context_processors.messages",
                 "plataforma_de_servicos.users.context_processors.allauth_settings",
+                "plataforma_de_servicos.produto.context_processors.categories",
+                "plataforma_de_servicos.cart.context_processors.cart",
             ],
         },
     },
@@ -362,4 +379,67 @@ UNFOLD = {
     "TABS": False,
     "LOADER": False,
     "SHOW_HISTORY": True,
+}
+
+CORES_LINHAS_TABELA = "0 0 0"
+CORES_PLACE_HOLDER_INPUT = "169 169 169"  # cores de placeholder de input
+CORES_TITULOS_TABELAS = "0 100 0"  # cores dos titulos de tabela
+
+UNFOLD_GERENTE_ADMIN = {
+    "SITE_TITLE": "Plataforma dos Gerentes",
+    "SITE_HEADER": "Plataforma dos Gerentes",
+    "SITE_URL": "/gerentes",
+    "SITE_ICON": None,
+    "DASHBOARD_CALLBACK": None,
+    "LOGIN": {
+        "image": None,
+        "redirect_after": None,
+    },
+    "STYLES": [
+        lambda request: static("css/gerente.css"),
+    ],
+    "SCRIPTS": [
+        lambda request: static("js/gerente.js"),
+    ],
+    "LOADER": False,
+    "SHOW_HISTORY": True,
+    "BORDER_RADIUS": "6px",
+    "COLORS": {
+        "base": {
+            # Cinza neutro - escala completa
+            "50": "250 250 250",   # quase branco
+            "100": "244 244 245",  # cinza muito claro
+            "200": "228 228 231",  # cinza claro
+            "300": "212 212 216",  # cinza médio-claro
+            "400": "161 161 170",  # cinza médio
+            "500": "113 113 122",  # cinza
+            "600": "82 82 91",     # cinza escuro
+            "700": "63 63 70",     # cinza mais escuro
+            "800": "39 39 42",     # quase preto
+            "900": "24 24 27",     # preto suave
+            "950": "9 9 11",       # preto
+        },
+        "primary": {
+            # Azul accent - para botões, links, destaques
+            "50": "239 246 255",   # azul muito claro
+            "100": "219 234 254",  # azul claro
+            "200": "191 219 254",  # azul suave
+            "300": "147 197 253",  # azul médio-claro
+            "400": "96 165 250",   # azul médio
+            "500": "59 130 246",   # azul principal
+            "600": "37 99 235",    # azul escuro
+            "700": "29 78 216",    # azul mais escuro
+            "800": "30 64 175",    # azul profundo
+            "900": "30 58 138",    # azul muito escuro
+            "950": "23 37 84",     # azul quase preto
+        },
+        "font": {
+            "subtle-light": "113 113 122",    # cinza médio
+            "subtle-dark": "161 161 170",     # cinza médio-claro
+            "default-light": "63 63 70",      # cinza escuro
+            "default-dark": "212 212 216",    # cinza claro
+            "important-light": "24 24 27",    # preto suave
+            "important-dark": "250 250 250",  # branco
+        },
+    },
 }

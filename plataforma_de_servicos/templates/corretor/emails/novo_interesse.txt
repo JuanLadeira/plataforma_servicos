@@ -1,0 +1,35 @@
+NOVO INTERESSE DE COMPRA - Protocolo #{{ interesse.id }}
+============================================================
+
+DADOS DO CLIENTE
+----------------
+Nome: {{ interesse.nome_cliente }}
+E-mail: {{ interesse.email_cliente }}
+Telefone: {{ interesse.telefone_cliente }}
+Data: {{ interesse.created|date:"d/m/Y H:i" }}
+
+{% if interesse.mensagem %}
+MENSAGEM DO CLIENTE
+-------------------
+{{ interesse.mensagem }}
+
+{% endif %}
+PRODUTOS DE INTERESSE
+---------------------
+{% for item in itens %}
+- {{ item.produto_nome }}{% if item.variacao_info %} ({{ item.variacao_info }}){% endif %}
+
+  Quantidade: {{ item.quantidade }}
+  Subtotal: R$ {{ item.subtotal }}
+
+{% endfor %}
+------------------------------------------------------------
+TOTAL: R$ {{ interesse.valor_total }}
+------------------------------------------------------------
+
+Acesse o sistema para mais detalhes:
+{{ site_url }}/gerentes/corretor/interessecompra/{{ interesse.id }}/change/
+
+--
+Este e-mail foi enviado automaticamente pelo sistema.
+Por favor, entre em contato com o cliente o mais breve possivel.

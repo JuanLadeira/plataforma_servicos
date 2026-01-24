@@ -4,7 +4,7 @@ from celery.result import EagerResult
 from plataforma_de_servicos.users.tasks import get_users_count
 from plataforma_de_servicos.users.tests.factories import UserFactory
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db, pytest.mark.users]
 
 
 def test_user_count(settings):

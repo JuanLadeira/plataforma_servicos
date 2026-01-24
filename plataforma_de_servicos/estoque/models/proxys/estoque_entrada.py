@@ -9,5 +9,9 @@ class EstoqueEntrada(Estoque):
 
     class Meta:
         proxy = True
-        verbose_name = "registro de entrada de estoque"
-        verbose_name_plural = "registros de entrada de estoque"
+        verbose_name = "Entrada de estoque"
+        verbose_name_plural = "Entradas de estoque"
+        ordering = ("-created",)
+
+    def get_inline_title(self):
+        return "Entradas"

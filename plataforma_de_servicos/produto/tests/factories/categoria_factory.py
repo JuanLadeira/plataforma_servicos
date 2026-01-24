@@ -8,23 +8,14 @@ from plataforma_de_servicos.produto.models.categoria_model import Categoria
 class CategoriaFactory(DjangoModelFactory):
     class Meta:
         model = Categoria
+        django_get_or_create = ('categoria',)
     
-    @factory.lazy_attribute
-    def categoria(self):
-        instances = [
-                "Motos",
-                "Carros",
-                "SUVs",
-                "Caminhões",
-                "Utilitários",
-                "Vans",
-                "Pickups",
-                "Outros",
-            ]
-        for instance in instances:
-            categorias = Categoria.objects.filter(categoria=instance)
-            if categorias.exists():
-                continue
-            return instance
-        raise ValueError("Todas as categorias já existem")
+    categoria = factory.Iterator([
+        "Pizzas Salgadas Tradicionais",
+        "Pizzas Salgadas Especiais", 
+        "Pizzas Doces",
+        "Bebidas",
+        "Acompanhamentos",
+        "Outros",
+    ])
         

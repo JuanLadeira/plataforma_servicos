@@ -3,9 +3,14 @@
 PYTHONPATH=/app
 USE_DOCKER=yes
 IPYTHONDIR=/app/.ipython
+# Database
+# ------------------------------------------------------------------------------
+DATABASE_URL=postgres://debug:debug@postgres:5432/plataforma_de_servicos
+
 # Redis
 # ------------------------------------------------------------------------------
 REDIS_URL=redis://redis:6379/0
+DEEPSEEK_API_KEY=sk-b1b88d8f09bc4c3d8e79dd266e868616
 
 # Celery
 # ------------------------------------------------------------------------------

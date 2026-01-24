@@ -1,0 +1,110 @@
+<div class="offcanvas-header border-bottom">
+    <h5 class="offcanvas-title" id="cartOffcanvasLabel">
+        <i class="fa fa-shopping-cart me-2"></i>Seu Carrinho
+        <span class="badge bg-primary ms-2">{{ cart|length }}</span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Fechar"></button>
+</div>
+<div class="offcanvas-body p-0">
+    {% if cart|length > 0 %}
+        <div class="cart-items" style="max-height: calc(100vh - 250px); overflow-y: auto;">
+            {% for item in cart %}
+                <div class="cart-item p-3 border-bottom position-relative">
+                    <div class="d-flex">
+                        {% if item.variation %}
+                            <img src="{{ item.variation.produto.get_image }}"
+                                 alt="{{ item.variation.produto.produto }}"
+                                 class="rounded"
+                                 style="width: 60px; height: 60px; object-fit: cover;">
+                            <div class="ms-3 flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h6 class="mb-1 text-truncate" style="max-width: 160px;">
+                                        {{ item.variation.produto.produto }}
+                                    </h6>
+                                    <button type="button"
+                                            class="btn btn-link btn-sm text-danger p-0 ms-2"
+                                            title="Remover item"
+                                            hx-post="{% url 'cart:cart-delete-mini' %}"
+                                            hx-vals='{"variation_id": "{{ item.variation.id }}", "action": "post"}'
+                                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                            hx-target="#cart-offcanvas-content"
+                                            hx-swap="innerHTML"
+                                            hx-confirm="Remover este item?">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted d-block">
+                                    {% for valor in item.variation.valores.all %}
+                                        {{ valor.valor }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </small>
+                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                    <span class="text-muted small">Qtd: {{ item.qty }}</span>
+                                    <strong class="text-primary">R$ {{ item.total }}</strong>
+                                </div>
+                            </div>
+                        {% elif item.produto %}
+                            <img src="{{ item.produto.get_image }}"
+                                 alt="{{ item.produto.produto }}"
+                                 class="rounded"
+                                 style="width: 60px; height: 60px; object-fit: cover;">
+                            <div class="ms-3 flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h6 class="mb-1 text-truncate" style="max-width: 160px;">
+                                        {{ item.produto.produto }}
+                                    </h6>
+                                    <button type="button"
+                                            class="btn btn-link btn-sm text-danger p-0 ms-2"
+                                            title="Remover item"
+                                            hx-post="{% url 'cart:cart-delete-mini' %}"
+                                            hx-vals='{"variation_id": "produto_{{ item.produto.id }}", "action": "post"}'
+                                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                            hx-target="#cart-offcanvas-content"
+                                            hx-swap="innerHTML"
+                                            hx-confirm="Remover este item?">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                    <span class="text-muted small">Qtd: {{ item.qty }}</span>
+                                    <strong class="text-primary">R$ {{ item.total }}</strong>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="cart-footer p-3 border-top bg-light">
+            <div class="d-flex justify-content-between mb-3">
+                <span class="fw-bold">Total:</span>
+                <span class="fw-bold text-primary fs-5">R$ {{ cart.get_total }}</span>
+            </div>
+            <div class="d-grid gap-2">
+                <a href="{% url 'corretor:interesse-compra' %}" class="btn btn-primary">
+                    <i class="fa fa-paper-plane me-2"></i>Demonstrar Interesse
+                </a>
+                <a href="{% url 'cart:cart-summary' %}" class="btn btn-outline-secondary">
+                    <i class="fa fa-shopping-cart me-2"></i>Ver Carrinho Completo
+                </a>
+                <button type="button" class="btn btn-link text-muted" data-bs-dismiss="offcanvas">
+                    <i class="fa fa-arrow-left me-2"></i>Continuar Comprando
+                </button>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center p-5">
+            <i class="fa fa-shopping-cart fa-3x text-muted mb-3"></i>
+            <p class="text-muted mb-3">Seu carrinho está vazio</p>
+            <button type="button" class="btn btn-primary" data-bs-dismiss="offcanvas">
+                <i class="fa fa-arrow-left me-2"></i>Continuar Comprando
+            </button>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Badge atualizado via OOB -->
+<span id="cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" hx-swap-oob="true">
+    {{ cart|length }}
+</span>

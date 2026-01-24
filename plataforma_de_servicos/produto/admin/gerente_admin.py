@@ -1,24 +1,170 @@
+from django import forms
 from django.contrib import admin
-from django.db import models
 from django.contrib.postgres.fields import ArrayField
-from plataforma_de_servicos.produto.models.produto_model import Produto
-from plataforma_de_servicos.produto.models.categoria_model import Categoria
-from plataforma_de_servicos.core.admin.sites import gerente_site
-from unfold.admin import ModelAdmin, TabularInline
-from unfold.contrib.forms.widgets import ArrayWidget, WysiwygWidget
+from django.db import models
+from unfold.admin import ModelAdmin
+from unfold.admin import TabularInline
+from unfold.contrib.forms.widgets import ArrayWidget
+from unfold.contrib.forms.widgets import WysiwygWidget
 
-@admin.register(Produto, site=gerente_site)
+from plataforma_de_servicos.produto.models import Atributo
+from plataforma_de_servicos.produto.models import Image
+from plataforma_de_servicos.produto.models import Produto
+from plataforma_de_servicos.produto.models import ValorAtributo
+from plataforma_de_servicos.produto.models import VariacaoProduto
+
+
+class ValorAtributoGerenteForm(forms.ModelForm):
+    """Formulário com validação de exclusividade para modificadores de preço."""
+
+    class Meta:
+        model = ValorAtributo
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        preco = cleaned_data.get('preco_adicional') or 0
+        percentual = cleaned_data.get('percentual_adicional') or 0
+
+        if preco > 0 and percentual > 0:
+            raise forms.ValidationError(
+                "Escolha apenas uma opção: preço adicional OU percentual adicional, não ambos."
+            )
+        return cleaned_data
+
+
+class ImageInline(TabularInline):
+    model = Image
+    extra = 0
+    verbose_name = "Imagem"
+    verbose_name_plural = "Imagens"
+    show_change_link = True
+
+    readonly_fields = ["order"]
+
+
+class VariacaoProdutoInline(TabularInline):
+    model = VariacaoProduto
+    extra = 1
+    autocomplete_fields = ("valores",)
+    readonly_fields = ("sku", "valores_display", "preco_final_calculado")
+    fields = ("valores", "valores_display", "preco", "estoque", "preco_final_calculado", "sku")
+    verbose_name = "Variação"
+    verbose_name_plural = "Variações do Produto"
+
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if db_field.name == "valores":
+            kwargs["queryset"] = ValorAtributo.objects.select_related(
+                "atributo",
+            ).order_by("atributo__nome", "valor")
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+    @admin.display(description="Atributos Selecionados")
+    def valores_display(self, obj):
+        """Mostra os atributos selecionados com seus modificadores de preço."""
+        if not obj.pk:
+            return "-"
+        partes = []
+        for valor in obj.valores.select_related("atributo").all():
+            texto = f"{valor.atributo.nome}: {valor.valor}"
+            if valor.preco_adicional and valor.preco_adicional > 0:
+                texto += f" (+R$ {valor.preco_adicional:,.2f})".replace(',', 'X').replace('.', ',').replace('X', '.')
+            elif valor.percentual_adicional and valor.percentual_adicional > 0:
+                texto += f" (+{valor.percentual_adicional}%)"
+            partes.append(texto)
+        return " | ".join(partes) if partes else "-"
+
+    @admin.display(description="Preço Final Calculado")
+    def preco_final_calculado(self, obj):
+        """Calcula o preço final baseado no preço base + modificadores."""
+        if obj.pk:
+            preco_final = obj.calcular_preco_final()
+            return f"R$ {preco_final:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        return "-"
+
+
 class ProdutoGerenteAdmin(ModelAdmin):
-    list_display = ['produto', 'preco', "estoque", "estoque_minimo", "categoria"]
-    list_display_links = ['produto',]
-    list_editable = ['preco', "estoque_minimo", "categoria"]
+    list_display = ["produto", "preco", "categoria", "count_variations"]
+    list_display_links = ["produto"]
     list_per_page = 30
-    list_select_related = ['categoria']
-    list_order_by = ['produto',]
-    list_order_by_desc = ['-produto',]
-    list_search = ['produto', 'categoria__categoria']
-    list_search_fields = ['produto', 'categoria__categoria']
-    search_fields = ['produto',]
+    list_select_related = ["categoria"]
+    list_order_by = ["produto"]
+    list_search = ["produto", "categoria__categoria"]
+    search_fields = ["produto"]
+    fieldsets = [
+        (
+            "Informações Básicas",
+            {
+                "fields": [
+                    "produto",
+                    "descricao",
+                    "categoria",
+                ],
+                "description": "Dados principais do produto que aparecem na listagem e página de detalhe."
+            },
+        ),
+        (
+            "Preço Base",
+            {
+                "fields": [
+                    "preco",
+                ],
+                "description": "Este é o preço base do produto. As variações podem ter preços diferentes ou usar modificadores (valor fixo ou percentual) definidos nos atributos."
+            },
+        ),
+        (
+            "Dados Fiscais e Estoque",
+            {
+                "fields": [
+                    "importado",
+                    "ncm",
+                    "estoque_minimo",
+                    "data",
+                ],
+                "classes": ["collapse"],
+                "description": "Informações fiscais e controle de estoque mínimo."
+            },
+        ),
+    ]
+    inlines = [ImageInline, VariacaoProdutoInline]
+    readonly_fields = ["data"]
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.prefetch_related("variacoes")
+        return queryset
+
+    @admin.display(description="Variações")
+    def count_variations(self, obj):
+        return obj.variacoes.count()
+
+    # Manter outras configurações do ModelAdmin
+    compressed_fields = True
+    warn_unsaved_form = True
+    list_filter_submit = True
+    list_fullwidth = True
+    list_horizontal_scrollbar_top = True
+    list_disable_select_all = True
+    actions_list = []
+    actions_row = []
+    actions_detail = []
+    actions_submit_line = []
+    formfield_overrides = {
+        models.TextField: {
+            "widget": WysiwygWidget,
+        },
+        ArrayField: {
+            "widget": ArrayWidget,
+        },
+    }
+
+
+class ProdutoInline(TabularInline):
+    model = Produto
+    extra = 0
+    verbose_name = "Produto"
+    verbose_name_plural = "Produtos"
+    show_change_link = True
     fieldsets = [
         (
             "Produto",
@@ -27,8 +173,6 @@ class ProdutoGerenteAdmin(ModelAdmin):
                     "produto",
                     "importado",
                     "ncm",
-                    "preco",
-                    "estoque",
                     "estoque_minimo",
                     "data",
                 ],
@@ -43,74 +187,21 @@ class ProdutoGerenteAdmin(ModelAdmin):
             },
         ),
     ]
-    readonly_fields = ["estoque", "data"]
-
-    compressed_fields = True
-    warn_unsaved_form = True
-
-    list_filter_submit = True
-    list_fullwidth = True
-
-    list_horizontal_scrollbar_top = True
-    list_disable_select_all = True
-
-    actions_list = []  # Displayed above the results list
-    actions_row = []  # Displayed in a table row in results list
-    actions_detail = []  # Displayed at the top of for in object detail
-    actions_submit_line = []  # Displayed near save in object detail
+    readonly_fields = ["produto", "data", "ncm", "importado"]
 
 
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related()
-    
-    def has_module_permission(self, request):
-        return self.admin_site.has_permission(request)
-    
-    def has_add_permission(self, request):
-        return self.admin_site.has_permission(request)
-        
-    def has_change_permission(self, request, obj=None):
-        return self.admin_site.has_permission(request)
-        
-    def has_delete_permission(self, request, obj=None):
-        return self.admin_site.has_permission(request)
-        
-    def has_view_permission(self, request, obj=None):
-        return self.admin_site.has_permission(request)
-
-    formfield_overrides = {
-        models.TextField: {
-            "widget": WysiwygWidget,
-        },
-        ArrayField: {
-            "widget": ArrayWidget,
-        }
-    }
-    
-
-
-class ProdutoInline(TabularInline):
-    model = Produto
-    extra = 0
-    verbose_name = "Produto"
-    verbose_name_plural = "Produtos"
-    show_change_link = True
-
-
-@admin.register(Categoria, site=gerente_site)
 class CategoriaGerenteAdmin(ModelAdmin):
     list_display = ["categoria"]
-    list_order_by = ["categoria",]
-    list_order_by_desc = ['-categoria',]
+    list_order_by = ["categoria"]
+    list_order_by_desc = ["-categoria"]
 
-    list_search = ["categoria", ]
-    list_search_fields = ["categoria",]
+    list_search = ["categoria"]
+    list_search_fields = ["categoria"]
 
-    search_fields = ["categoria",]
+    search_fields = ["categoria"]
 
     inlines = [ProdutoInline]
 
-
     compressed_fields = True
     warn_unsaved_form = True
 
@@ -120,21 +211,75 @@ class CategoriaGerenteAdmin(ModelAdmin):
     list_horizontal_scrollbar_top = True
     list_disable_select_all = True
 
-
     def get_queryset(self, request):
         return super().get_queryset(request).select_related()
-    
-    def has_module_permission(self, request):
-        return self.admin_site.has_permission(request)
-    
-    def has_add_permission(self, request):
-        return self.admin_site.has_permission(request)
-        
-    def has_change_permission(self, request, obj=None):
-        return self.admin_site.has_permission(request)
-        
-    def has_delete_permission(self, request, obj=None):
-        return self.admin_site.has_permission(request)
-        
-    def has_view_permission(self, request, obj=None):
-        return self.admin_site.has_permission(request)
+
+
+class ValorAtributoGerenteInline(TabularInline):
+    model = ValorAtributo
+    form = ValorAtributoGerenteForm
+    extra = 1
+    fields = ['valor', 'preco_adicional', 'percentual_adicional']
+    verbose_name = "Valor do Atributo"
+    verbose_name_plural = "Valores do Atributo (escolha preço OU percentual, não ambos)"
+
+
+class AtributoGerenteAdmin(ModelAdmin):
+    list_display = ["nome", "count_valores"]
+    search_fields = ["nome"]
+    list_order_by = ["nome"]
+    inlines = [ValorAtributoGerenteInline]
+    compressed_fields = True
+    warn_unsaved_form = True
+    fieldsets = [
+        (
+            "Atributo",
+            {
+                "fields": ["nome"],
+                "description": (
+                    "Atributos são características do produto (ex: Cor, Tamanho, Sabor). "
+                    "Abaixo você pode adicionar os valores possíveis para este atributo."
+                )
+            },
+        ),
+    ]
+
+    @admin.display(description="Valores Cadastrados")
+    def count_valores(self, obj):
+        return obj.valores.count()
+
+
+class ValorAtributoGerenteAdmin(ModelAdmin):
+    form = ValorAtributoGerenteForm
+    list_display = ["atributo", "valor", "modificador_display"]
+    list_filter = ["atributo"]
+    search_fields = ["valor", "atributo__nome"]
+    autocomplete_fields = ["atributo"]
+    list_select_related = ["atributo"]
+    list_order_by = ["atributo__nome", "valor"]
+    compressed_fields = True
+    warn_unsaved_form = True
+    fieldsets = [
+        ("Identificação", {
+            "fields": ["atributo", "valor"],
+            "description": "Selecione o atributo (ex: Cor) e digite o valor (ex: Vermelho)."
+        }),
+        ("Modificador de Preço (escolha apenas um)", {
+            "fields": ["preco_adicional", "percentual_adicional"],
+            "description": (
+                "Quando o cliente selecionar este valor, o preço será ajustado. Exemplos:\n"
+                "- Preço adicional de R$ 5,00: produto de R$ 30 vira R$ 35\n"
+                "- Percentual de 10%: produto de R$ 30 vira R$ 33\n\n"
+                "IMPORTANTE: Use apenas UM dos campos (preço OU percentual)."
+            )
+        })
+    ]
+
+    @admin.display(description="Modificador")
+    def modificador_display(self, obj):
+        """Mostra o modificador de preço de forma legível."""
+        if obj.preco_adicional and obj.preco_adicional > 0:
+            return f"+R$ {obj.preco_adicional:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        elif obj.percentual_adicional and obj.percentual_adicional > 0:
+            return f"+{obj.percentual_adicional}%"
+        return "-"

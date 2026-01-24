@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+<div class="container my-5">
+    <main>
+        <div class="card product-detail-card">
+            <div class="card-body">
+                <div class="row g-5">
+                    <!-- Galeria de imagens -->
+                    <div class="col-lg-6">
+                        <div class="image-gallery">
+                            <div class="main-image mb-3">
+                                {% if imagens %}
+                                    <img id="mainImage" alt="Imagem principal de {{ produto.produto }}" src="{{ imagens.0 }}" />
+                                {% else %}
+                                    <img id="mainImage" alt="Foto não disponível" src="{% static 'images/no-image.png' %}" />
+                                {% endif %}
+                            </div>
+                            {% if imagens and imagens|length > 1 %}
+                            <div class="thumbnails d-flex justify-content-center">
+                                {% for imagem in imagens %}
+                                    <img src="{{ imagem }}"
+                                         alt="Miniatura {{ forloop.counter }}"
+                                         class="img-thumbnail me-2"
+                                         onclick="document.getElementById('mainImage').src = this.src">
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Detalhes do produto -->
+                    <div class="col-lg-6">
+                        <span class="badge bg-primary mb-2">{{ produto.categoria }}</span>
+                        <h1 class="h2 fw-bold">{{ produto.produto }}</h1>
+
+                        <!-- Descrição do produto -->
+                        {% if produto.descricao %}
+                            <p class="product-description">{{ produto.descricao }}</p>
+                        {% else %}
+                            <p class="product-description text-muted">
+                                <em>Descrição não disponível para este produto.</em>
+                            </p>
+                        {% endif %}
+
+                        <div class="action-box my-4 p-4 rounded">
+                            <!-- Display de preço -->
+                            <div id="price-display" class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="h5 text-muted">Preço</span>
+                                <span id="preco-valor" class="h2 fw-bold text-primary">R$ {{ produto.preco }}</span>
+                            </div>
+
+                            <!-- Seletores de atributos (se houver variações) -->
+                            {% if tem_variacoes %}
+                            <div id="attribute-selectors" class="mb-3">
+                                {% for item in atributos %}
+                                    {% include "pages/components/attribute_selector.html" with atributo=item.atributo valores=item.valores %}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            <!-- Hidden field para variation_id -->
+                            <input type="hidden" id="variation-id" name="variation_id" value="">
+
+                            <div class="row g-2 align-items-center">
+                                <div class="col-md-5">
+                                    {% include "pages/components/select_product_range.html" with product=produto estoque_range=estoque_range %}
+                                </div>
+                                <div class="col-md-7">
+                                    <button
+                                        type="button"
+                                        id="add-button"
+                                        class="btn btn-primary w-100"
+                                        hx-post="{% url 'cart:cart-add' %}"
+                                        hx-include="#select-{{ produto.id }}, #variation-id"
+                                        hx-vals='{"product_id": "{{ produto.id }}", "action": "post"}'
+                                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                        hx-swap="none"
+                                        hx-on="htmx:afterRequest: (function(event) {
+                                            const response = JSON.parse(event.detail.xhr.responseText);
+
+                                            if (response.error) {
+                                                window.location.href = response.redirect;
+                                            } else if (response.redirect) {
+                                                const button = document.getElementById('add-button');
+                                                button.classList.add('btn-success');
+                                                button.innerHTML = '<i class=&quot;fa fa-check&quot;></i> Adicionado!';
+                                                setTimeout(() => {
+                                                    window.location.href = response.redirect;
+                                                }, 1000);
+                                            }
+                                        })(event)">
+                                        <i class="fa fa-plus"></i> Adicionar ao Carrinho
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Info de estoque -->
+                        <div id="stock-info" class="d-flex align-items-center text-muted">
+                            <i class="fa fa-archive me-2"></i>
+                            <span id="estoque-display" class="{% if produto.estoque > 10 %}stock-available{% elif produto.estoque > 0 %}stock-low{% else %}stock-unavailable{% endif %}">
+                                {% if produto.estoque > 0 %}
+                                    Estoque disponível: {{ produto.estoque }}
+                                {% else %}
+                                    Produto indisponível
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+{% if tem_variacoes %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectors = document.querySelectorAll('.attribute-select');
+    const precoValor = document.getElementById('preco-valor');
+    const estoqueDisplay = document.getElementById('estoque-display');
+    const variationIdInput = document.getElementById('variation-id');
+    const addButton = document.getElementById('add-button');
+    const priceDisplay = document.getElementById('price-display');
+
+    function updatePrice() {
+        const valores = [];
+        let allSelected = true;
+
+        selectors.forEach(selector => {
+            if (selector.value) {
+                valores.push(selector.value);
+            } else {
+                allSelected = false;
+            }
+        });
+
+        // Se nem todos os atributos foram selecionados, não fazer a requisição
+        if (!allSelected) {
+            variationIdInput.value = '';
+            return;
+        }
+
+        // Adicionar classe de loading
+        priceDisplay.classList.add('loading');
+
+        // Fazer requisição AJAX
+        const formData = new FormData();
+        formData.append('produto_id', '{{ produto.id }}');
+        valores.forEach(v => formData.append('valores[]', v));
+
+        fetch('{% url "calcular-preco-variacao" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Remover classe de loading
+            priceDisplay.classList.remove('loading');
+
+            // Atualizar preço
+            precoValor.textContent = data.preco_formatado;
+            precoValor.classList.add('updated');
+            setTimeout(() => precoValor.classList.remove('updated'), 500);
+
+            // Atualizar variation_id
+            variationIdInput.value = data.variation_id || '';
+
+            // Atualizar estoque
+            if (data.disponivel) {
+                estoqueDisplay.textContent = 'Estoque disponível: ' + data.estoque;
+                estoqueDisplay.className = data.estoque > 10 ? 'stock-available' : 'stock-low';
+                addButton.disabled = false;
+                addButton.classList.remove('btn-secondary');
+                addButton.classList.add('btn-primary');
+            } else {
+                estoqueDisplay.textContent = 'Produto indisponível';
+                estoqueDisplay.className = 'stock-unavailable';
+                addButton.disabled = true;
+                addButton.classList.remove('btn-primary');
+                addButton.classList.add('btn-secondary');
+            }
+
+            // Mostrar aviso se combinação inválida
+            if (data.combinacao_invalida) {
+                estoqueDisplay.textContent = 'Combinação não disponível';
+                estoqueDisplay.className = 'stock-unavailable';
+            }
+        })
+        .catch(error => {
+            priceDisplay.classList.remove('loading');
+            console.error('Erro ao calcular preço:', error);
+        });
+    }
+
+    // Adicionar event listeners
+    selectors.forEach(selector => {
+        selector.addEventListener('change', updatePrice);
+    });
+});
+</script>
+{% endif %}
+{% endblock content %}

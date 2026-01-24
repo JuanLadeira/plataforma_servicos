@@ -1,0 +1,63 @@
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="text-center mb-5">
+        <h1 class="h2 fw-bold">Bem-vindo ao seu Painel, {{ user.name|default:user.email }}!</h1>
+        <p class="text-muted">Aqui você pode gerenciar seus pedidos, informações de conta e mais.</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body d-flex flex-column text-center p-5">
+                    <div class="mb-3">
+                        <i class="fa fa-list-alt fa-3x text-primary"></i>
+                    </div>
+                    <h4 class="card-title">Meus Pedidos</h4>
+                    <p class="card-text text-muted">Acompanhe o status dos seus pedidos atuais e veja seu histórico de compras.</p>
+                    <div class="mt-auto">
+                        <a class="btn btn-primary" href="{% url 'track-orders' %}">Ver Meus Pedidos</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body d-flex flex-column text-center p-5">
+                    <div class="mb-3">
+                        <i class="fa fa-user-circle fa-3x text-primary"></i>
+                    </div>
+                    <h4 class="card-title">Gerenciar Perfil</h4>
+                    <p class="card-text text-muted">Atualize seu nome, e-mail e outras informações da sua conta.</p>
+                    <div class="mt-auto">
+                        <a class="btn btn-primary" href="{% url 'profile-management' %}">Editar Perfil</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body d-flex flex-column text-center p-5">
+                    <div class="mb-3">
+                        <i class="fa fa-truck fa-3x text-primary"></i>
+                    </div>
+                    <h4 class="card-title">Endereço de Entrega</h4>
+                    <p class="card-text text-muted">Adicione ou atualize seu endereço de entrega para agilizar suas compras.</p>
+                    <div class="mt-auto">
+                        <a class="btn btn-primary" href="{% url 'manage-shipping' %}">Gerenciar Endereço</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+

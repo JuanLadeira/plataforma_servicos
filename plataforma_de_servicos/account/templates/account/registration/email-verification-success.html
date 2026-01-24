@@ -1,0 +1,22 @@
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0 text-center my-5">
+                <div class="card-body p-5">
+                    <i class="fa fa-check-circle fa-4x text-success mb-4"></i>
+                    <h1 class="h3 fw-bold">E-mail Verificado!</h1>
+                    <p class="text-muted">Sua conta agora está ativa. Você já pode fazer login e aproveitar.</p>
+                    <div class="d-grid mt-4">
+                        <a href="{% url 'my-login' %}" class="btn btn-primary">Ir para o Login</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

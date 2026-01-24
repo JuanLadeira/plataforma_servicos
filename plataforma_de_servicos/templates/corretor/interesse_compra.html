@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Demonstrar Interesse - Bella Pizza{% endblock %}
+
+{% block content %}
+<main class="pt-5">
+    <div class="container">
+        <h1 class="h2 mb-4">Demonstrar Interesse</h1>
+        <p class="text-muted mb-4">
+            Preencha seus dados abaixo e um de nossos corretores entrará em contato para finalizar sua compra.
+        </p>
+
+        <div class="row">
+            <!-- Coluna do Formulário -->
+            <div class="col-lg-7">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">Seus Dados de Contato</h5>
+                        <form method="post">
+                            {% csrf_token %}
+
+                            <div class="mb-3">
+                                <label for="id_nome_cliente" class="form-label">{{ form.nome_cliente.label }}</label>
+                                {{ form.nome_cliente }}
+                                {% if form.nome_cliente.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.nome_cliente.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="id_email_cliente" class="form-label">{{ form.email_cliente.label }}</label>
+                                {{ form.email_cliente }}
+                                {% if form.email_cliente.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.email_cliente.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="id_telefone_cliente" class="form-label">{{ form.telefone_cliente.label }}</label>
+                                {{ form.telefone_cliente }}
+                                {% if form.telefone_cliente.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.telefone_cliente.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="id_mensagem" class="form-label">{{ form.mensagem.label }}</label>
+                                {{ form.mensagem }}
+                                {% if form.mensagem.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.mensagem.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fa fa-paper-plane me-2"></i>Enviar Interesse
+                                </button>
+                                <a href="{% url 'cart:cart-summary' %}" class="btn btn-outline-secondary">
+                                    <i class="fa fa-arrow-left me-2"></i>Voltar ao Carrinho
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna do Resumo -->
+            <div class="col-lg-5">
+                <div class="card shadow-sm sticky-top" style="top: 20px;">
+                    <div class="card-body">
+                        <h5 class="card-title">Resumo dos Itens</h5>
+                        <hr>
+
+                        {% for item in cart %}
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    {% if item.variation %}
+                                        <strong>{{ item.variation.produto.produto }}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            {% for valor in item.variation.valores.all %}
+                                                {{ valor.atributo.nome }}: {{ valor.valor }}{% if not forloop.last %}, {% endif %}
+                                            {% endfor %}
+                                        </small>
+                                    {% elif item.produto %}
+                                        <strong>{{ item.produto.produto }}</strong>
+                                    {% endif %}
+                                    <br>
+                                    <small class="text-muted">Qtd: {{ item.qty }}</small>
+                                </div>
+                                <span class="fw-bold">R$ {{ item.total }}</span>
+                            </div>
+                        {% endfor %}
+
+                        <hr>
+                        <div class="d-flex justify-content-between fw-bold h5 mb-0">
+                            <span>Total</span>
+                            <span class="text-primary">R$ {{ cart.get_total }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3 border-info">
+                    <div class="card-body">
+                        <h6 class="card-title text-info">
+                            <i class="fa fa-info-circle me-2"></i>Como funciona?
+                        </h6>
+                        <ol class="small mb-0">
+                            <li class="mb-2">Preencha seus dados de contato</li>
+                            <li class="mb-2">Um corretor receberá sua solicitação</li>
+                            <li class="mb-2">Entraremos em contato para confirmar os detalhes</li>
+                            <li>Finalize sua compra com atendimento personalizado</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br><br>
+</main>
+{% endblock %}

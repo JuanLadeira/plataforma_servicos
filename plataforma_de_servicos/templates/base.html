@@ -1,4 +1,3 @@
-
 {% load static i18n compress%}<!DOCTYPE html>
 {% get_current_language as LANGUAGE_CODE %}
 <html lang="{{ LANGUAGE_CODE }}">
@@ -7,7 +6,7 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>
       {% block title %}
-      plataforma_de_servicos
+      Bella Pizza
     {% endblock title %}
   </title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,20 +15,43 @@
   <meta name="author"
         content="Juan" />
   <link rel="icon" href="{% static 'images/favicons/favicon.ico' %}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
   {% block css %}
     <!-- Latest compiled and minified Bootstrap CSS -->
     <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css"
-          integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA=="
-          crossorigin="anonymous"
-          referrerpolicy="no-referrer" />
+  href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css"
+  integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA=="
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <!-- Your stuff: Third-party CSS libraries go here -->
 <!-- This file stores project-specific CSS -->
 
 
 {% compress css %}
   <link href="{% static 'css/project.css' %}" rel="stylesheet" />
+  <link id="dark-theme-style" rel="stylesheet" href="{% static 'css/black-theme.css' %}" disabled />
 {% endcompress %}
+
+<!-- HTMX indicator styles -->
+<style>
+  .htmx-indicator { display: none; }
+  .htmx-request .htmx-indicator { display: inline-block; }
+  .htmx-request .htmx-hide-on-request { display: none; }
+  .htmx-show-on-request { display: none; }
+  .htmx-request .htmx-show-on-request { display: inline; }
+
+  /* Toast container */
+  .toast-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 1050;
+  }
+</style>
 
 
 {% endblock css %}
@@ -41,10 +63,11 @@
 
 <!-- Bootstrap JS -->
 <script defer
-        src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.min.js"
-        integrity="sha512-1/RvZTcCDEUjY/CypiMz+iqqtaoQfAITmNSJY17Myp4Ms5mdxPS5UV7iOfdZoxcGhzFbOm6sntTKJppjvuhg4g=="
-        crossorigin="anonymous"
-        referrerpolicy="no-referrer"></script>
+      src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.bundle.min.js"
+      integrity="sha512-kenU1KFdBIe4zVF0s0G1M1FF6Chtw6vB9Kz0I1sPvHvnsz9fNf2x5w5pX3pG5j0XT+5GFo4lCJZf0oM3rIHcHg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"></script>
+
 <!-- Your stuff: Third-party javascript libraries go here -->
 
 
@@ -55,70 +78,37 @@
   <script defer src="{% static 'js/project.js' %}"></script>
 {% endcompress %}
 
+<script defer src="https://unpkg.com/htmx.org"></script>
+<script>
+  // Configurar HTMX para incluir CSRF token em todas as requisições
+  document.addEventListener('DOMContentLoaded', function() {
+    document.body.addEventListener('htmx:configRequest', function(event) {
+      // Pegar CSRF token do cookie
+      const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrftoken='))
+        ?.split('=')[1];
+      if (csrfToken) {
+        event.detail.headers['X-CSRFToken'] = csrfToken;
+      }
+    });
+  });
+</script>
 
 {% endblock javascript %}
 </head>
 <body class="{% block bodyclass %}{% endblock bodyclass %}">
+  {% csrf_token %}
   {% block body %}
   <div class="mb-1">
-    <nav class="navbar navbar-expand-md navbar-light bg-light">
-      <div class="container-fluid">
-        <button class="navbar-toggler navbar-toggler-right"
-                type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#navbarSupportedContent"
-                aria-controls="navbarSupportedContent"
-                aria-expanded="false"
-                aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <a class="navbar-brand" href="{% url 'home' %}">plataforma_de_servicos</a>
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul class="navbar-nav mr-auto">
-            <li class="nav-item active">
-              <a class="nav-link" href="{% url 'home' %}">Home <span class="visually-hidden">(current)</span></a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'about' %}">About</a>
-            </li>
-            {% if request.user.is_authenticated %}
-              <li class="nav-item">
-                <a class="nav-link"
-                   href="{% url 'users:detail' request.user.pk %}">{% translate "My Profile" %}</a>
-              </li>
-              <li class="nav-item">
-                {# URL provided by django-allauth/account/urls.py #}
-                <a class="nav-link" href="{% url 'account_logout' %}">{% translate "Sign Out" %}</a>
-              </li>
-            {% else %}
-              {% if ACCOUNT_ALLOW_REGISTRATION %}
-                <li class="nav-item">
-                  {# URL provided by django-allauth/account/urls.py #}
-                  <a id="sign-up-link" class="nav-link" href="{% url 'account_signup' %}">{% translate "Sign Up" %}</a>
-                </li>
-              {% endif %}
-              <li class="nav-item">
-                {# URL provided by django-allauth/account/urls.py #}
-                <a id="log-in-link" class="nav-link" href="{% url 'account_login' %}">{% translate "Sign In" %}</a>
-              </li>
-            {% endif %}
-          </ul>
-        </div>
-      </div>
-    </nav>
+      {% include "navbar.html" %}
   </div>
+
+  <!-- Toast container para notificações -->
+  <div class="toast-container" id="toast-container"></div>
+
   <div class="container">
-    {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-dismissible {% if message.tags %}alert-{{ message.tags }}{% endif %}">
-          {{ message }}
-          <button type="button"
-                  class="btn-close"
-                  data-bs-dismiss="alert"
-                  aria-label="Close"></button>
-        </div>
-      {% endfor %}
-    {% endif %}
+
     {% block main %}
       {% block content %}
         <p>Use this document as a way to quick start any new project.</p>
@@ -128,18 +118,111 @@
   </div>
   {% endblock body %}
   <!-- /container -->
+
+  <!-- Mini-carrinho Offcanvas -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="cartOffcanvas" aria-labelledby="cartOffcanvasLabel">
+    <div id="cart-offcanvas-content"
+         hx-get="{% url 'cart:cart-mini' %}"
+         hx-trigger="load, cartUpdated from:body"
+         hx-swap="innerHTML">
+      <!-- Conteúdo carregado via HTMX -->
+      <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Carregando...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   {% block modal %}
   {% endblock modal %}
   {% block inline_javascript %}
-    {% comment %}
-    Script tags with only code, no src (defer by default). To run
-    with a "defer" so that you run inline code:
     <script>
-      window.addEventListener('DOMContentLoaded', () => {
-        /* Run whatever you want */
+      document.addEventListener('DOMContentLoaded', () => {
+        const themeSwitch = document.getElementById('theme-switch');
+        const darkThemeStyle = document.getElementById('dark-theme-style');
+        const body = document.body;
+
+        const applyTheme = (theme) => {
+          if (theme === 'dark') {
+            body.classList.add('dark-mode');
+            darkThemeStyle.removeAttribute('disabled');
+            if(themeSwitch) themeSwitch.checked = true;
+          } else {
+            body.classList.remove('dark-mode');
+            darkThemeStyle.setAttribute('disabled', 'true');
+            if(themeSwitch) themeSwitch.checked = false;
+          }
+        };
+
+        // Apply theme on initial load
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        applyTheme(savedTheme);
+
+        if(themeSwitch) {
+            themeSwitch.addEventListener('change', () => {
+                const newTheme = themeSwitch.checked ? 'dark' : 'light';
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+            });
+        }
+
+        // Toast notification system
+        function showToast(message, type = 'success', redirect = null) {
+          const container = document.getElementById('toast-container');
+          const toastId = 'toast-' + Date.now();
+          const bgClass = type === 'error' ? 'bg-danger' : 'bg-success';
+          const icon = type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle';
+
+          const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+              <div class="d-flex">
+                <div class="toast-body">
+                  <i class="fa ${icon} me-2"></i>
+                  ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+              </div>
+            </div>
+          `;
+
+          container.insertAdjacentHTML('beforeend', toastHtml);
+          const toastEl = document.getElementById(toastId);
+          const toast = new bootstrap.Toast(toastEl, { delay: redirect ? 1500 : 4000 });
+          toast.show();
+
+          // Redirecionar após o toast ser mostrado (se redirect fornecido)
+          if (redirect) {
+            setTimeout(() => {
+              window.location.href = redirect;
+            }, 1500);
+          }
+
+          // Remove from DOM after hidden
+          toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+        }
+
+        // Listen for HTMX showToast event
+        document.body.addEventListener('showToast', (event) => {
+          const { message, type, redirect } = event.detail;
+          showToast(message, type, redirect);
+        });
+
+        // Listen for HTMX openCartOffcanvas event
+        document.body.addEventListener('openCartOffcanvas', () => {
+          const offcanvasEl = document.getElementById('cartOffcanvas');
+          if (offcanvasEl) {
+            const offcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl);
+            // Trigger content update before opening
+            htmx.trigger('#cart-offcanvas-content', 'cartUpdated');
+            offcanvas.show();
+          }
+        });
+
+        // Make showToast globally available
+        window.showToast = showToast;
       });
     </script>
-    {% endcomment %}
   {% endblock inline_javascript %}
 </body>
 </html>

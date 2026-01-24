@@ -1,12 +1,13 @@
-# ruff: noqa: PLR2004, C901, PLR0912, PLR0915, RUF001
 
 from logging import getLogger
 
 from django.core.management.base import BaseCommand
-
 from django.db.utils import IntegrityError
-from plataforma_de_servicos.produto.tests.factories.produto_factory import ProdutoFactory
+
 from plataforma_de_servicos.produto.models.produto_model import Produto
+from plataforma_de_servicos.produto.tests.factories.produto_factory import (
+    ProdutoFactory,
+)
 
 logger = getLogger("django")
 
@@ -22,7 +23,7 @@ class Command(BaseCommand):
                 self.stdout.write(
                     self.style.SUCCESS(f"produto criado: {produto.produto}"),
                 )
-            except IntegrityError as e:
+            except IntegrityError:
                 produtos = Produto.objects.all()
                 numero = produtos.count()
                 self.stdout.write(
@@ -30,5 +31,5 @@ class Command(BaseCommand):
                 )
                 break
             except Exception as e:
-                logger.error(f"Erro inesperado ao criar produto: {str(e)}")
+                logger.error(f"Erro inesperado ao criar produto: {e!s}")
                 raise

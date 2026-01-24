@@ -1,0 +1,54 @@
+
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="text-center mb-5">
+                <h1 class="h2 fw-bold">Gerenciamento de Perfil</h1>
+                <p class="text-muted">Atualize suas informações ou exclua sua conta.</p>
+            </div>
+
+            <!-- Update Account Card -->
+            <div class="card shadow-lg border-0 mb-4">
+                <div class="card-body p-5">
+                    <h3 class="card-title h4 fw-bold mb-4">Atualizar Conta</h3>
+                    <form method="POST" autocomplete="off">
+                        {% csrf_token %}
+                        {{ user_form|crispy }}
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Delete Account Card -->
+            <div class="card shadow-lg border-danger mb-4">
+                <div class="card-body p-5">
+                    <h3 class="card-title h4 fw-bold mb-2 text-danger">Excluir Conta</h3>
+                    <p class="text-muted">Esta ação é irreversível. Todos os seus dados associados a esta conta serão permanentemente removidos.</p>
+                    <div class="d-grid mt-4">
+                        <a class="btn btn-danger" href="{% url 'delete-account' %}">Excluir Minha Conta</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+

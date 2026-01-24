@@ -19,7 +19,7 @@ from plataforma_de_servicos.users.views import UserRedirectView
 from plataforma_de_servicos.users.views import UserUpdateView
 from plataforma_de_servicos.users.views import user_detail_view
 
-pytestmark = pytest.mark.django_db
+pytestmark = [pytest.mark.django_db, pytest.mark.users]
 
 
 class TestUserUpdateView:

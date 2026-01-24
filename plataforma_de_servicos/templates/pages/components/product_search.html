@@ -1,0 +1,12 @@
+<div class="mb-4 mt-2">
+    <input
+        type="text"
+        class="form-control search-bar"
+        id="searchBar"
+        name="search"
+        placeholder="Procure por produtos..."
+        hx-get="{% url 'home' %}"
+        hx-target="#productList"
+        hx-trigger="keyup changed delay:500ms"
+    >
+</div>

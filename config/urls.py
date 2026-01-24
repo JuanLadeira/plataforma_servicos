@@ -7,11 +7,17 @@ from django.urls import include
 from django.urls import path
 from django.views import defaults as default_views
 from django.views.generic import TemplateView
-from plataforma_de_servicos.produto.admin.gerente_admin import gerente_site
-
+from plataforma_de_servicos.core.admin.sites.gerente_admin_site import gerente_site
+from plataforma_de_servicos.produto.views import views
 
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="pages/home.html"), name="home"),
+    path("", views.home, name="home"),
+    path("search/category/", views.category_search, name="category-search"),
+    path("produto/<slug:produto_slug>/", views.produto_detail, name="produto-detail"),
+    path("produto/calcular-preco/", views.calcular_preco_variacao, name="calcular-preco-variacao"),
+    path("cart/", include("plataforma_de_servicos.cart.urls",  namespace="cart")),
+    path("corretor/", include("plataforma_de_servicos.corretor.urls", namespace="corretor")),
+    path("payment/", include("plataforma_de_servicos.payment.urls", namespace="payment")),
     path(
         "about/",
         TemplateView.as_view(template_name="pages/about.html"),

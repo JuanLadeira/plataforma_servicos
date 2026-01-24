@@ -5,34 +5,38 @@ from plataforma_de_servicos.estoque.serializers.estoque_saida_serializer import 
     EstoqueSaidaPostSerializer,
 )
 
+pytestmark = [pytest.mark.django_db(transaction=True), pytest.mark.estoque]
 
-@pytest.mark.django_db(transaction=True)
+
 class TestEstoquesaida:
-    def test_estoque_saida(self, produto_factory, user_factory):
+    def test_estoque_saida(self, produto_factory, user_factory, inventario_factory):
         produto = produto_factory(estoque=1)
         produto_2 = produto_factory(estoque=2)
         funcionario = user_factory()
+        inventario = inventario_factory()
         dados_saida = {
             "nf": 1,
             "movimento": "s",
             "funcionario": funcionario.pk,
+            "inventario_origem": inventario.pk,
             "itens": [
                 {
                     "produto": produto.pk,
                     "quantidade": 1,
+                    "inventario": inventario.pk,
                 },
                 {
                     "produto": produto_2.pk,
                     "quantidade": 2,
+                    "inventario": inventario.pk,
                 },
             ],
         }
         # Usar o serializer
         estoque_saida_serializer_class = EstoqueSaidaPostSerializer
         serializer = estoque_saida_serializer_class(data=dados_saida)
-        assert serializer.is_valid()
-        if serializer.is_valid():
-            estoque_saida = serializer.save()
+        assert serializer.is_valid(raise_exception=True)
+        estoque_saida = serializer.save()
         produto_2.refresh_from_db()
         produto.refresh_from_db()
 
@@ -61,31 +65,38 @@ class TestEstoquesaida:
         assert produto_2.estoque == zero
 
     def test_estoque_saida_produto_saldo_insuficiente_error(
-        self, produto_factory, user_factory,
+        self,
+        produto_factory,
+        user_factory,
+        inventario_factory,
     ):
         zero = 0
         produto = produto_factory(estoque=0)
         produto_2 = produto_factory(estoque=0)
         funcionario = user_factory()
+        inventario = inventario_factory()
         dados_saida = {
             "nf": 1,
             "movimento": "s",
             "funcionario": funcionario.pk,
+            "inventario_origem": inventario.pk,
             "itens": [
                 {
                     "produto": produto.pk,
                     "quantidade": 1,
+                    "inventario": inventario.pk,
                 },
                 {
                     "produto": produto_2.pk,
                     "quantidade": 2,
+                    "inventario": inventario.pk,
                 },
             ],
         }
         # Usar o serializer
         estoque_saida_serializer_class = EstoqueSaidaPostSerializer
         serializer = estoque_saida_serializer_class(data=dados_saida)
-        assert serializer.is_valid()
+        assert serializer.is_valid(raise_exception=True)
         with pytest.raises(ProdutoSaldoInsuficienteError):
             serializer.save()
 
