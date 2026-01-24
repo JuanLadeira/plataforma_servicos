@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo Interesse de Compra</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #3b82f6;
+            margin: 0;
+            font-size: 24px;
+        }
+        .badge {
+            display: inline-block;
+            background-color: #10b981;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 8px;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #6b7280;
+            width: 120px;
+            flex-shrink: 0;
+        }
+        .info-value {
+            color: #111827;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .items-table th,
+        .items-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .items-table th {
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+        .items-table td.number {
+            text-align: right;
+        }
+        .total-row {
+            background-color: #f0f9ff;
+            font-weight: 600;
+        }
+        .total-row td {
+            color: #1e40af;
+        }
+        .message-box {
+            background-color: #fefce8;
+            border-left: 4px solid #eab308;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 0 4px 4px 0;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #3b82f6;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Novo Interesse de Compra</h1>
+            <span class="badge">Protocolo #{{ interesse.id }}</span>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Dados do Cliente</div>
+            <div class="info-row">
+                <span class="info-label">Nome:</span>
+                <span class="info-value">{{ interesse.nome_cliente }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">E-mail:</span>
+                <span class="info-value">{{ interesse.email_cliente }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Telefone:</span>
+                <span class="info-value">{{ interesse.telefone_cliente }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Data:</span>
+                <span class="info-value">{{ interesse.created|date:"d/m/Y H:i" }}</span>
+            </div>
+        </div>
+
+        {% if interesse.mensagem %}
+        <div class="section">
+            <div class="section-title">Mensagem do Cliente</div>
+            <div class="message-box">
+                {{ interesse.mensagem }}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="section">
+            <div class="section-title">Produtos de Interesse</div>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th class="number">Qtd</th>
+                        <th class="number">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in itens %}
+                    <tr>
+                        <td>
+                            {{ item.produto_nome }}
+                            {% if item.variacao_info %}
+                            <br><small style="color: #6b7280;">{{ item.variacao_info }}</small>
+                            {% endif %}
+                        </td>
+                        <td class="number">{{ item.quantidade }}</td>
+                        <td class="number">R$ {{ item.subtotal }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="total-row">
+                        <td colspan="2"><strong>Total</strong></td>
+                        <td class="number"><strong>R$ {{ interesse.valor_total }}</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="{{ site_url }}/gerentes/corretor/interessecompra/{{ interesse.id }}/change/" class="cta-button">
+                Ver no Sistema
+            </a>
+        </div>
+
+        <div class="footer">
+            <p>Este e-mail foi enviado automaticamente pelo sistema.<br>
+            Por favor, entre em contato com o cliente o mais breve possivel.</p>
+        </div>
+    </div>
+</body>
+</html>

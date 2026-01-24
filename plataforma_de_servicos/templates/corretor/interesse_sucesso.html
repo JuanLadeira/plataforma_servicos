@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Interesse Registrado - Bella Pizza{% endblock %}
+
+{% block content %}
+<main class="pt-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm text-center">
+                    <div class="card-body p-5">
+                        <div class="mb-4">
+                            <i class="fa fa-check-circle text-success" style="font-size: 5rem;"></i>
+                        </div>
+                        <h1 class="h2 mb-3">Interesse Registrado com Sucesso!</h1>
+                        <p class="lead text-muted mb-4">
+                            Obrigado, <strong>{{ interesse.nome_cliente }}</strong>!<br>
+                            Em breve um de nossos corretores entrará em contato.
+                        </p>
+
+                        <div class="alert alert-info text-start">
+                            <h6><i class="fa fa-info-circle me-2"></i>Detalhes do seu interesse:</h6>
+                            <ul class="mb-0">
+                                <li><strong>Protocolo:</strong> #{{ interesse.id }}</li>
+                                <li><strong>E-mail:</strong> {{ interesse.email_cliente }}</li>
+                                <li><strong>Telefone:</strong> {{ interesse.telefone_cliente }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumo dos itens -->
+                <div class="card shadow-sm mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Itens do seu interesse</h5>
+                        <hr>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Produto</th>
+                                        <th class="text-center">Qtd</th>
+                                        <th class="text-end">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in interesse.itens.all %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ item.produto_nome }}</strong>
+                                                {% if item.variacao_info %}
+                                                    <br><small class="text-muted">{{ item.variacao_info }}</small>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">{{ item.quantidade }}</td>
+                                            <td class="text-end">R$ {{ item.subtotal }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-light">
+                                        <td colspan="2" class="text-end fw-bold">Total:</td>
+                                        <td class="text-end fw-bold text-primary">R$ {{ interesse.valor_total }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        {% if interesse.mensagem %}
+                            <div class="mt-3 p-3 bg-light rounded">
+                                <h6>Sua mensagem:</h6>
+                                <p class="mb-0 text-muted">{{ interesse.mensagem }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <a href="{% url 'home' %}" class="btn btn-primary btn-lg">
+                        <i class="fa fa-home me-2"></i>Voltar para a Loja
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br><br>
+</main>
+{% endblock %}

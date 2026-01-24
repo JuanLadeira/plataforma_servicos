@@ -100,6 +100,7 @@ LOCAL_APPS = [
     "plataforma_de_servicos.inventario",
     "plataforma_de_servicos.cart",
     "plataforma_de_servicos.payment",
+    "plataforma_de_servicos.corretor",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -388,50 +389,57 @@ UNFOLD_GERENTE_ADMIN = {
     "SITE_TITLE": "Plataforma dos Gerentes",
     "SITE_HEADER": "Plataforma dos Gerentes",
     "SITE_URL": "/gerentes",
-    "SITE_ICON": None,  # path to image from static
+    "SITE_ICON": None,
     "DASHBOARD_CALLBACK": None,
     "LOGIN": {
-        "image": None,  # path to image from static
+        "image": None,
         "redirect_after": None,
-
     },
-      "STYLES": [
+    "STYLES": [
         lambda request: static("css/gerente.css"),
     ],
     "SCRIPTS": [
         lambda request: static("js/gerente.js"),
-    ],  # paths to js files from static
+    ],
     "LOADER": False,
     "SHOW_HISTORY": True,
-    "BORDER_RADIUS": "8px",
+    "BORDER_RADIUS": "6px",
     "COLORS": {
         "base": {
-            "50": "240 255 244",  # light green
-            "100": "220 255 220",
-            "200": "190 245 190",
+            # Cinza neutro - escala completa
+            "50": "250 250 250",   # quase branco
+            "100": "244 244 245",  # cinza muito claro
+            "200": "228 228 231",  # cinza claro
+            "300": "212 212 216",  # cinza médio-claro
+            "400": "161 161 170",  # cinza médio
+            "500": "113 113 122",  # cinza
+            "600": "82 82 91",     # cinza escuro
+            "700": "63 63 70",     # cinza mais escuro
+            "800": "39 39 42",     # quase preto
+            "900": "24 24 27",     # preto suave
+            "950": "9 9 11",       # preto
         },
         "primary": {
-            "50": "240 255 244",  # light green
-            "100": "220 255 220",
-            "200": "190 245 190",
-            "300": "160 235 160",
-            "400": "130 225 130",
-            "500": "100 215 100",
-            "600": "80 200 80",
-            "700": "60 180 60",
-            "800": "40 160 40",
-            "900": "20 140 20",
-            "950": "10 120 10",
+            # Azul accent - para botões, links, destaques
+            "50": "239 246 255",   # azul muito claro
+            "100": "219 234 254",  # azul claro
+            "200": "191 219 254",  # azul suave
+            "300": "147 197 253",  # azul médio-claro
+            "400": "96 165 250",   # azul médio
+            "500": "59 130 246",   # azul principal
+            "600": "37 99 235",    # azul escuro
+            "700": "29 78 216",    # azul mais escuro
+            "800": "30 64 175",    # azul profundo
+            "900": "30 58 138",    # azul muito escuro
+            "950": "23 37 84",     # azul quase preto
         },
         "font": {
-            "subtle-light": "var(--color-base-500)",  # text-base-500
-            "subtle-dark": "var(--color-base-400)",  # text-base-400
-            "default-light": "var(--color-base-600)",  # text-base-600
-            "default-dark": "var(--color-base-300)",  # text-base-300
-            "important-light": "var(--color-base-900)",  # text-base-900
-            "important-dark": "var(--color-base-100)",  # text-base-100
+            "subtle-light": "113 113 122",    # cinza médio
+            "subtle-dark": "161 161 170",     # cinza médio-claro
+            "default-light": "63 63 70",      # cinza escuro
+            "default-dark": "212 212 216",    # cinza claro
+            "important-light": "24 24 27",    # preto suave
+            "important-dark": "250 250 250",  # branco
         },
-
     },
-
 }

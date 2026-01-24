@@ -15,6 +15,9 @@ from plataforma_de_servicos.produto.tests.factories.categoria_factory import (
     CategoriaFactory,
 )
 from plataforma_de_servicos.produto.tests.factories.produto_factory import ProdutoFactory
+from plataforma_de_servicos.corretor.tests.factories import CorretorFactory
+from plataforma_de_servicos.corretor.tests.factories import InteresseCompraFactory
+from plataforma_de_servicos.corretor.tests.factories import ItemInteresseFactory
 from plataforma_de_servicos.users.models import User
 from plataforma_de_servicos.users.tests.factories import UserFactory
 
@@ -43,3 +46,6 @@ register(UserFactory)
 register(EstoqueEntradaFactory)
 register(EstoqueItensFactory)
 register(InventarioFactory)
+register(CorretorFactory)
+register(InteresseCompraFactory)
+register(ItemInteresseFactory)

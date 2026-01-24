@@ -1,7 +1,8 @@
 from copy import deepcopy
 from decimal import Decimal
 
-from plataforma_de_servicos.produto.models import Produto, VariacaoProduto
+from plataforma_de_servicos.produto.models import Produto
+from plataforma_de_servicos.produto.models import VariacaoProduto
 
 
 class Cart:
@@ -19,7 +20,7 @@ class Cart:
     def add(self, variation: VariacaoProduto, product_qty: int):
         """Adiciona uma variação de produto ao carrinho ou atualiza sua quantidade."""
         variation_id = str(variation.id)
-        
+
         if product_qty <= 0:
             # Não permite adicionar quantidade zero ou negativa
             return
@@ -78,23 +79,23 @@ class Cart:
         Itera sobre os itens do carrinho, buscando os objetos do banco de dados
         e preparando os dados para exibição.
         """
-        all_variation_ids = [key for key in self.cart.keys() if not key.startswith('produto_')]
-        produto_ids = [int(key.replace('produto_', '')) for key in self.cart.keys() if key.startswith('produto_')]
+        all_variation_ids = [key for key in self.cart.keys() if not key.startswith("produto_")]
+        produto_ids = [int(key.replace("produto_", "")) for key in self.cart.keys() if key.startswith("produto_")]
 
         variations = VariacaoProduto.objects.filter(id__in=all_variation_ids).select_related(
-            "produto"
+            "produto",
         ).prefetch_related("valores__atributo")
-        
+
         produtos = Produto.objects.filter(id__in=produto_ids)
 
         cart = deepcopy(self.cart)
-        
+
         for variation in variations:
             variation_key = str(variation.id)
             cart[variation_key]["variation"] = variation
             # Opcional: Recalcular preço para garantir que está atualizado
             cart[variation_key]["preco"] = str(variation.calcular_preco_final())
-        
+
         for produto in produtos:
             produto_key = f"produto_{produto.id}"
             cart[produto_key]["produto"] = produto
@@ -107,7 +108,7 @@ class Cart:
     def get_total(self):
         """Calcula o valor total do carrinho."""
         return sum(Decimal(item["preco"]) * item["qty"] for item in self.cart.values())
-    
+
     def clear(self):
         """Limpa o carrinho da sessão."""
         self.session["cart"] = {}
@@ -116,5 +117,5 @@ class Cart:
 
     def _save(self):
         """Salva o carrinho na sessão."""
-        self.session['cart'] = self.cart
+        self.session["cart"] = self.cart
         self.session.modified = True
