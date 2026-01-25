@@ -49,7 +49,147 @@
     position: fixed;
     top: 80px;
     right: 20px;
-    z-index: 1050;
+    z-index: 1055;
+  }
+
+  /* Modern toast styles */
+  .toast-modern {
+    background: #fff;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    min-width: 320px;
+    backdrop-filter: blur(10px);
+  }
+
+  .toast-modern .toast-body {
+    padding: 16px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a1a2e;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .toast-modern .toast-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .toast-modern.toast-success .toast-icon {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #fff;
+  }
+
+  .toast-modern.toast-error .toast-icon {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #fff;
+  }
+
+  .toast-modern.toast-warning .toast-icon {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #fff;
+  }
+
+  .toast-modern.toast-info .toast-icon {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #fff;
+  }
+
+  .toast-modern .toast-message {
+    flex: 1;
+    line-height: 1.4;
+  }
+
+  .toast-modern .btn-close {
+    opacity: 0.5;
+    transition: opacity 0.2s;
+  }
+
+  .toast-modern .btn-close:hover {
+    opacity: 1;
+  }
+
+  .toast-modern .toast-progress {
+    height: 3px;
+    background: rgba(0, 0, 0, 0.1);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+
+  .toast-modern .toast-progress-bar {
+    height: 100%;
+    transition: width linear;
+  }
+
+  .toast-modern.toast-success .toast-progress-bar {
+    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  }
+
+  .toast-modern.toast-error .toast-progress-bar {
+    background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+  }
+
+  .toast-modern.toast-warning .toast-progress-bar {
+    background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+  }
+
+  .toast-modern.toast-info .toast-progress-bar {
+    background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+  }
+
+  /* Toast animation */
+  .toast-modern.showing {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  .toast-modern.hiding {
+    animation: slideOut 0.3s ease-in forwards;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideOut {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+
+  /* Dark mode support */
+  .dark-mode .toast-modern {
+    background: #1e1e2e;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  }
+
+  .dark-mode .toast-modern .toast-body {
+    color: #e2e8f0;
+  }
+
+  .dark-mode .toast-modern .toast-progress {
+    background: rgba(255, 255, 255, 0.1);
   }
 </style>
 
@@ -167,36 +307,62 @@
             });
         }
 
-        // Toast notification system
+        // Toast notification system - Modern Design
         function showToast(message, type = 'success', redirect = null) {
           const container = document.getElementById('toast-container');
           const toastId = 'toast-' + Date.now();
-          const bgClass = type === 'error' ? 'bg-danger' : 'bg-success';
-          const icon = type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle';
+          const delay = redirect ? 1500 : 4000;
+
+          // Icon mapping
+          const icons = {
+            success: 'fa-check',
+            error: 'fa-xmark',
+            warning: 'fa-exclamation',
+            info: 'fa-info'
+          };
+          const icon = icons[type] || icons.success;
+          const toastType = type === 'error' ? 'error' : type === 'warning' ? 'warning' : type === 'info' ? 'info' : 'success';
 
           const toastHtml = `
-            <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-              <div class="d-flex">
-                <div class="toast-body">
-                  <i class="fa ${icon} me-2"></i>
-                  ${message}
+            <div id="${toastId}" class="toast toast-modern toast-${toastType} showing" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+              <div class="toast-body">
+                <div class="toast-icon">
+                  <i class="fa ${icon}"></i>
                 </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                <span class="toast-message">${message}</span>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Fechar"></button>
+              </div>
+              <div class="toast-progress">
+                <div class="toast-progress-bar" style="width: 100%;"></div>
               </div>
             </div>
           `;
 
           container.insertAdjacentHTML('beforeend', toastHtml);
           const toastEl = document.getElementById(toastId);
-          const toast = new bootstrap.Toast(toastEl, { delay: redirect ? 1500 : 4000 });
+          const progressBar = toastEl.querySelector('.toast-progress-bar');
+
+          // Show toast
+          const toast = new bootstrap.Toast(toastEl, { autohide: false });
           toast.show();
 
-          // Redirecionar após o toast ser mostrado (se redirect fornecido)
-          if (redirect) {
+          // Animate progress bar
+          requestAnimationFrame(() => {
+            progressBar.style.transitionDuration = delay + 'ms';
+            progressBar.style.width = '0%';
+          });
+
+          // Auto-hide after delay
+          setTimeout(() => {
+            toastEl.classList.remove('showing');
+            toastEl.classList.add('hiding');
             setTimeout(() => {
-              window.location.href = redirect;
-            }, 1500);
-          }
+              toast.hide();
+              if (redirect) {
+                window.location.href = redirect;
+              }
+            }, 300);
+          }, delay);
 
           // Remove from DOM after hidden
           toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
