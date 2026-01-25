@@ -169,11 +169,11 @@
 {% endblock css %}
 
 {% block content %}
-<section class="hero">
+<section class="hero" style="background-image: url('{{ site_config.get_hero_image_url }}');">
     <div class="hero-content">
-        <h1>Pizzas Artesanais, Sabor Inesquecível</h1>
-        <p>Feitas com os melhores ingredientes, direto do forno para sua casa.</p>
-        <a href="#productList" class="btn btn-primary">Ver o Cardápio</a>
+        <h1>{{ site_config.hero_title }}</h1>
+        <p>{{ site_config.hero_description }}</p>
+        <a href="#productList" class="btn btn-primary">{{ site_config.hero_button_text }}</a>
     </div>
 </section>
 

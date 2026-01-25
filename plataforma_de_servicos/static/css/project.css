@@ -187,7 +187,8 @@ button:hover, .btn:hover {
 
 /* Hero Section */
 .hero {
-    background: url('https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop') no-repeat center center;
+    background-repeat: no-repeat;
+    background-position: center center;
     background-size: cover;
     color: white;
     text-align: center;
