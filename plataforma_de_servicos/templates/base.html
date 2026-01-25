@@ -44,12 +44,159 @@
   .htmx-show-on-request { display: none; }
   .htmx-request .htmx-show-on-request { display: inline; }
 
-  /* Toast container */
+  /* Toast container - bottom right */
   .toast-container {
     position: fixed;
-    top: 80px;
-    right: 20px;
-    z-index: 1050;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1055;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 12px;
+  }
+
+  /* Clean minimal toast */
+  .toast-minimal {
+    background: #fff;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 300px;
+    max-width: 400px;
+    border-left: 4px solid;
+    overflow: hidden;
+  }
+
+  .toast-minimal.toast-success { border-left-color: #22c55e; }
+  .toast-minimal.toast-error { border-left-color: #ef4444; }
+  .toast-minimal.toast-warning { border-left-color: #f59e0b; }
+  .toast-minimal.toast-info { border-left-color: #3b82f6; }
+
+  .toast-minimal .toast-content {
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .toast-minimal .toast-icon {
+    font-size: 18px;
+    margin-top: 2px;
+  }
+
+  .toast-minimal.toast-success .toast-icon { color: #22c55e; }
+  .toast-minimal.toast-error .toast-icon { color: #ef4444; }
+  .toast-minimal.toast-warning .toast-icon { color: #f59e0b; }
+  .toast-minimal.toast-info .toast-icon { color: #3b82f6; }
+
+  .toast-minimal .toast-text {
+    flex: 1;
+  }
+
+  .toast-minimal .toast-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 2px 0;
+  }
+
+  .toast-minimal .toast-message {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .toast-minimal .btn-close {
+    font-size: 12px;
+    opacity: 0.4;
+    padding: 0;
+    margin-top: 2px;
+  }
+
+  .toast-minimal .btn-close:hover {
+    opacity: 0.8;
+  }
+
+  /* Toast animation */
+  .toast-minimal.showing {
+    animation: toastSlideUp 0.3s ease-out;
+  }
+
+  .toast-minimal.hiding {
+    animation: toastSlideOut 0.25s ease-in forwards;
+  }
+
+  @keyframes toastSlideUp {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes toastSlideOut {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(110%);
+      opacity: 0;
+    }
+  }
+
+  /* Dark mode */
+  .dark-mode .toast-minimal {
+    background: #1f2937;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .dark-mode .toast-minimal .toast-title {
+    color: #f3f4f6;
+  }
+
+  .dark-mode .toast-minimal .toast-message {
+    color: #9ca3af;
+  }
+
+  /* Notification dropdown styles */
+  .notification-item {
+    padding: 10px 16px;
+    border-left: 3px solid transparent;
+    transition: background 0.15s;
+  }
+
+  .notification-item:hover {
+    background: #f9fafb;
+  }
+
+  .notification-item.notification-success { border-left-color: #22c55e; }
+  .notification-item.notification-error { border-left-color: #ef4444; }
+  .notification-item.notification-warning { border-left-color: #f59e0b; }
+  .notification-item.notification-info { border-left-color: #3b82f6; }
+
+  .notification-item .notification-text {
+    font-size: 13px;
+    color: #374151;
+    margin: 0;
+  }
+
+  .notification-item .notification-time {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 2px;
+  }
+
+  .dark-mode .notification-item:hover {
+    background: #374151;
+  }
+
+  .dark-mode .notification-item .notification-text {
+    color: #e5e7eb;
   }
 </style>
 
@@ -167,39 +314,124 @@
             });
         }
 
-        // Toast notification system
+        // Toast notification system - Minimal Design
         function showToast(message, type = 'success', redirect = null) {
           const container = document.getElementById('toast-container');
           const toastId = 'toast-' + Date.now();
-          const bgClass = type === 'error' ? 'bg-danger' : 'bg-success';
-          const icon = type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle';
+          const delay = redirect ? 1500 : 4000;
+
+          // Config por tipo
+          const config = {
+            success: { icon: 'fa-check', title: 'Sucesso' },
+            error: { icon: 'fa-xmark', title: 'Erro' },
+            warning: { icon: 'fa-exclamation', title: 'Atenção' },
+            info: { icon: 'fa-info', title: 'Info' }
+          };
+          const { icon, title } = config[type] || config.success;
+          const toastType = ['error', 'warning', 'info'].includes(type) ? type : 'success';
 
           const toastHtml = `
-            <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-              <div class="d-flex">
-                <div class="toast-body">
-                  <i class="fa ${icon} me-2"></i>
-                  ${message}
+            <div id="${toastId}" class="toast toast-minimal toast-${toastType} showing" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+              <div class="toast-content">
+                <i class="fa ${icon} toast-icon"></i>
+                <div class="toast-text">
+                  <p class="toast-title">${title}</p>
+                  <p class="toast-message">${message}</p>
                 </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Fechar"></button>
               </div>
             </div>
           `;
 
           container.insertAdjacentHTML('beforeend', toastHtml);
           const toastEl = document.getElementById(toastId);
-          const toast = new bootstrap.Toast(toastEl, { delay: redirect ? 1500 : 4000 });
+
+          // Show toast
+          const toast = new bootstrap.Toast(toastEl, { autohide: false });
           toast.show();
 
-          // Redirecionar após o toast ser mostrado (se redirect fornecido)
-          if (redirect) {
+          // Add to notification history
+          addToNotificationHistory(message, toastType);
+
+          // Auto-hide after delay
+          setTimeout(() => {
+            toastEl.classList.remove('showing');
+            toastEl.classList.add('hiding');
             setTimeout(() => {
-              window.location.href = redirect;
-            }, 1500);
-          }
+              toast.hide();
+              if (redirect) {
+                window.location.href = redirect;
+              }
+            }, 250);
+          }, delay);
 
           // Remove from DOM after hidden
           toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+        }
+
+        // Add notification to dropdown history
+        function addToNotificationHistory(message, type) {
+          const dropdown = document.querySelector('#notificationsDropdown + .dropdown-menu');
+          if (!dropdown) return;
+
+          // Remove "no notifications" message if present
+          const emptyMsg = dropdown.querySelector('.text-muted');
+          if (emptyMsg && emptyMsg.textContent.includes('Nenhuma')) {
+            emptyMsg.closest('li').remove();
+          }
+
+          // Create timestamp
+          const now = new Date();
+          const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+          // Create notification item
+          const notifHtml = `
+            <li class="notification-li">
+              <div class="notification-item notification-${type}">
+                <p class="notification-text">${message}</p>
+                <div class="notification-time">${time}</div>
+              </div>
+            </li>
+          `;
+
+          // Find header and insert after it
+          const header = dropdown.querySelector('.border-bottom');
+          if (header) {
+            header.closest('li').insertAdjacentHTML('afterend', notifHtml);
+          } else {
+            dropdown.insertAdjacentHTML('afterbegin', notifHtml);
+          }
+
+          // Update badge
+          updateNotificationBadge();
+
+          // Keep only last 10 notifications (excluding header)
+          const items = dropdown.querySelectorAll('.notification-li');
+          if (items.length > 10) {
+            items[items.length - 1].remove();
+          }
+        }
+
+        // Update notification badge count
+        function updateNotificationBadge() {
+          const dropdown = document.querySelector('#notificationsDropdown + .dropdown-menu');
+          const btn = document.getElementById('notificationsDropdown');
+          if (!dropdown || !btn) return;
+
+          const count = dropdown.querySelectorAll('.notification-li').length;
+          let badge = btn.querySelector('.badge');
+
+          if (count > 0) {
+            if (!badge) {
+              badge = document.createElement('span');
+              badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+              badge.style.fontSize = '10px';
+              btn.appendChild(badge);
+            }
+            badge.textContent = count > 9 ? '9+' : count;
+          } else if (badge) {
+            badge.remove();
+          }
         }
 
         // Listen for HTMX showToast event
