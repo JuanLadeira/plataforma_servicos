@@ -44,152 +44,159 @@
   .htmx-show-on-request { display: none; }
   .htmx-request .htmx-show-on-request { display: inline; }
 
-  /* Toast container */
+  /* Toast container - bottom right */
   .toast-container {
     position: fixed;
-    top: 80px;
-    right: 20px;
+    bottom: 24px;
+    right: 24px;
     z-index: 1055;
-  }
-
-  /* Modern toast styles */
-  .toast-modern {
-    background: #fff;
-    border: none;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-    overflow: hidden;
-    min-width: 320px;
-    backdrop-filter: blur(10px);
-  }
-
-  .toast-modern .toast-body {
-    padding: 16px 20px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #1a1a2e;
     display: flex;
-    align-items: center;
+    flex-direction: column-reverse;
     gap: 12px;
   }
 
-  .toast-modern .toast-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
+  /* Clean minimal toast */
+  .toast-minimal {
+    background: #fff;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 300px;
+    max-width: 400px;
+    border-left: 4px solid;
+    overflow: hidden;
+  }
+
+  .toast-minimal.toast-success { border-left-color: #22c55e; }
+  .toast-minimal.toast-error { border-left-color: #ef4444; }
+  .toast-minimal.toast-warning { border-left-color: #f59e0b; }
+  .toast-minimal.toast-info { border-left-color: #3b82f6; }
+
+  .toast-minimal .toast-content {
+    padding: 14px 16px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    align-items: flex-start;
+    gap: 12px;
   }
 
-  .toast-modern.toast-success .toast-icon {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: #fff;
+  .toast-minimal .toast-icon {
+    font-size: 18px;
+    margin-top: 2px;
   }
 
-  .toast-modern.toast-error .toast-icon {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    color: #fff;
-  }
+  .toast-minimal.toast-success .toast-icon { color: #22c55e; }
+  .toast-minimal.toast-error .toast-icon { color: #ef4444; }
+  .toast-minimal.toast-warning .toast-icon { color: #f59e0b; }
+  .toast-minimal.toast-info .toast-icon { color: #3b82f6; }
 
-  .toast-modern.toast-warning .toast-icon {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    color: #fff;
-  }
-
-  .toast-modern.toast-info .toast-icon {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    color: #fff;
-  }
-
-  .toast-modern .toast-message {
+  .toast-minimal .toast-text {
     flex: 1;
+  }
+
+  .toast-minimal .toast-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 2px 0;
+  }
+
+  .toast-minimal .toast-message {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
     line-height: 1.4;
   }
 
-  .toast-modern .btn-close {
-    opacity: 0.5;
-    transition: opacity 0.2s;
+  .toast-minimal .btn-close {
+    font-size: 12px;
+    opacity: 0.4;
+    padding: 0;
+    margin-top: 2px;
   }
 
-  .toast-modern .btn-close:hover {
-    opacity: 1;
-  }
-
-  .toast-modern .toast-progress {
-    height: 3px;
-    background: rgba(0, 0, 0, 0.1);
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-  }
-
-  .toast-modern .toast-progress-bar {
-    height: 100%;
-    transition: width linear;
-  }
-
-  .toast-modern.toast-success .toast-progress-bar {
-    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
-  }
-
-  .toast-modern.toast-error .toast-progress-bar {
-    background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
-  }
-
-  .toast-modern.toast-warning .toast-progress-bar {
-    background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
-  }
-
-  .toast-modern.toast-info .toast-progress-bar {
-    background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+  .toast-minimal .btn-close:hover {
+    opacity: 0.8;
   }
 
   /* Toast animation */
-  .toast-modern.showing {
-    animation: slideIn 0.3s ease-out;
+  .toast-minimal.showing {
+    animation: toastSlideUp 0.3s ease-out;
   }
 
-  .toast-modern.hiding {
-    animation: slideOut 0.3s ease-in forwards;
+  .toast-minimal.hiding {
+    animation: toastSlideOut 0.25s ease-in forwards;
   }
 
-  @keyframes slideIn {
+  @keyframes toastSlideUp {
     from {
-      transform: translateX(100%);
+      transform: translateY(20px);
       opacity: 0;
     }
     to {
-      transform: translateX(0);
+      transform: translateY(0);
       opacity: 1;
     }
   }
 
-  @keyframes slideOut {
+  @keyframes toastSlideOut {
     from {
       transform: translateX(0);
       opacity: 1;
     }
     to {
-      transform: translateX(100%);
+      transform: translateX(110%);
       opacity: 0;
     }
   }
 
-  /* Dark mode support */
-  .dark-mode .toast-modern {
-    background: #1e1e2e;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  /* Dark mode */
+  .dark-mode .toast-minimal {
+    background: #1f2937;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
-  .dark-mode .toast-modern .toast-body {
-    color: #e2e8f0;
+  .dark-mode .toast-minimal .toast-title {
+    color: #f3f4f6;
   }
 
-  .dark-mode .toast-modern .toast-progress {
-    background: rgba(255, 255, 255, 0.1);
+  .dark-mode .toast-minimal .toast-message {
+    color: #9ca3af;
+  }
+
+  /* Notification dropdown styles */
+  .notification-item {
+    padding: 10px 16px;
+    border-left: 3px solid transparent;
+    transition: background 0.15s;
+  }
+
+  .notification-item:hover {
+    background: #f9fafb;
+  }
+
+  .notification-item.notification-success { border-left-color: #22c55e; }
+  .notification-item.notification-error { border-left-color: #ef4444; }
+  .notification-item.notification-warning { border-left-color: #f59e0b; }
+  .notification-item.notification-info { border-left-color: #3b82f6; }
+
+  .notification-item .notification-text {
+    font-size: 13px;
+    color: #374151;
+    margin: 0;
+  }
+
+  .notification-item .notification-time {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 2px;
+  }
+
+  .dark-mode .notification-item:hover {
+    background: #374151;
+  }
+
+  .dark-mode .notification-item .notification-text {
+    color: #e5e7eb;
   }
 </style>
 
@@ -307,50 +314,44 @@
             });
         }
 
-        // Toast notification system - Modern Design
+        // Toast notification system - Minimal Design
         function showToast(message, type = 'success', redirect = null) {
           const container = document.getElementById('toast-container');
           const toastId = 'toast-' + Date.now();
           const delay = redirect ? 1500 : 4000;
 
-          // Icon mapping
-          const icons = {
-            success: 'fa-check',
-            error: 'fa-xmark',
-            warning: 'fa-exclamation',
-            info: 'fa-info'
+          // Config por tipo
+          const config = {
+            success: { icon: 'fa-check', title: 'Sucesso' },
+            error: { icon: 'fa-xmark', title: 'Erro' },
+            warning: { icon: 'fa-exclamation', title: 'Atenção' },
+            info: { icon: 'fa-info', title: 'Info' }
           };
-          const icon = icons[type] || icons.success;
-          const toastType = type === 'error' ? 'error' : type === 'warning' ? 'warning' : type === 'info' ? 'info' : 'success';
+          const { icon, title } = config[type] || config.success;
+          const toastType = ['error', 'warning', 'info'].includes(type) ? type : 'success';
 
           const toastHtml = `
-            <div id="${toastId}" class="toast toast-modern toast-${toastType} showing" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
-              <div class="toast-body">
-                <div class="toast-icon">
-                  <i class="fa ${icon}"></i>
+            <div id="${toastId}" class="toast toast-minimal toast-${toastType} showing" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+              <div class="toast-content">
+                <i class="fa ${icon} toast-icon"></i>
+                <div class="toast-text">
+                  <p class="toast-title">${title}</p>
+                  <p class="toast-message">${message}</p>
                 </div>
-                <span class="toast-message">${message}</span>
                 <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Fechar"></button>
-              </div>
-              <div class="toast-progress">
-                <div class="toast-progress-bar" style="width: 100%;"></div>
               </div>
             </div>
           `;
 
           container.insertAdjacentHTML('beforeend', toastHtml);
           const toastEl = document.getElementById(toastId);
-          const progressBar = toastEl.querySelector('.toast-progress-bar');
 
           // Show toast
           const toast = new bootstrap.Toast(toastEl, { autohide: false });
           toast.show();
 
-          // Animate progress bar
-          requestAnimationFrame(() => {
-            progressBar.style.transitionDuration = delay + 'ms';
-            progressBar.style.width = '0%';
-          });
+          // Add to notification history
+          addToNotificationHistory(message, toastType);
 
           // Auto-hide after delay
           setTimeout(() => {
@@ -361,11 +362,76 @@
               if (redirect) {
                 window.location.href = redirect;
               }
-            }, 300);
+            }, 250);
           }, delay);
 
           // Remove from DOM after hidden
           toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+        }
+
+        // Add notification to dropdown history
+        function addToNotificationHistory(message, type) {
+          const dropdown = document.querySelector('#notificationsDropdown + .dropdown-menu');
+          if (!dropdown) return;
+
+          // Remove "no notifications" message if present
+          const emptyMsg = dropdown.querySelector('.text-muted');
+          if (emptyMsg && emptyMsg.textContent.includes('Nenhuma')) {
+            emptyMsg.closest('li').remove();
+          }
+
+          // Create timestamp
+          const now = new Date();
+          const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+          // Create notification item
+          const notifHtml = `
+            <li class="notification-li">
+              <div class="notification-item notification-${type}">
+                <p class="notification-text">${message}</p>
+                <div class="notification-time">${time}</div>
+              </div>
+            </li>
+          `;
+
+          // Find header and insert after it
+          const header = dropdown.querySelector('.border-bottom');
+          if (header) {
+            header.closest('li').insertAdjacentHTML('afterend', notifHtml);
+          } else {
+            dropdown.insertAdjacentHTML('afterbegin', notifHtml);
+          }
+
+          // Update badge
+          updateNotificationBadge();
+
+          // Keep only last 10 notifications (excluding header)
+          const items = dropdown.querySelectorAll('.notification-li');
+          if (items.length > 10) {
+            items[items.length - 1].remove();
+          }
+        }
+
+        // Update notification badge count
+        function updateNotificationBadge() {
+          const dropdown = document.querySelector('#notificationsDropdown + .dropdown-menu');
+          const btn = document.getElementById('notificationsDropdown');
+          if (!dropdown || !btn) return;
+
+          const count = dropdown.querySelectorAll('.notification-li').length;
+          let badge = btn.querySelector('.badge');
+
+          if (count > 0) {
+            if (!badge) {
+              badge = document.createElement('span');
+              badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+              badge.style.fontSize = '10px';
+              btn.appendChild(badge);
+            }
+            badge.textContent = count > 9 ? '9+' : count;
+          } else if (badge) {
+            badge.remove();
+          }
         }
 
         // Listen for HTMX showToast event

@@ -64,27 +64,25 @@
   
         <!-- Dropdown de Notificações -->
         <div class="dropdown ms-3">
-           <button class="btn btn-outline-secondary dropdown-toggle position-relative" type="button" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+           <button class="btn btn-outline-secondary position-relative" type="button" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="fa fa-bell"></i>
-            {% if messages %}
-              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                {{ messages|length }}
-              </span>
-            {% endif %}
           </button>
-          <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="notificationsDropdown" style="width: 300px;">
+          <ul class="dropdown-menu dropdown-menu-end shadow-lg p-0" aria-labelledby="notificationsDropdown" style="width: 320px; max-height: 400px; overflow-y: auto;">
+            <li class="px-3 py-2 border-bottom bg-light">
+              <strong class="text-sm">Notificações</strong>
+            </li>
             {% if messages %}
               {% for message in messages %}
                 <li>
-                  <div class="dropdown-item text-bg-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
-                    {{ message }}
+                  <div class="notification-item notification-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
+                    <p class="notification-text">{{ message }}</p>
                   </div>
                 </li>
-                <li><hr class="dropdown-divider"></li>
               {% endfor %}
             {% else %}
               <li>
-                <div class="dropdown-item text-center text-muted">
+                <div class="dropdown-item text-center text-muted py-4">
+                  <i class="fa fa-bell-slash mb-2 d-block" style="font-size: 24px; opacity: 0.3;"></i>
                   Nenhuma notificação
                 </div>
               </li>
