@@ -1,0 +1,115 @@
+{% load static %}
+
+<aside class="category-sidebar" id="categorySidebar">
+    <div class="sidebar-header">
+        <h5 class="sidebar-title">
+            <i class="fa fa-layer-group me-2"></i>Categorias
+        </h5>
+    </div>
+
+    <nav class="sidebar-nav">
+        <ul class="category-list">
+            <li class="category-item">
+                <a href="#"
+                   class="category-link {% if not selected_category or selected_category == 'all' %}active{% endif %}"
+                   hx-get="{% url 'home' %}"
+                   hx-target="#productList"
+                   hx-push-url="true"
+                   hx-on::after-request="updateActiveCategory(this)">
+                    <i class="fa fa-grid-2 me-2"></i>
+                    <span>Todos os Produtos</span>
+                </a>
+            </li>
+            {% for category in categories %}
+            <li class="category-item">
+                <a href="#"
+                   class="category-link {% if selected_category == category.id %}active{% endif %}"
+                   hx-get="{% url 'home' %}?category={{ category.id }}"
+                   hx-target="#productList"
+                   hx-push-url="true"
+                   hx-on::after-request="updateActiveCategory(this)">
+                    <i class="fa fa-tag me-2"></i>
+                    <span>{{ category.categoria }}</span>
+                    {% if category.produto_count %}
+                    <span class="category-count">{{ category.produto_count }}</span>
+                    {% endif %}
+                </a>
+            </li>
+            {% empty %}
+            <li class="category-item">
+                <span class="category-link text-muted">
+                    <i class="fa fa-info-circle me-2"></i>
+                    <span>Nenhuma categoria</span>
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+    </nav>
+</aside>
+
+<!-- Mobile toggle button -->
+<button class="btn btn-primary sidebar-toggle d-lg-none"
+        type="button"
+        data-bs-toggle="offcanvas"
+        data-bs-target="#categorySidebarMobile">
+    <i class="fa fa-filter"></i>
+</button>
+
+<!-- Mobile offcanvas sidebar -->
+<div class="offcanvas offcanvas-start d-lg-none" tabindex="-1" id="categorySidebarMobile">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title">
+            <i class="fa fa-layer-group me-2"></i>Categorias
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+        <nav class="sidebar-nav">
+            <ul class="category-list">
+                <li class="category-item">
+                    <a href="#"
+                       class="category-link {% if not selected_category or selected_category == 'all' %}active{% endif %}"
+                       hx-get="{% url 'home' %}"
+                       hx-target="#productList"
+                       hx-push-url="true"
+                       data-bs-dismiss="offcanvas"
+                       hx-on::after-request="updateActiveCategory(this)">
+                        <i class="fa fa-grid-2 me-2"></i>
+                        <span>Todos os Produtos</span>
+                    </a>
+                </li>
+                {% for category in categories %}
+                <li class="category-item">
+                    <a href="#"
+                       class="category-link {% if selected_category == category.id %}active{% endif %}"
+                       hx-get="{% url 'home' %}?category={{ category.id }}"
+                       hx-target="#productList"
+                       hx-push-url="true"
+                       data-bs-dismiss="offcanvas"
+                       hx-on::after-request="updateActiveCategory(this)">
+                        <i class="fa fa-tag me-2"></i>
+                        <span>{{ category.categoria }}</span>
+                        {% if category.produto_count %}
+                        <span class="category-count">{{ category.count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<script>
+function updateActiveCategory(element) {
+    // Remove active from all links
+    document.querySelectorAll('.category-link').forEach(link => {
+        link.classList.remove('active');
+    });
+    // Add active to clicked element and its counterpart (desktop/mobile)
+    const href = element.getAttribute('hx-get');
+    document.querySelectorAll(`.category-link[hx-get="${href}"]`).forEach(link => {
+        link.classList.add('active');
+    });
+}
+</script>

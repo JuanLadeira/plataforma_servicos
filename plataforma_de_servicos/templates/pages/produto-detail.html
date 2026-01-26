@@ -46,10 +46,15 @@
                         {% endif %}
 
                         <div class="action-box my-4 p-4 rounded">
-                            <!-- Display de preço -->
-                            <div id="price-display" class="d-flex justify-content-between align-items-center mb-3">
-                                <span class="h5 text-muted">Preço</span>
-                                <span id="preco-valor" class="h2 fw-bold text-primary">R$ {{ produto.preco }}</span>
+                            <!-- Display de preço unitário -->
+                            <div id="price-display" class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">Preço unitário</span>
+                                <span id="preco-unitario" class="h5 fw-bold text-secondary" data-preco="{{ produto.preco }}">R$ {{ produto.preco }}</span>
+                            </div>
+                            <!-- Display de preço total -->
+                            <div id="total-display" class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="h5 text-muted">Total</span>
+                                <span id="preco-total" class="h2 fw-bold text-primary">R$ {{ produto.preco }}</span>
                             </div>
 
                             <!-- Seletores de atributos (se houver variações) -->
@@ -116,15 +121,38 @@
     </main>
 </div>
 
-{% if tem_variacoes %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const selectors = document.querySelectorAll('.attribute-select');
-    const precoValor = document.getElementById('preco-valor');
+    const precoUnitario = document.getElementById('preco-unitario');
+    const precoTotal = document.getElementById('preco-total');
     const estoqueDisplay = document.getElementById('estoque-display');
     const variationIdInput = document.getElementById('variation-id');
     const addButton = document.getElementById('add-button');
     const priceDisplay = document.getElementById('price-display');
+    const quantitySelect = document.querySelector('.quantity-select');
+
+    // Preço base do produto
+    let currentUnitPrice = parseFloat('{{ produto.preco|default:"0" }}'.replace(',', '.'));
+
+    // Função para formatar preço em R$
+    function formatPrice(price) {
+        return 'R$ ' + price.toFixed(2).replace('.', ',');
+    }
+
+    // Função para atualizar o total baseado no preço unitário e quantidade
+    function updateTotal() {
+        const quantity = parseInt(quantitySelect.value) || 1;
+        const total = currentUnitPrice * quantity;
+        precoTotal.textContent = formatPrice(total);
+        precoTotal.classList.add('updated');
+        setTimeout(() => precoTotal.classList.remove('updated'), 500);
+    }
+
+    // Event listener para mudança de quantidade
+    quantitySelect.addEventListener('change', updateTotal);
+
+    {% if tem_variacoes %}
+    const selectors = document.querySelectorAll('.attribute-select');
 
     function updatePrice() {
         const valores = [];
@@ -164,21 +192,42 @@ document.addEventListener('DOMContentLoaded', function() {
             // Remover classe de loading
             priceDisplay.classList.remove('loading');
 
-            // Atualizar preço
-            precoValor.textContent = data.preco_formatado;
-            precoValor.classList.add('updated');
-            setTimeout(() => precoValor.classList.remove('updated'), 500);
+            // Atualizar preço unitário
+            currentUnitPrice = data.preco;
+            precoUnitario.textContent = data.preco_formatado;
+            precoUnitario.dataset.preco = data.preco;
+            precoUnitario.classList.add('updated');
+            setTimeout(() => precoUnitario.classList.remove('updated'), 500);
+
+            // Atualizar total
+            updateTotal();
 
             // Atualizar variation_id
             variationIdInput.value = data.variation_id || '';
 
-            // Atualizar estoque
+            // Atualizar estoque e dropdown de quantidade
             if (data.disponivel) {
                 estoqueDisplay.textContent = 'Estoque disponível: ' + data.estoque;
                 estoqueDisplay.className = data.estoque > 10 ? 'stock-available' : 'stock-low';
                 addButton.disabled = false;
                 addButton.classList.remove('btn-secondary');
                 addButton.classList.add('btn-primary');
+
+                // Atualizar opções de quantidade com base no estoque da variação
+                const maxQty = Math.min(data.estoque, 20);
+                const currentQty = parseInt(quantitySelect.value) || 1;
+                quantitySelect.innerHTML = '';
+                for (let i = 1; i <= maxQty; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = i;
+                    if (i === currentQty || (currentQty > maxQty && i === maxQty)) {
+                        option.selected = true;
+                    }
+                    quantitySelect.appendChild(option);
+                }
+                // Atualizar total se quantidade foi ajustada
+                updateTotal();
             } else {
                 estoqueDisplay.textContent = 'Produto indisponível';
                 estoqueDisplay.className = 'stock-unavailable';
@@ -199,11 +248,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Adicionar event listeners
+    // Adicionar event listeners para seletores de atributos
     selectors.forEach(selector => {
         selector.addEventListener('change', updatePrice);
     });
+    {% endif %}
 });
 </script>
-{% endif %}
 {% endblock content %}

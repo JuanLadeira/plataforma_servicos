@@ -92,6 +92,7 @@ THIRD_PARTY_APPS = [
 
 
 LOCAL_APPS = [
+    "plataforma_de_servicos.core",
     "plataforma_de_servicos.users",
     "plataforma_de_servicos.empresa",
     "plataforma_de_servicos.servico",
@@ -101,6 +102,7 @@ LOCAL_APPS = [
     "plataforma_de_servicos.cart",
     "plataforma_de_servicos.payment",
     "plataforma_de_servicos.corretor",
+    "plataforma_de_servicos.vendas",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -220,6 +222,7 @@ TEMPLATES = [
                 "plataforma_de_servicos.users.context_processors.allauth_settings",
                 "plataforma_de_servicos.produto.context_processors.categories",
                 "plataforma_de_servicos.cart.context_processors.cart",
+                "plataforma_de_servicos.core.context_processors.site_config",
             ],
         },
     },

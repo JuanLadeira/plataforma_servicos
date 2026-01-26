@@ -66,7 +66,7 @@ class Produto(models.Model):
         null=True,
         help_text="Descrição detalhada do produto"
     )
-    preco = models.DecimalField("preço", max_digits=7, decimal_places=2, null=True, blank=True)
+    preco = models.DecimalField("preço", max_digits=10, decimal_places=2, null=True, blank=True)
     estoque = models.IntegerField("estoque atual", default=0, null=True, blank=True)
     estoque_minimo = models.PositiveIntegerField("estoque mínimo", default=0)
     data = models.DateField(null=True, blank=True)

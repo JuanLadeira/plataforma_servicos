@@ -1,0 +1,291 @@
+from decimal import Decimal
+
+import pytest
+from django.utils import timezone
+
+from plataforma_de_servicos.corretor.models import StatusInteresse
+from plataforma_de_servicos.corretor.tests.factories import CorretorFactory
+from plataforma_de_servicos.corretor.tests.factories import InteresseCompraFactory
+from plataforma_de_servicos.corretor.tests.factories import ItemInteresseFactory
+from plataforma_de_servicos.users.tests.factories import UserFactory
+from plataforma_de_servicos.vendas.models import OrdemCompra
+from plataforma_de_servicos.vendas.models import StatusOrdemCompra
+from plataforma_de_servicos.vendas.services import OrdemCompraService
+from plataforma_de_servicos.vendas.services import OrdemCompraServiceError
+from plataforma_de_servicos.vendas.tests.factories import OrdemCompraFactory
+
+
+@pytest.mark.django_db
+class TestOrdemCompraModel:
+    def test_str_representation(self):
+        ordem = OrdemCompraFactory(numero="OC-2026-00001", nome_cliente="João Silva")
+        assert str(ordem) == "OC-2026-00001 - João Silva"
+
+    def test_pode_aprovar_when_pendente(self):
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.PENDENTE_APROVACAO)
+        assert ordem.pode_aprovar is True
+
+    def test_pode_aprovar_when_not_pendente(self):
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.APROVADA)
+        assert ordem.pode_aprovar is False
+
+    def test_pode_faturar_when_aprovada(self):
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.APROVADA)
+        assert ordem.pode_faturar is True
+
+    def test_pode_faturar_when_not_aprovada(self):
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.PENDENTE_APROVACAO)
+        assert ordem.pode_faturar is False
+
+
+@pytest.mark.django_db
+class TestOrdemCompraServiceGerarNumero:
+    def test_gerar_numero_formato(self):
+        numero = OrdemCompraService.gerar_numero()
+        ano = timezone.now().year
+        assert numero.startswith(f"OC-{ano}-")
+        assert len(numero) == 13  # OC-YYYY-NNNNN
+
+    def test_gerar_numero_incrementa(self):
+        OrdemCompraFactory(numero="OC-2026-00001")
+        numero = OrdemCompraService.gerar_numero()
+        assert numero == "OC-2026-00002"
+
+    def test_gerar_numero_primeiro_do_ano(self):
+        # Sem ordens existentes
+        numero = OrdemCompraService.gerar_numero()
+        ano = timezone.now().year
+        assert numero == f"OC-{ano}-00001"
+
+
+@pytest.mark.django_db
+class TestOrdemCompraServiceCriarOrdem:
+    def test_criar_ordem_de_interesse_sucesso(self):
+        """Testa criação via signal quando interesse é convertido."""
+        corretor = CorretorFactory()
+        # Criar interesse como NOVO primeiro
+        interesse = InteresseCompraFactory(
+            status=StatusInteresse.NOVO,
+            corretor=corretor,
+            valor_total=Decimal("150.00"),
+        )
+        ItemInteresseFactory(
+            interesse=interesse,
+            produto_nome="Produto Teste",
+            quantidade=2,
+            preco_unitario=Decimal("75.00"),
+        )
+
+        # Converter dispara o signal que cria a ordem
+        interesse.status = StatusInteresse.CONVERTIDO
+        interesse.save()
+
+        # Buscar a ordem criada pelo signal
+        ordem = interesse.ordem_compra
+
+        assert ordem.interesse == interesse
+        assert ordem.nome_cliente == interesse.nome_cliente
+        assert ordem.email_cliente == interesse.email_cliente
+        assert ordem.telefone_cliente == interesse.telefone_cliente
+        assert ordem.valor_total == interesse.valor_total
+        assert ordem.corretor == corretor
+        assert ordem.status == StatusOrdemCompra.PENDENTE_APROVACAO
+        assert ordem.itens.count() == 1
+
+    def test_criar_ordem_copia_itens(self):
+        """Testa que os itens são copiados corretamente."""
+        # Criar interesse como NOVO primeiro
+        interesse = InteresseCompraFactory(status=StatusInteresse.NOVO)
+        ItemInteresseFactory(
+            interesse=interesse,
+            produto_nome="Pizza Margherita",
+            variacao_info="Tamanho: Grande",
+            quantidade=2,
+            preco_unitario=Decimal("45.00"),
+        )
+        ItemInteresseFactory(
+            interesse=interesse,
+            produto_nome="Refrigerante",
+            quantidade=3,
+            preco_unitario=Decimal("8.00"),
+        )
+
+        # Converter dispara o signal
+        interesse.status = StatusInteresse.CONVERTIDO
+        interesse.save()
+
+        ordem = interesse.ordem_compra
+
+        assert ordem.itens.count() == 2
+        item1 = ordem.itens.get(produto_nome="Pizza Margherita")
+        assert item1.variacao_info == "Tamanho: Grande"
+        assert item1.quantidade == 2
+        assert item1.preco_unitario == Decimal("45.00")
+
+    def test_criar_ordem_interesse_nao_convertido_erro(self):
+        interesse = InteresseCompraFactory(status=StatusInteresse.NOVO)
+
+        with pytest.raises(OrdemCompraServiceError) as exc_info:
+            OrdemCompraService.criar_ordem_de_interesse(interesse)
+
+        assert "CONVERTIDO" in str(exc_info.value)
+
+    def test_criar_ordem_duplicada_erro(self):
+        """Testa que não é possível criar ordem duplicada."""
+        # Criar interesse como NOVO
+        interesse = InteresseCompraFactory(status=StatusInteresse.NOVO)
+
+        # Converter (signal cria a ordem)
+        interesse.status = StatusInteresse.CONVERTIDO
+        interesse.save()
+
+        # Tentar criar manualmente deve falhar
+        with pytest.raises(OrdemCompraServiceError) as exc_info:
+            OrdemCompraService.criar_ordem_de_interesse(interesse)
+
+        assert "já possui" in str(exc_info.value)
+
+
+@pytest.mark.django_db
+class TestOrdemCompraServiceAprovar:
+    def test_aprovar_sucesso(self):
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.PENDENTE_APROVACAO)
+        usuario = UserFactory()
+
+        ordem = OrdemCompraService.aprovar(ordem, usuario)
+
+        assert ordem.status == StatusOrdemCompra.APROVADA
+        assert ordem.aprovado_por == usuario
+        assert ordem.data_aprovacao is not None
+
+    def test_aprovar_ordem_ja_aprovada_erro(self):
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.APROVADA)
+        usuario = UserFactory()
+
+        with pytest.raises(OrdemCompraServiceError) as exc_info:
+            OrdemCompraService.aprovar(ordem, usuario)
+
+        assert "não pode ser aprovada" in str(exc_info.value)
+
+
+@pytest.mark.django_db
+class TestOrdemCompraServiceRejeitar:
+    def test_rejeitar_sucesso(self):
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.PENDENTE_APROVACAO)
+        usuario = UserFactory()
+
+        ordem = OrdemCompraService.rejeitar(ordem, usuario, "Cliente desistiu")
+
+        assert ordem.status == StatusOrdemCompra.REJEITADA
+        assert ordem.aprovado_por == usuario
+        assert ordem.motivo_rejeicao == "Cliente desistiu"
+
+    def test_rejeitar_sem_motivo_erro(self):
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.PENDENTE_APROVACAO)
+        usuario = UserFactory()
+
+        with pytest.raises(OrdemCompraServiceError) as exc_info:
+            OrdemCompraService.rejeitar(ordem, usuario, "")
+
+        assert "motivo" in str(exc_info.value).lower()
+
+    def test_rejeitar_ordem_ja_aprovada_erro(self):
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.APROVADA)
+        usuario = UserFactory()
+
+        with pytest.raises(OrdemCompraServiceError) as exc_info:
+            OrdemCompraService.rejeitar(ordem, usuario, "Motivo")
+
+        assert "não pode ser rejeitada" in str(exc_info.value)
+
+
+@pytest.mark.django_db
+class TestOrdemCompraServiceFaturar:
+    def test_faturar_sucesso(self):
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.APROVADA)
+
+        ordem = OrdemCompraService.faturar(ordem)
+
+        assert ordem.status == StatusOrdemCompra.FATURADA
+
+    def test_faturar_ordem_nao_aprovada_erro(self):
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.PENDENTE_APROVACAO)
+
+        with pytest.raises(OrdemCompraServiceError) as exc_info:
+            OrdemCompraService.faturar(ordem)
+
+        assert "não pode ser faturada" in str(exc_info.value)
+
+
+@pytest.mark.django_db
+class TestOrdemCompraServiceCancelar:
+    def test_cancelar_ordem_pendente(self):
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.PENDENTE_APROVACAO)
+
+        ordem = OrdemCompraService.cancelar(ordem, "Cliente cancelou")
+
+        assert ordem.status == StatusOrdemCompra.CANCELADA
+        assert "Cliente cancelou" in ordem.observacoes
+
+    def test_cancelar_ordem_aprovada(self):
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.APROVADA)
+
+        ordem = OrdemCompraService.cancelar(ordem)
+
+        assert ordem.status == StatusOrdemCompra.CANCELADA
+
+    def test_cancelar_ordem_faturada_erro(self):
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.FATURADA)
+
+        with pytest.raises(OrdemCompraServiceError) as exc_info:
+            OrdemCompraService.cancelar(ordem)
+
+        assert "não pode ser cancelada" in str(exc_info.value)
+
+
+@pytest.mark.django_db
+class TestOrdemCompraServiceConcluir:
+    def test_concluir_sucesso(self):
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.FATURADA)
+
+        ordem = OrdemCompraService.concluir(ordem)
+
+        assert ordem.status == StatusOrdemCompra.CONCLUIDA
+
+    def test_concluir_ordem_nao_faturada_erro(self):
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.APROVADA)
+
+        with pytest.raises(OrdemCompraServiceError) as exc_info:
+            OrdemCompraService.concluir(ordem)
+
+        assert "não pode ser concluída" in str(exc_info.value)
+
+
+@pytest.mark.django_db
+class TestSignalCriarOrdemAoConverter:
+    def test_signal_cria_ordem_ao_converter(self):
+        interesse = InteresseCompraFactory(status=StatusInteresse.NOVO)
+        ItemInteresseFactory(interesse=interesse)
+
+        # Mudar para convertido deve disparar o signal
+        interesse.status = StatusInteresse.CONVERTIDO
+        interesse.save()
+
+        assert hasattr(interesse, "ordem_compra")
+        assert interesse.ordem_compra.status == StatusOrdemCompra.PENDENTE_APROVACAO
+
+    def test_signal_nao_duplica_ordem(self):
+        interesse = InteresseCompraFactory(status=StatusInteresse.CONVERTIDO)
+        ItemInteresseFactory(interesse=interesse)
+
+        # Primeira vez cria
+        assert OrdemCompra.objects.filter(interesse=interesse).count() == 1
+
+        # Salvar novamente não deve duplicar
+        interesse.save()
+        assert OrdemCompra.objects.filter(interesse=interesse).count() == 1
+
+    def test_signal_nao_cria_para_outros_status(self):
+        interesse = InteresseCompraFactory(status=StatusInteresse.EM_ATENDIMENTO)
+
+        assert not OrdemCompra.objects.filter(interesse=interesse).exists()

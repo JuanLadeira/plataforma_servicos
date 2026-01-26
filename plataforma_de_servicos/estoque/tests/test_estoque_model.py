@@ -71,18 +71,17 @@ class EstoqueModelTest(TestCase):
         self.assertEqual(estoque.observacao, "Produtos danificados")
 
     def test_validacao_saida_sem_origem(self):
-        """Testar que saída sem origem_saida falha na validação"""
+        """Testar que saída sem origem_saida é válida (campo opcional para saídas manuais)"""
         estoque = Estoque(
             funcionario=self.user,
             movimento=Movimento.SAIDA.value,
-            # origem_saida não definida
+            # origem_saida não definida - agora é opcional
             inventario_origem=self.inventario_origem
         )
-        
-        with self.assertRaises(ValidationError) as context:
-            estoque.clean()
-        
-        self.assertIn("Saída requer especificação da origem/motivo", str(context.exception))
+
+        # Não deve levantar exceção - origem_saida é opcional
+        estoque.clean()
+        self.assertIsNone(estoque.origem_saida)
 
     def test_validacao_pedido_sem_id(self):
         """Testar que saída por pedido sem pedido_id falha na validação"""

@@ -106,28 +106,69 @@ class EstoqueServiceTest(TestCase):
         self.assertEqual(self.produto2.estoque, estoque_inicial_p2 - 1)
 
     def test_criar_saida_por_pedido_com_variacao(self):
-        """Testar criação de saída com variações de produto"""
+        """Testar criação de saída com variações de produto - atualiza estoque da variação."""
         pedido_id = 456
         itens_pedido = [
             {
                 "produto": self.produto1,
-                "quantidade": 1,
+                "quantidade": 2,
                 "variacao": self.variacao,
             },
         ]
+
+        estoque_inicial_produto = self.produto1.estoque  # 10
+        estoque_inicial_variacao = self.variacao.estoque  # 5
 
         saida = EstoqueService.criar_saida_por_pedido(
             pedido_id=pedido_id,
             itens_pedido=itens_pedido,
             funcionario=self.user,
+            inventario_origem=self.inventario,
         )
 
         self.assertEqual(saida.pedido_id, pedido_id)
 
-        # Verificar que o produto foi usado (não a variação)
+        # Verificar que o item tem produto E variação
         item = EstoqueItens.objects.get(estoque=saida)
         self.assertEqual(item.produto, self.produto1)
-        self.assertEqual(item.quantidade, 1)
+        self.assertEqual(item.variacao, self.variacao)
+        self.assertEqual(item.quantidade, 2)
+
+        # Verificar que AMBOS os estoques foram atualizados
+        self.produto1.refresh_from_db()
+        self.variacao.refresh_from_db()
+        self.assertEqual(self.produto1.estoque, estoque_inicial_produto - 2)  # 10 - 2 = 8
+        self.assertEqual(self.variacao.estoque, estoque_inicial_variacao - 2)  # 5 - 2 = 3
+
+    def test_criar_saida_variacao_estoque_insuficiente(self):
+        """Testar que saída falha quando variação tem estoque insuficiente."""
+        from plataforma_de_servicos.estoque.exceptions import VariacaoSaldoInsuficienteError
+
+        pedido_id = 789
+        itens_pedido = [
+            {
+                "produto": self.produto1,
+                "quantidade": 10,  # Variação só tem 5
+                "variacao": self.variacao,
+            },
+        ]
+
+        with self.assertRaises(VariacaoSaldoInsuficienteError):
+            EstoqueService.criar_saida_por_pedido(
+                pedido_id=pedido_id,
+                itens_pedido=itens_pedido,
+                funcionario=self.user,
+                inventario_origem=self.inventario,
+            )
+
+        # Verificar que nada foi criado (transação atômica)
+        self.assertEqual(Estoque.objects.filter(pedido_id=pedido_id).count(), 0)
+
+        # Verificar que estoques não foram alterados
+        self.produto1.refresh_from_db()
+        self.variacao.refresh_from_db()
+        self.assertEqual(self.produto1.estoque, 10)
+        self.assertEqual(self.variacao.estoque, 5)
 
     def test_criar_saida_manual(self):
         """Testar criação de saída manual"""

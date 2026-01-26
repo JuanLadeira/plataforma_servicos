@@ -8,6 +8,15 @@ class ProdutoSaldoInsuficienteError(Exception):
         )
 
 
+class VariacaoSaldoInsuficienteError(Exception):
+    def __init__(self, variacao, quantidade):
+        super().__init__(
+            f"""Não é possível realizar a saída da variação '{variacao}'.
+            Saldo insuficiente para a quantidade {quantidade}.
+            Estoque atual da variação: {variacao.estoque}""",
+        )
+
+
 class ProtocoloProcessadoError(Exception):
     def __init__(self):
         super().__init__("Já foi dado baixa nessa entrega.")

@@ -31,12 +31,12 @@ class TestCartViews:
             HTTP_HX_REQUEST="true",
         )
 
-        # View retorna HTML com HX-Trigger para requisições HTMX
+        # View retorna JSON para requisições HTMX, não um HX-Trigger direto
         assert response.status_code == 200
-        assert "HX-Trigger" in response.headers
-        assert "showToast" in response.headers["HX-Trigger"]
-        assert "success" in response.headers["HX-Trigger"]
-        assert b"cart-badge" in response.content
+        json_data = response.json()
+        assert json_data["success"] is True
+        assert json_data["qty"] == 2
+        assert "adicionado ao carrinho" in json_data["message"]
 
         cart = Cart(response.wsgi_request)
         assert len(cart) == 2
