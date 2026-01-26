@@ -19,6 +19,11 @@ class Inventario(TimeStampedModel):
         default=True,
         verbose_name="Ativo",
     )
+    exibir_na_vitrine = models.BooleanField(
+        default=False,
+        verbose_name="Exibir na Vitrine",
+        help_text="Se marcado, os produtos deste inventário serão exibidos na página inicial para os clientes.",
+    )
 
     class Meta:
         verbose_name = _("Inventário")

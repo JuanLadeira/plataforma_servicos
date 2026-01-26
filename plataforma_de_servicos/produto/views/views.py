@@ -1,12 +1,15 @@
 
 import logging
 
+from django.db.models import Exists
+from django.db.models import OuterRef
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render
 from django.template.context_processors import csrf
 from django.views.decorators.http import require_POST
 
+from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models.categoria_model import Categoria
 from plataforma_de_servicos.produto.models.produto_model import Produto
 
@@ -14,19 +17,37 @@ logger = logging.getLogger("django")
 
 
 def home(request):
+    # Subquery para verificar se produto tem saldo em inventário exibível na vitrine
+    produtos_em_vitrine = InventarioSaldo.objects.filter(
+        produto=OuterRef("pk"),
+        quantidade__gt=0,
+        inventario__is_ativo=True,
+        inventario__exibir_na_vitrine=True,
+    )
+
     # Obter o ID da categoria do parâmetro GET (se existir)
     # Filtrar produtos por categoria, se fornecido
     if category_id := request.GET.get("category"):
-        produtos = Produto.objects.filter(categoria__id=category_id).prefetch_related("images")
+        produtos = Produto.objects.filter(
+            categoria__id=category_id
+        ).annotate(
+            em_vitrine=Exists(produtos_em_vitrine)
+        ).filter(
+            em_vitrine=True
+        ).prefetch_related("images")
         categoria = Categoria.objects.filter(id=category_id).first()
     else:
-        produtos = Produto.objects.all().prefetch_related("images")
+        produtos = Produto.objects.annotate(
+            em_vitrine=Exists(produtos_em_vitrine)
+        ).filter(
+            em_vitrine=True
+        ).prefetch_related("images")
         categoria = "Todos os produtos"
+
     if search := request.GET.get("search"):
         produtos = produtos.filter(produto__icontains=search)
+        logger.info("Filtro de busca aplicado: %s", search)
 
-        logger.info("Nenhum filtro de categoria aplicado, exibindo todos os produtos")
-# Verificar se a requisição é feita via HTMX
     # Preparar os produtos com imagens e estoque > 0
     produtos_with_images = [
         {

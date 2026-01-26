@@ -1,8 +1,9 @@
+from django.contrib import admin
 from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
 
-from plataforma_de_servicos.estoque.models.proxys.estoque_entrada import EstoqueEntrada
-from plataforma_de_servicos.estoque.models.proxys.estoque_saida import EstoqueSaida
+from plataforma_de_servicos.estoque.choices.movimento import Movimento
+from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueItens
 from plataforma_de_servicos.inventario.models import InventarioSaldo
 
 
@@ -19,45 +20,107 @@ class InventarioSaldoInline(TabularInline):
         return queryset.filter(quantidade__gt=0)
 
 
-# TODO CORRIGIR PARA ESTOQUE ITENS E FILTRAR GET_QUERYSET PELO MOVIMENTO DE ENTRADA.
-class InventarioEntradaInline(TabularInline):
-    model = EstoqueEntrada
-
-    fk_name = "inventario_destino"
+class EstoqueItensEntradaInline(TabularInline):
+    """Inline para exibir itens de ENTRADA de estoque no inventário."""
+    model = EstoqueItens
+    fk_name = "inventario"
     extra = 0
     max_num = 0
-
-    readonly_fields = ["inventario_destino", "funcionario", "nf", "movimento", "processado"]
+    min_num = 0
     can_delete = False
-    show_change_link = True
-    show_full_result_count = True
-    exclude = ["inventario_origem"]
+    verbose_name = "Item de Entrada"
+    verbose_name_plural = "Itens de Entrada"
 
-    title = "Entradas"
+    readonly_fields = [
+        "produto",
+        "quantidade",
+        "saldo",
+        "data_movimento",
+        "nf_movimento",
+        "funcionario_movimento",
+    ]
+    fields = readonly_fields
 
-    def has_add_permission(self, request, obj):
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return queryset.filter(
+            estoque__movimento=Movimento.ENTRADA.value
+        ).select_related("estoque", "estoque__funcionario", "produto")
+
+    def has_add_permission(self, request, obj=None):
         return False
 
+    def has_change_permission(self, request, obj=None):
+        return False
 
-# TODO CORRIGIR PARA ESTOQUE ITENS E FILTRAR GET_QUERYSET PELO MOVIMENTO DE SAÍDA.
-class InventarioSaidaInline(TabularInline):
-    model = EstoqueSaida
+    @admin.display(description="Data")
+    def data_movimento(self, obj):
+        return obj.estoque.created.strftime("%d/%m/%Y %H:%M") if obj.estoque else "-"
 
-    fk_name = "inventario_origem"
+    @admin.display(description="NF")
+    def nf_movimento(self, obj):
+        return obj.estoque.nf if obj.estoque else "-"
 
-    title = "Saídas"
+    @admin.display(description="Funcionário")
+    def funcionario_movimento(self, obj):
+        return obj.estoque.funcionario if obj.estoque else "-"
 
-    readonly_fields = ["inventario_destino", "inventario_origem", "funcionario", "nf", "movimento", "processado"]
 
+class EstoqueItensSaidaInline(TabularInline):
+    """Inline para exibir itens de SAÍDA de estoque no inventário."""
+    model = EstoqueItens
+    fk_name = "inventario"
     extra = 0
+    max_num = 0
+    min_num = 0
     can_delete = False
+    verbose_name = "Item de Saída"
+    verbose_name_plural = "Itens de Saída"
 
-    def has_add_permission(self, request, obj):
+    readonly_fields = [
+        "produto",
+        "quantidade",
+        "saldo",
+        "data_movimento",
+        "nf_movimento",
+        "funcionario_movimento",
+        "origem_saida_display",
+    ]
+    fields = readonly_fields
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return queryset.filter(
+            estoque__movimento=Movimento.SAIDA.value
+        ).select_related("estoque", "estoque__funcionario", "produto")
+
+    def has_add_permission(self, request, obj=None):
         return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Data")
+    def data_movimento(self, obj):
+        return obj.estoque.created.strftime("%d/%m/%Y %H:%M") if obj.estoque else "-"
+
+    @admin.display(description="NF")
+    def nf_movimento(self, obj):
+        return obj.estoque.nf if obj.estoque else "-"
+
+    @admin.display(description="Funcionário")
+    def funcionario_movimento(self, obj):
+        return obj.estoque.funcionario if obj.estoque else "-"
+
+    @admin.display(description="Origem")
+    def origem_saida_display(self, obj):
+        return obj.estoque.get_origem_saida_display() if obj.estoque and obj.estoque.origem_saida else "-"
 
 
 class InventarioGerenteAdmin(ModelAdmin):
-    list_display = ["nome", "slug", "is_ativo"]
+    list_display = ["nome", "slug", "is_ativo", "exibir_na_vitrine"]
+    list_filter = ["is_ativo", "exibir_na_vitrine"]
+    list_editable = ["exibir_na_vitrine"]
     list_order_by = ["nome"]
     list_order_by_desc = ["-nome"]
 
@@ -66,7 +129,24 @@ class InventarioGerenteAdmin(ModelAdmin):
 
     search_fields = ["nome", "slug"]
 
-    inlines = [InventarioSaldoInline, InventarioEntradaInline, InventarioSaidaInline]
+    fieldsets = [
+        (
+            "Informações Básicas",
+            {
+                "fields": ["nome", "slug", "is_ativo"],
+            },
+        ),
+        (
+            "Configurações de Exibição",
+            {
+                "fields": ["exibir_na_vitrine"],
+                "description": "Configure se os produtos deste inventário devem aparecer na vitrine da página inicial.",
+            },
+        ),
+    ]
+    readonly_fields = ["slug"]
+
+    inlines = [InventarioSaldoInline, EstoqueItensEntradaInline, EstoqueItensSaidaInline]
 
     compressed_fields = True
     warn_unsaved_form = True
@@ -74,10 +154,10 @@ class InventarioGerenteAdmin(ModelAdmin):
     list_filter_submit = True
     list_fullwidth = True
 
-    actions_list = []  # Displayed above the results list
-    actions_row = []  # Displayed in a table row in results list
-    actions_detail = []  # Displayed at the top of for in object detail
-    actions_submit_line = []  # Displayed near save in object detail
+    actions_list = []
+    actions_row = []
+    actions_detail = []
+    actions_submit_line = []
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related()
