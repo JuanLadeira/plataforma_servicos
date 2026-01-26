@@ -126,7 +126,7 @@ class OrdemCompraService:
                     "variacao": item.variacao,
                     "quantidade": item.quantidade,
                 })
-        
+
         if itens_pedido:
             EstoqueService.criar_saida_por_pedido(
                 pedido_id=ordem.pk,
