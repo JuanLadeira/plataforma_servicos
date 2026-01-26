@@ -34,25 +34,25 @@ def home(request):
         try:
             selected_category = int(category_id)
             produtos = Produto.objects.filter(
-                categoria__id=category_id
+                categoria__id=category_id,
             ).annotate(
-                em_vitrine=Exists(produtos_em_vitrine)
+                em_vitrine=Exists(produtos_em_vitrine),
             ).filter(
-                em_vitrine=True
+                em_vitrine=True,
             ).prefetch_related("images")
             categoria = Categoria.objects.filter(id=category_id).first()
         except (ValueError, TypeError):
             produtos = Produto.objects.annotate(
-                em_vitrine=Exists(produtos_em_vitrine)
+                em_vitrine=Exists(produtos_em_vitrine),
             ).filter(
-                em_vitrine=True
+                em_vitrine=True,
             ).prefetch_related("images")
             categoria = "Todos os produtos"
     else:
         produtos = Produto.objects.annotate(
-            em_vitrine=Exists(produtos_em_vitrine)
+            em_vitrine=Exists(produtos_em_vitrine),
         ).filter(
-            em_vitrine=True
+            em_vitrine=True,
         ).prefetch_related("images")
         categoria = "Todos os produtos"
 
@@ -103,7 +103,7 @@ def produto_detail(request, produto_slug):
     produto = get_object_or_404(Produto, slug=produto_slug)
 
     # Buscar variações do produto
-    variacoes = produto.variacoes.prefetch_related('valores__atributo').all()
+    variacoes = produto.variacoes.prefetch_related("valores__atributo").all()
 
     # Extrair atributos únicos das variações
     atributos_dict = {}
@@ -112,16 +112,16 @@ def produto_detail(request, produto_slug):
             atributo = valor.atributo
             if atributo.id not in atributos_dict:
                 atributos_dict[atributo.id] = {
-                    'atributo': atributo,
-                    'valores': set()
+                    "atributo": atributo,
+                    "valores": set(),
                 }
-            atributos_dict[atributo.id]['valores'].add(valor)
+            atributos_dict[atributo.id]["valores"].add(valor)
 
     # Converter para lista ordenada
     atributos = [
         {
-            'atributo': data['atributo'],
-            'valores': sorted(data['valores'], key=lambda v: v.valor)
+            "atributo": data["atributo"],
+            "valores": sorted(data["valores"], key=lambda v: v.valor),
         }
         for data in atributos_dict.values()
     ]
@@ -149,7 +149,7 @@ def category_search(request):
         results = Categoria.objects.none()
 
     return render(
-        request, "pages/partials/category_results.html", {"categories": results}
+        request, "pages/partials/category_results.html", {"categories": results},
     )
 
 
@@ -168,20 +168,20 @@ def calcular_preco_variacao(request):
     if not valores_ids:
         return JsonResponse({
             "preco": str(produto.preco) if produto.preco else "0",
-            "preco_formatado": f"R$ {produto.preco:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if produto.preco else "R$ 0,00",
+            "preco_formatado": f"R$ {produto.preco:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if produto.preco else "R$ 0,00",
             "estoque": produto.estoque or 0,
             "variation_id": None,
             "disponivel": (produto.estoque or 0) > 0,
         })
 
     # Buscar variação que corresponde aos valores selecionados
-    variacoes = produto.variacoes.prefetch_related('valores').all()
+    variacoes = produto.variacoes.prefetch_related("valores").all()
 
     variacao_encontrada = None
     valores_ids_set = set(map(int, valores_ids))
 
     for variacao in variacoes:
-        variacao_valores_ids = set(variacao.valores.values_list('id', flat=True))
+        variacao_valores_ids = set(variacao.valores.values_list("id", flat=True))
         if variacao_valores_ids == valores_ids_set:
             variacao_encontrada = variacao
             break
@@ -190,18 +190,17 @@ def calcular_preco_variacao(request):
         preco_final = variacao_encontrada.calcular_preco_final()
         return JsonResponse({
             "preco": str(preco_final),
-            "preco_formatado": f"R$ {preco_final:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
+            "preco_formatado": f"R$ {preco_final:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
             "estoque": variacao_encontrada.estoque,
             "variation_id": variacao_encontrada.id,
             "disponivel": variacao_encontrada.estoque > 0,
         })
-    else:
-        # Sem variação específica, usar preço base
-        return JsonResponse({
-            "preco": str(produto.preco) if produto.preco else "0",
-            "preco_formatado": f"R$ {produto.preco:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if produto.preco else "R$ 0,00",
-            "estoque": produto.estoque or 0,
-            "variation_id": None,
-            "disponivel": (produto.estoque or 0) > 0,
-            "combinacao_invalida": True,
-        })
+    # Sem variação específica, usar preço base
+    return JsonResponse({
+        "preco": str(produto.preco) if produto.preco else "0",
+        "preco_formatado": f"R$ {produto.preco:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if produto.preco else "R$ 0,00",
+        "estoque": produto.estoque or 0,
+        "variation_id": None,
+        "disponivel": (produto.estoque or 0) > 0,
+        "combinacao_invalida": True,
+    })
