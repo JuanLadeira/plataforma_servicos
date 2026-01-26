@@ -32,38 +32,3 @@
     </div>
 </div>
 
-<script>
-function initCategorySearch() {
-    const searchInput = document.getElementById('category-search-input');
-    if (searchInput && !searchInput.dataset.initialized) {
-        searchInput.dataset.initialized = 'true';
-        searchInput.addEventListener('input', function(e) {
-            const inputValue = e.target.value;
-            const options = document.getElementById('category-options').options;
-            
-            for (let i = 0; i < options.length; i++) {
-                if (options[i].value === inputValue) {
-                    const categoryId = options[i].getAttribute('data-id');
-                    if (categoryId) {
-                        const url = `{% url 'home' %}?category=${categoryId}`;
-                        htmx.ajax('GET', url, {
-                            target: '#productList',
-                            swap: 'outerHTML'
-                        });
-                    }
-                    break;
-                }
-            }
-        });
-    }
-}
-
-// Initialize on first page load
-document.addEventListener('DOMContentLoaded', initCategorySearch);
-
-// Re-initialize after HTMX swaps content
-document.body.addEventListener('htmx:afterSwap', function(event) {
-    // We need to re-run the script on the new content
-    initCategorySearch();
-});
-</script>

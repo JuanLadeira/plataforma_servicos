@@ -26,16 +26,28 @@ def home(request):
     )
 
     # Obter o ID da categoria do parâmetro GET (se existir)
+    category_id = request.GET.get("category")
+    selected_category = None
+
     # Filtrar produtos por categoria, se fornecido
-    if category_id := request.GET.get("category"):
-        produtos = Produto.objects.filter(
-            categoria__id=category_id
-        ).annotate(
-            em_vitrine=Exists(produtos_em_vitrine)
-        ).filter(
-            em_vitrine=True
-        ).prefetch_related("images")
-        categoria = Categoria.objects.filter(id=category_id).first()
+    if category_id:
+        try:
+            selected_category = int(category_id)
+            produtos = Produto.objects.filter(
+                categoria__id=category_id
+            ).annotate(
+                em_vitrine=Exists(produtos_em_vitrine)
+            ).filter(
+                em_vitrine=True
+            ).prefetch_related("images")
+            categoria = Categoria.objects.filter(id=category_id).first()
+        except (ValueError, TypeError):
+            produtos = Produto.objects.annotate(
+                em_vitrine=Exists(produtos_em_vitrine)
+            ).filter(
+                em_vitrine=True
+            ).prefetch_related("images")
+            categoria = "Todos os produtos"
     else:
         produtos = Produto.objects.annotate(
             em_vitrine=Exists(produtos_em_vitrine)
@@ -63,7 +75,11 @@ def home(request):
         for produto in produtos if produto.estoque > 0
     ]
 
-    context = {"my_products": produtos_with_images, "categoria": categoria}
+    context = {
+        "my_products": produtos_with_images,
+        "categoria": categoria,
+        "selected_category": selected_category,
+    }
     # Verificar se a requisição é feita via HTMX
     logger.info(context)
     if request.headers.get("HX-Request"):
