@@ -1,17 +1,28 @@
 from typing import Any
 
 from django import forms
+from django.contrib import admin
 from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
 
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueItens
+from plataforma_de_servicos.produto.models import VariacaoProduto
 
 
 class EstoqueItensInline(TabularInline):
     model = EstoqueItens
     extra = 0
+    fields = ("produto", "variacao", "quantidade", "saldo", "inventario")
     readonly_fields = ("saldo", "inventario")
+    autocomplete_fields = ("produto", "variacao")
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "variacao":
+            kwargs["queryset"] = VariacaoProduto.objects.select_related(
+                "produto"
+            ).prefetch_related("valores", "valores__atributo")
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 def get_inventario(estoque):
@@ -99,9 +110,10 @@ class EstoqueEntradaAdmin(ModelAdmin):
 
 class EstoqueSaidaAdmin(ModelAdmin):
     inlines = (EstoqueItensInline,)
-    list_display = ("__str__", "nf", "funcionario")
+    list_display = ("__str__", "nf", "funcionario", "origem_saida", "pedido_id")
     search_fields = ("nf",)
-    list_filter = ("funcionario",)
+    list_filter = ("funcionario", "origem_saida")
+    readonly_fields = ("pedido_id",)
 
     compressed_fields = True
     warn_unsaved_form = True
@@ -117,6 +129,40 @@ class EstoqueSaidaAdmin(ModelAdmin):
     actions_detail = []  # Displayed at the top of for in object detail
     actions_submit_line = []  # Displayed near save in object detail
 
+    fieldsets = [
+        (
+            "Informações da Saída",
+            {
+                "fields": [
+                    "inventario_origem",
+                    "funcionario",
+                    "nf",
+                ],
+                "description": "Dados básicos da saída de estoque."
+            },
+        ),
+        (
+            "Detalhes da Saída",
+            {
+                "fields": [
+                    "origem_saida",
+                    "observacao",
+                ],
+                "description": "Motivo da saída (opcional). Se for uma saída automática de pedido, o campo 'ID do Pedido' será preenchido automaticamente."
+            },
+        ),
+        (
+            "Informações do Sistema",
+            {
+                "fields": [
+                    "pedido_id",
+                ],
+                "classes": ["collapse"],
+                "description": "Campos preenchidos automaticamente pelo sistema."
+            },
+        ),
+    ]
+
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
 
@@ -130,6 +176,10 @@ class EstoqueSaidaAdmin(ModelAdmin):
 
         if "inventario_destino" in form.base_fields:
             form.base_fields["inventario_destino"].widget = forms.HiddenInput()
+
+        # Tornar origem_saida não obrigatório
+        if "origem_saida" in form.base_fields:
+            form.base_fields["origem_saida"].required = False
 
         return form
 

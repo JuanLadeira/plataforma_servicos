@@ -2,6 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.forms.models import BaseInlineFormSet
 from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
 from unfold.contrib.forms.widgets import ArrayWidget
@@ -12,6 +13,32 @@ from plataforma_de_servicos.produto.models import Image
 from plataforma_de_servicos.produto.models import Produto
 from plataforma_de_servicos.produto.models import ValorAtributo
 from plataforma_de_servicos.produto.models import VariacaoProduto
+
+
+class VariacaoProdutoInlineFormSet(BaseInlineFormSet):
+    """Formset customizado que valida a soma do estoque das variações."""
+
+    def clean(self):
+        super().clean()
+
+        if not self.instance or not self.instance.pk:
+            return
+
+        produto_estoque = self.instance.estoque or 0
+        if produto_estoque == 0:
+            return
+
+        total_variacao_estoque = 0
+        for form in self.forms:
+            if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
+                estoque = form.cleaned_data.get('estoque', 0) or 0
+                total_variacao_estoque += estoque
+
+        if total_variacao_estoque > produto_estoque:
+            raise forms.ValidationError(
+                f"O estoque total das variações ({total_variacao_estoque}) "
+                f"não pode exceder o estoque do produto ({produto_estoque})."
+            )
 
 
 class ValorAtributoGerenteForm(forms.ModelForm):
@@ -45,6 +72,7 @@ class ImageInline(TabularInline):
 
 class VariacaoProdutoInline(TabularInline):
     model = VariacaoProduto
+    formset = VariacaoProdutoInlineFormSet
     extra = 1
     autocomplete_fields = ("valores",)
     readonly_fields = ("sku", "valores_display", "preco_final_calculado")
@@ -113,7 +141,21 @@ class ProdutoGerenteAdmin(ModelAdmin):
             },
         ),
         (
-            "Dados Fiscais e Estoque",
+            "Controle de Estoque",
+            {
+                "fields": [
+                    "estoque_display",
+                    "estoque_variacoes_display",
+                    "estoque_disponivel_display",
+                ],
+                "description": (
+                    "O estoque total do produto é gerenciado pelo sistema de movimentações de estoque (Entrada/Saída). "
+                    "A soma do estoque de todas as variações não pode exceder o estoque total do produto."
+                )
+            },
+        ),
+        (
+            "Dados Fiscais e Estoque Mínimo",
             {
                 "fields": [
                     "importado",
@@ -127,7 +169,7 @@ class ProdutoGerenteAdmin(ModelAdmin):
         ),
     ]
     inlines = [ImageInline, VariacaoProdutoInline]
-    readonly_fields = ["data"]
+    readonly_fields = ["data", "estoque_display", "estoque_variacoes_display", "estoque_disponivel_display"]
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -137,6 +179,38 @@ class ProdutoGerenteAdmin(ModelAdmin):
     @admin.display(description="Variações")
     def count_variations(self, obj):
         return obj.variacoes.count()
+
+    @admin.display(description="Estoque Total do Produto")
+    def estoque_display(self, obj):
+        """Mostra o estoque total do produto (gerenciado via movimentações)."""
+        if obj.pk:
+            estoque = obj.estoque or 0
+            if estoque == 0:
+                return "Não definido (sem limite para variações)"
+            return str(estoque)
+        return "-"
+
+    @admin.display(description="Estoque Alocado nas Variações")
+    def estoque_variacoes_display(self, obj):
+        """Mostra a soma do estoque de todas as variações."""
+        if obj.pk:
+            total = sum(v.estoque or 0 for v in obj.variacoes.all())
+            return str(total)
+        return "-"
+
+    @admin.display(description="Estoque Disponível para Alocar")
+    def estoque_disponivel_display(self, obj):
+        """Mostra quanto estoque ainda pode ser alocado nas variações."""
+        if obj.pk:
+            estoque_produto = obj.estoque or 0
+            if estoque_produto == 0:
+                return "Sem limite definido"
+            total_variacoes = sum(v.estoque or 0 for v in obj.variacoes.all())
+            disponivel = estoque_produto - total_variacoes
+            if disponivel < 0:
+                return f"{disponivel} (EXCEDIDO!)"
+            return str(disponivel)
+        return "-"
 
     # Manter outras configurações do ModelAdmin
     compressed_fields = True
@@ -282,4 +356,30 @@ class ValorAtributoGerenteAdmin(ModelAdmin):
             return f"+R$ {obj.preco_adicional:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
         elif obj.percentual_adicional and obj.percentual_adicional > 0:
             return f"+{obj.percentual_adicional}%"
+        return "-"
+
+
+class VariacaoProdutoGerenteAdmin(ModelAdmin):
+    """Admin para VariacaoProduto - usado principalmente para autocomplete no Estoque."""
+    list_display = ["produto", "sku", "estoque", "preco_final_display"]
+    list_filter = ["produto__categoria"]
+    search_fields = ["sku", "produto__produto", "valores__valor"]
+    autocomplete_fields = ["produto", "valores"]
+    list_select_related = ["produto"]
+    list_order_by = ["produto__produto", "sku"]
+    readonly_fields = ["sku"]
+    compressed_fields = True
+    warn_unsaved_form = True
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            "produto"
+        ).prefetch_related("valores", "valores__atributo")
+
+    @admin.display(description="Preço Final")
+    def preco_final_display(self, obj):
+        """Mostra o preço final calculado."""
+        if obj.pk:
+            preco = obj.calcular_preco_final()
+            return f"R$ {preco:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
         return "-"

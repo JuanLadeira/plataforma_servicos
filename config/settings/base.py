@@ -101,6 +101,7 @@ LOCAL_APPS = [
     "plataforma_de_servicos.cart",
     "plataforma_de_servicos.payment",
     "plataforma_de_servicos.corretor",
+    "plataforma_de_servicos.vendas",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps

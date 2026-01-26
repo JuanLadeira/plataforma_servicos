@@ -79,10 +79,11 @@ class CartViewsTest(TestCase):
         response = cart_add(request)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("HX-Trigger", response.headers)
-        self.assertIn("showToast", response.headers["HX-Trigger"])
-        self.assertIn("success", response.headers["HX-Trigger"])
-        self.assertIn(b"cart-badge", response.content)
+        response_data = json.loads(response.content)
+        self.assertTrue(response_data.get("success"))
+        self.assertIn("redirect", response_data)
+        self.assertIn("message", response_data)
+        self.assertEqual(response_data["qty"], 2)
 
         cart = Cart(request)
         self.assertEqual(len(cart), 2)
@@ -100,8 +101,9 @@ class CartViewsTest(TestCase):
         response = cart_add(request)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("HX-Trigger", response.headers)
-        self.assertIn("success", response.headers["HX-Trigger"])
+        response_data = json.loads(response.content)
+        self.assertTrue(response_data.get("success"))
+        self.assertIn("redirect", response_data)
 
         cart = Cart(request)
         self.assertEqual(len(cart), 1)
@@ -119,8 +121,9 @@ class CartViewsTest(TestCase):
         response = cart_add(request)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("HX-Trigger", response.headers)
-        self.assertIn("error", response.headers["HX-Trigger"])
+        response_data = json.loads(response.content)
+        self.assertTrue(response_data.get("error"))
+        self.assertIn("message", response_data)
 
         cart = Cart(request)
         self.assertEqual(len(cart), 0)
@@ -140,8 +143,9 @@ class CartViewsTest(TestCase):
         request_next.META["HTTP_HX_REQUEST"] = "true"
 
         response = cart_add(request_next)
-        self.assertIn("HX-Trigger", response.headers)
-        self.assertIn("error", response.headers["HX-Trigger"])
+        response_data = json.loads(response.content)
+        self.assertTrue(response_data.get("error"))
+        self.assertIn("message", response_data)
 
     def test_cart_add_sem_action_post(self):
         """Testar requisição sem action=post"""
@@ -205,7 +209,8 @@ class CartViewsTest(TestCase):
         response = cart_add(request)
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("HX-Trigger", response.headers)
-        self.assertIn("success", response.headers["HX-Trigger"])
+        response_data = json.loads(response.content)
+        self.assertTrue(response_data.get("success"))
+        self.assertIn("redirect", response_data)
         cart = Cart(request)
         self.assertEqual(len(cart), self.produto.estoque)

@@ -72,11 +72,8 @@ class Estoque(TimeStampedModel):
             if not self.inventario_origem:
                 message = "Saída requer inventário de origem"
                 raise ValidationError(message=message)
-            
-            if not self.origem_saida:
-                message = "Saída requer especificação da origem/motivo"
-                raise ValidationError(message=message)
-            
+
+            # Se origem for PEDIDO, exige o ID do pedido
             if self.origem_saida == OrigemSaida.PEDIDO.value and not self.pedido_id:
                 message = "Saída por pedido requer ID do pedido"
                 raise ValidationError(message=message)

@@ -49,6 +49,7 @@ class EstoqueService:
                 EstoqueItens.objects.create(
                     estoque=saida,
                     produto=item["produto"],
+                    variacao=item.get("variacao"),
                     quantidade=item["quantidade"],
                     inventario=inventario_origem,
                 )
@@ -62,10 +63,10 @@ class EstoqueService:
     def criar_saida_manual(origem: str, itens: list, funcionario: User, inventario_origem: Inventario = None, observacao: str = ""):
         """
         Cria uma saída de estoque manual (perda, ajuste, etc.)
-        
+
         Args:
             origem: Tipo de origem da saída (OrigemSaida)
-            itens: Lista de dicts com 'produto' e 'quantidade'
+            itens: Lista de dicts com 'produto', 'quantidade' e 'variacao' (opcional)
             funcionario: Usuário responsável
             inventario_origem: Inventário de origem
             observacao: Observações adicionais
@@ -86,6 +87,7 @@ class EstoqueService:
                 EstoqueItens.objects.create(
                     estoque=saida,
                     produto=item["produto"],
+                    variacao=item.get("variacao"),
                     quantidade=item["quantidade"],
                     inventario=inventario_origem,
                 )

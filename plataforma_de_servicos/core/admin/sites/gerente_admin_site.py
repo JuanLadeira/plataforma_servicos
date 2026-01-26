@@ -14,10 +14,14 @@ from plataforma_de_servicos.produto.admin.gerente_admin import AtributoGerenteAd
 from plataforma_de_servicos.produto.admin.gerente_admin import CategoriaGerenteAdmin
 from plataforma_de_servicos.produto.admin.gerente_admin import ProdutoGerenteAdmin
 from plataforma_de_servicos.produto.admin.gerente_admin import ValorAtributoGerenteAdmin
+from plataforma_de_servicos.produto.admin.gerente_admin import VariacaoProdutoGerenteAdmin
 from plataforma_de_servicos.produto.models.atributos import Atributo
 from plataforma_de_servicos.produto.models.atributos import ValorAtributo
+from plataforma_de_servicos.produto.models.atributos import VariacaoProduto
 from plataforma_de_servicos.produto.models.categoria_model import Categoria
 from plataforma_de_servicos.produto.models.produto_model import Produto
+from plataforma_de_servicos.vendas.admin import OrdemCompraGerenteAdmin
+from plataforma_de_servicos.vendas.models import OrdemCompra
 
 
 class GerenteAdminSite(UnfoldAdminSite):
@@ -47,8 +51,10 @@ gerente_site.register(Produto, ProdutoGerenteAdmin)
 gerente_site.register(Categoria, CategoriaGerenteAdmin)
 gerente_site.register(Atributo, AtributoGerenteAdmin)
 gerente_site.register(ValorAtributo, ValorAtributoGerenteAdmin)
+gerente_site.register(VariacaoProduto, VariacaoProdutoGerenteAdmin)
 gerente_site.register(EstoqueEntrada, EstoqueEntradaAdmin)
 gerente_site.register(EstoqueSaida, EstoqueSaidaAdmin)
 gerente_site.register(Inventario, InventarioGerenteAdmin)
 gerente_site.register(Corretor, CorretorGerenteAdmin)
 gerente_site.register(InteresseCompra, InteresseCompraGerenteAdmin)
+gerente_site.register(OrdemCompra, OrdemCompraGerenteAdmin)

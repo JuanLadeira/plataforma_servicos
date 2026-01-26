@@ -75,9 +75,12 @@ def cart_add(request):
             error_msg = f"Estoque insuficiente para {produto_nome}. Disponível: {estoque_disponivel}."
             messages.error(request, error_msg)
             if request.headers.get("HX-Request"):
-                response = HttpResponse(_render_cart_badge(request, cart))
-                response["HX-Trigger"] = '{"showToast": {"message": "' + error_msg + '", "type": "error"}}'
-                return response
+                # Retornar JSON para o handler do produto-detail.html
+                return JsonResponse({
+                    "error": True,
+                    "message": error_msg,
+                    "redirect": reverse("cart:cart-summary"),
+                })
             return redirect("cart:cart-summary")
 
         if variation:
@@ -89,13 +92,14 @@ def cart_add(request):
         messages.success(request, success_msg)
 
         if request.headers.get("HX-Request"):
-            response = HttpResponse(_render_cart_badge(request, cart))
-            import json
-            toast_data = {"message": success_msg, "type": "success"}
-            triggers = {"showToast": toast_data, "openCartOffcanvas": True}
-            response["HX-Trigger"] = json.dumps(triggers)
-            return response
-        
+            # Retornar JSON para o handler do produto-detail.html
+            return JsonResponse({
+                "success": True,
+                "message": success_msg,
+                "redirect": reverse("cart:cart-summary"),
+                "qty": len(cart),
+            })
+
         return redirect("cart:cart-summary")
 
     return JsonResponse({"error": "Invalid request"}, status=400)
