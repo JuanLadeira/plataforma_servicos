@@ -15,18 +15,26 @@ logger = logging.getLogger("django")
 
 def home(request):
     # Obter o ID da categoria do parâmetro GET (se existir)
+    category_id = request.GET.get("category")
+    selected_category = None
+
     # Filtrar produtos por categoria, se fornecido
-    if category_id := request.GET.get("category"):
-        produtos = Produto.objects.filter(categoria__id=category_id).prefetch_related("images")
-        categoria = Categoria.objects.filter(id=category_id).first()
+    if category_id:
+        try:
+            selected_category = int(category_id)
+            produtos = Produto.objects.filter(categoria__id=category_id).prefetch_related("images")
+            categoria = Categoria.objects.filter(id=category_id).first()
+        except (ValueError, TypeError):
+            produtos = Produto.objects.all().prefetch_related("images")
+            categoria = "Todos os produtos"
     else:
         produtos = Produto.objects.all().prefetch_related("images")
         categoria = "Todos os produtos"
+
     if search := request.GET.get("search"):
         produtos = produtos.filter(produto__icontains=search)
+        logger.info("Filtro de busca aplicado: %s", search)
 
-        logger.info("Nenhum filtro de categoria aplicado, exibindo todos os produtos")
-# Verificar se a requisição é feita via HTMX
     # Preparar os produtos com imagens e estoque > 0
     produtos_with_images = [
         {
@@ -42,7 +50,11 @@ def home(request):
         for produto in produtos if produto.estoque > 0
     ]
 
-    context = {"my_products": produtos_with_images, "categoria": categoria}
+    context = {
+        "my_products": produtos_with_images,
+        "categoria": categoria,
+        "selected_category": selected_category,
+    }
     # Verificar se a requisição é feita via HTMX
     logger.info(context)
     if request.headers.get("HX-Request"):

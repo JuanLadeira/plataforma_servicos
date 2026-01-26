@@ -1,7 +1,11 @@
 from unfold.sites import UnfoldAdminSite
 
+from plataforma_de_servicos.core.admin.site_config_admin import SiteConfigGerenteAdmin
+from plataforma_de_servicos.core.models import SiteConfig
 from plataforma_de_servicos.corretor.admin.gerente_admin import CorretorGerenteAdmin
-from plataforma_de_servicos.corretor.admin.gerente_admin import InteresseCompraGerenteAdmin
+from plataforma_de_servicos.corretor.admin.gerente_admin import (
+    InteresseCompraGerenteAdmin,
+)
 from plataforma_de_servicos.corretor.models import Corretor
 from plataforma_de_servicos.corretor.models import InteresseCompra
 from plataforma_de_servicos.estoque.admin.gerente_admin import EstoqueEntradaAdmin
@@ -58,3 +62,4 @@ gerente_site.register(Inventario, InventarioGerenteAdmin)
 gerente_site.register(Corretor, CorretorGerenteAdmin)
 gerente_site.register(InteresseCompra, InteresseCompraGerenteAdmin)
 gerente_site.register(OrdemCompra, OrdemCompraGerenteAdmin)
+gerente_site.register(SiteConfig, SiteConfigGerenteAdmin)
