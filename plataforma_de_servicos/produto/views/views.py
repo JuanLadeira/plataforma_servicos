@@ -1,96 +1,54 @@
 
 import logging
+from dataclasses import asdict
 
-from django.db.models import Exists
-from django.db.models import OuterRef
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render
 from django.template.context_processors import csrf
 from django.views.decorators.http import require_POST
 
-from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models.categoria_model import Categoria
 from plataforma_de_servicos.produto.models.produto_model import Produto
+from plataforma_de_servicos.produto.services import ProdutoService
 
 logger = logging.getLogger("django")
 
 
 def home(request):
-    # Subquery para verificar se produto tem saldo em inventário exibível na vitrine
-    produtos_em_vitrine = InventarioSaldo.objects.filter(
-        produto=OuterRef("pk"),
-        quantidade__gt=0,
-        inventario__is_ativo=True,
-        inventario__exibir_na_vitrine=True,
+    category_id = request.GET.get("category")
+    search = request.GET.get("search")
+
+    produtos, categoria = ProdutoService.listar_produtos_vitrine(
+        category_id=category_id,
+        search=search,
     )
 
-    # Obter o ID da categoria do parâmetro GET (se existir)
-    category_id = request.GET.get("category")
-    selected_category = None
+    if search:
+        logger.info("Filtro de busca aplicado: %s", search)
 
-    # Filtrar produtos por categoria, se fornecido
+    produtos_vitrine = ProdutoService.preparar_produtos_para_vitrine(produtos)
+
+    selected_category = None
     if category_id:
         try:
             selected_category = int(category_id)
-            produtos = Produto.objects.filter(
-                categoria__id=category_id
-            ).annotate(
-                em_vitrine=Exists(produtos_em_vitrine)
-            ).filter(
-                em_vitrine=True
-            ).prefetch_related("images")
-            categoria = Categoria.objects.filter(id=category_id).first()
         except (ValueError, TypeError):
-            produtos = Produto.objects.annotate(
-                em_vitrine=Exists(produtos_em_vitrine)
-            ).filter(
-                em_vitrine=True
-            ).prefetch_related("images")
-            categoria = "Todos os produtos"
-    else:
-        produtos = Produto.objects.annotate(
-            em_vitrine=Exists(produtos_em_vitrine)
-        ).filter(
-            em_vitrine=True
-        ).prefetch_related("images")
-        categoria = "Todos os produtos"
-
-    if search := request.GET.get("search"):
-        produtos = produtos.filter(produto__icontains=search)
-        logger.info("Filtro de busca aplicado: %s", search)
-
-    # Preparar os produtos com imagens e estoque > 0
-    produtos_with_images = [
-        {
-            "id": produto.id,
-            "produto": produto.produto,
-            "imagem": produto.get_image(),
-            "slug": produto.slug,
-            "categoria": produto.categoria.categoria if produto.categoria else "Sem categoria",
-            "preco": produto.preco,
-            "estoque": produto.estoque,
-            "url": produto.get_absolute_url(),
-        }
-        for produto in produtos if produto.estoque > 0
-    ]
+            pass
 
     context = {
-        "my_products": produtos_with_images,
+        "my_products": [asdict(p) for p in produtos_vitrine],
         "categoria": categoria,
         "selected_category": selected_category,
     }
-    # Verificar se a requisição é feita via HTMX
-    logger.info(context)
-    if request.headers.get("HX-Request"):
-        # Retornar apenas o template parcial com os produtos filtrados
-        logger.info("Requisição HTMX detectada, retornando apenas o template parcial")
 
+    logger.info(context)
+
+    if request.headers.get("HX-Request"):
+        logger.info("Requisição HTMX detectada, retornando apenas o template parcial")
         return render(request, "pages/partials/product_list_partial.html", context)
 
     logger.info("Renderizando a página inicial com produtos e categorias")
-    # Caso contrário, renderizar a página completa
-
     return render(request, "pages/home.html", context)
 
 
@@ -102,29 +60,8 @@ def categories(request):
 def produto_detail(request, produto_slug):
     produto = get_object_or_404(Produto, slug=produto_slug)
 
-    # Buscar variações do produto
-    variacoes = produto.variacoes.prefetch_related('valores__atributo').all()
-
-    # Extrair atributos únicos das variações
-    atributos_dict = {}
-    for variacao in variacoes:
-        for valor in variacao.valores.all():
-            atributo = valor.atributo
-            if atributo.id not in atributos_dict:
-                atributos_dict[atributo.id] = {
-                    'atributo': atributo,
-                    'valores': set()
-                }
-            atributos_dict[atributo.id]['valores'].add(valor)
-
-    # Converter para lista ordenada
-    atributos = [
-        {
-            'atributo': data['atributo'],
-            'valores': sorted(data['valores'], key=lambda v: v.valor)
-        }
-        for data in atributos_dict.values()
-    ]
+    variacoes = produto.variacoes.prefetch_related("valores__atributo").all()
+    atributos = ProdutoService.obter_atributos_variacoes(produto)
 
     context = {
         "produto": produto,
@@ -142,14 +79,13 @@ def produto_detail(request, produto_slug):
 def category_search(request):
     search_text = request.POST.get("search")
 
-    # Realiza a busca case-insensitive e retorna os resultados
     if search_text:
         results = Categoria.objects.filter(categoria__icontains=search_text)
     else:
         results = Categoria.objects.none()
 
     return render(
-        request, "pages/partials/category_results.html", {"categories": results}
+        request, "pages/partials/category_results.html", {"categories": results},
     )
 
 
@@ -164,44 +100,6 @@ def calcular_preco_variacao(request):
 
     produto = get_object_or_404(Produto, id=produto_id)
 
-    # Se não houver valores selecionados, retornar preço base
-    if not valores_ids:
-        return JsonResponse({
-            "preco": str(produto.preco) if produto.preco else "0",
-            "preco_formatado": f"R$ {produto.preco:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if produto.preco else "R$ 0,00",
-            "estoque": produto.estoque or 0,
-            "variation_id": None,
-            "disponivel": (produto.estoque or 0) > 0,
-        })
+    resultado = ProdutoService.calcular_preco_variacao(produto, valores_ids or None)
 
-    # Buscar variação que corresponde aos valores selecionados
-    variacoes = produto.variacoes.prefetch_related('valores').all()
-
-    variacao_encontrada = None
-    valores_ids_set = set(map(int, valores_ids))
-
-    for variacao in variacoes:
-        variacao_valores_ids = set(variacao.valores.values_list('id', flat=True))
-        if variacao_valores_ids == valores_ids_set:
-            variacao_encontrada = variacao
-            break
-
-    if variacao_encontrada:
-        preco_final = variacao_encontrada.calcular_preco_final()
-        return JsonResponse({
-            "preco": str(preco_final),
-            "preco_formatado": f"R$ {preco_final:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.'),
-            "estoque": variacao_encontrada.estoque,
-            "variation_id": variacao_encontrada.id,
-            "disponivel": variacao_encontrada.estoque > 0,
-        })
-    else:
-        # Sem variação específica, usar preço base
-        return JsonResponse({
-            "preco": str(produto.preco) if produto.preco else "0",
-            "preco_formatado": f"R$ {produto.preco:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if produto.preco else "R$ 0,00",
-            "estoque": produto.estoque or 0,
-            "variation_id": None,
-            "disponivel": (produto.estoque or 0) > 0,
-            "combinacao_invalida": True,
-        })
+    return JsonResponse(asdict(resultado))
