@@ -4,6 +4,8 @@ from django.utils import timezone
 from plataforma_de_servicos.corretor.models import InteresseCompra
 from plataforma_de_servicos.corretor.models import StatusInteresse
 from plataforma_de_servicos.estoque.services import EstoqueService
+from plataforma_de_servicos.produto.models import Produto
+from plataforma_de_servicos.produto.models import VariacaoProduto
 from plataforma_de_servicos.users.models import User
 from plataforma_de_servicos.vendas.models import ItemOrdemCompra
 from plataforma_de_servicos.vendas.models import OrdemCompra
@@ -13,6 +15,41 @@ from plataforma_de_servicos.vendas.models import StatusOrdemCompra
 class OrdemCompraServiceError(Exception):
     """Exceção base para erros do serviço de OrdemCompra."""
 
+
+def _buscar_produto_e_variacao(produto_nome: str, variacao_info: str) -> tuple[Produto | None, VariacaoProduto | None]:
+    """
+    Busca o produto pelo nome e a variação pelas informações de atributos.
+
+    Args:
+        produto_nome: Nome do produto
+        variacao_info: String com informações da variação (ex: "Cor: Azul, Tamanho: M")
+
+    Returns:
+        Tupla com (Produto, VariacaoProduto) ou (None, None) se não encontrar
+    """
+    # Buscar produto pelo nome exato
+    try:
+        produto = Produto.objects.get(produto=produto_nome)
+    except Produto.DoesNotExist:
+        return None, None
+
+    # Se não há informação de variação, retornar só o produto
+    if not variacao_info or not variacao_info.strip():
+        return produto, None
+
+    # Buscar variação que corresponda aos atributos
+    # variacao_info tem formato "Cor: Azul, Tamanho: M"
+    # ValorAtributo.__str__ retorna "Atributo: Valor"
+    valores_busca = [v.strip() for v in variacao_info.split(",")]
+
+    for variacao in produto.variacoes.prefetch_related("valores", "valores__atributo").all():
+        valores_variacao = [str(v) for v in variacao.valores.all()]
+        # Verificar se todos os valores buscados estão na variação
+        if set(valores_busca) == set(valores_variacao):
+            return produto, variacao
+
+    # Se não encontrou variação correspondente, retornar só o produto
+    return produto, None
 
 
 class OrdemCompraService:
@@ -83,10 +120,16 @@ class OrdemCompraService:
 
         # Criar itens da ordem a partir dos itens do interesse
         for item_interesse in interesse.itens.all():
+            # Tentar vincular ao produto e variação reais
+            produto, variacao = _buscar_produto_e_variacao(
+                item_interesse.produto_nome,
+                item_interesse.variacao_info,
+            )
+
             ItemOrdemCompra.objects.create(
                 ordem=ordem,
-                produto=None,  # ItemInteresse não tem FK para Produto
-                variacao=None,  # ItemInteresse não tem FK para VariacaoProduto
+                produto=produto,
+                variacao=variacao,
                 produto_nome=item_interesse.produto_nome,
                 variacao_info=item_interesse.variacao_info,
                 quantidade=item_interesse.quantidade,

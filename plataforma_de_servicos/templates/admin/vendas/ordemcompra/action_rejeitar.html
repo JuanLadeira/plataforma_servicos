@@ -1,0 +1,108 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Rejeitar Ordem {{ object.numero }} | {{ site_header }}{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="flex mb-4" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+        <li class="inline-flex items-center">
+            <a href="{% url 'gerentes:index' %}" class="text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">
+                Inicio
+            </a>
+        </li>
+        <li>
+            <div class="flex items-center">
+                <span class="mx-2 text-gray-400">/</span>
+                <a href="{% url 'gerentes:vendas_ordemcompra_changelist' %}" class="text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">
+                    Ordens de compra
+                </a>
+            </div>
+        </li>
+        <li>
+            <div class="flex items-center">
+                <span class="mx-2 text-gray-400">/</span>
+                <a href="{% url 'gerentes:vendas_ordemcompra_change' object.pk %}" class="text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-white">
+                    {{ object.numero }}
+                </a>
+            </div>
+        </li>
+        <li aria-current="page">
+            <div class="flex items-center">
+                <span class="mx-2 text-gray-400">/</span>
+                <span class="text-gray-500 dark:text-gray-400">Rejeitar</span>
+            </div>
+        </li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div class="p-6">
+            <h1 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Rejeitar Ordem {{ object.numero }}
+            </h1>
+
+            <div class="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-amber-800 dark:text-amber-200">
+                            Atencao
+                        </h3>
+                        <p class="mt-1 text-sm text-amber-700 dark:text-amber-300">
+                            Esta acao nao pode ser desfeita. A ordem sera marcada como rejeitada permanentemente.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <dl class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Cliente</dt>
+                        <dd class="font-medium text-gray-900 dark:text-white">{{ object.nome_cliente }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-gray-500 dark:text-gray-400">Valor Total</dt>
+                        <dd class="font-medium text-gray-900 dark:text-white">R$ {{ object.valor_total }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-6">
+                    <label for="id_motivo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {{ form.motivo.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.motivo }}
+                    {% if form.motivo.help_text %}
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.motivo.help_text }}</p>
+                    {% endif %}
+                    {% if form.motivo.errors %}
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.motivo.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button type="submit"
+                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        Confirmar Rejeicao
+                    </button>
+                    <a href="{% url 'gerentes:vendas_ordemcompra_change' object.pk %}"
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,3 +1,4 @@
+import json
 import logging
 
 from django.contrib import messages
@@ -55,6 +56,7 @@ def cart_add(request):
         product_id = request.POST.get("product_id")
         variation_id = request.POST.get("variation_id")
         product_quantity = int(request.POST.get("product_quantity", 1))
+        no_redirect = request.POST.get("no_redirect")  # Para requisições da home
 
         if variation_id:
             variation = get_object_or_404(VariacaoProduto, id=variation_id)
@@ -75,6 +77,13 @@ def cart_add(request):
             error_msg = f"Estoque insuficiente para {produto_nome}. Disponível: {estoque_disponivel}."
             messages.error(request, error_msg)
             if request.headers.get("HX-Request"):
+                if no_redirect:
+                    # Retornar HTML para a home - badge + toast de erro
+                    response = HttpResponse(_render_cart_badge(request, cart))
+                    response["HX-Trigger"] = json.dumps({
+                        "showToast": {"message": error_msg, "type": "error"},
+                    })
+                    return response
                 # Retornar JSON para o handler do produto-detail.html
                 return JsonResponse({
                     "error": True,
@@ -92,6 +101,14 @@ def cart_add(request):
         messages.success(request, success_msg)
 
         if request.headers.get("HX-Request"):
+            if no_redirect:
+                # Retornar HTML para a home - badge + trigger para abrir offcanvas
+                response = HttpResponse(_render_cart_badge(request, cart))
+                response["HX-Trigger"] = json.dumps({
+                    "showToast": {"message": success_msg, "type": "success"},
+                    "openCartOffcanvas": True,
+                })
+                return response
             # Retornar JSON para o handler do produto-detail.html
             return JsonResponse({
                 "success": True,
@@ -129,7 +146,6 @@ def cart_delete_mini(request):
         cart.delete(variation=variation_id)
 
         # Retorna o offcanvas atualizado com toast
-        import json
         response = HttpResponse(_render_cart_offcanvas(request, cart))
         response["HX-Trigger"] = json.dumps({
             "showToast": {
