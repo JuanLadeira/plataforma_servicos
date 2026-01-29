@@ -11,7 +11,6 @@ from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
 from unfold.decorators import action
 
-from plataforma_de_servicos.produto.models import Produto
 from plataforma_de_servicos.produto.models import VariacaoProduto
 from plataforma_de_servicos.vendas.admin.forms import CancelamentoOrdemForm
 from plataforma_de_servicos.vendas.admin.forms import RejeicaoOrdemForm
@@ -23,9 +22,10 @@ from plataforma_de_servicos.vendas.services import OrdemCompraServiceError
 
 
 class ItemOrdemCompraInline(TabularInline):
+    """Inline para admin padrão - sem autocomplete (modelos não registrados aqui)."""
+
     model = ItemOrdemCompra
     extra = 1
-    autocomplete_fields = ["produto", "variacao"]
 
     @admin.display(description="Subtotal")
     def get_subtotal(self, obj):
@@ -56,13 +56,6 @@ class ItemOrdemCompraInline(TabularInline):
         if obj and obj.status != StatusOrdemCompra.PENDENTE_APROVACAO:
             return False
         return True
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "variacao":
-            kwargs["queryset"] = VariacaoProduto.objects.select_related(
-                "produto"
-            ).prefetch_related("valores", "valores__atributo")
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 @admin.register(OrdemCompra)

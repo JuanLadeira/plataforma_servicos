@@ -191,11 +191,44 @@ class TestOrdemCompraGerenteAdminDisplayMethods:
 class TestItemOrdemCompraInlines:
     """Testes para os inlines de itens."""
 
-    def test_gerente_inline_has_add_permission_retorna_false(self, request_factory, admin_user):
+    def test_gerente_inline_has_add_permission_sem_obj_retorna_true(self, request_factory, admin_user):
+        """Sem objeto (criação), permite adicionar."""
         inline = ItemOrdemCompraGerenteInline(OrdemCompra, gerente_site)
         request = request_factory.get("/")
         request.user = admin_user
-        assert inline.has_add_permission(request) is False
+        assert inline.has_add_permission(request, obj=None) is True
+
+    def test_gerente_inline_has_add_permission_pendente_retorna_true(self, request_factory, admin_user):
+        """Com ordem pendente, permite adicionar."""
+        inline = ItemOrdemCompraGerenteInline(OrdemCompra, gerente_site)
+        request = request_factory.get("/")
+        request.user = admin_user
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.PENDENTE_APROVACAO)
+        assert inline.has_add_permission(request, obj=ordem) is True
+
+    def test_gerente_inline_has_add_permission_aprovada_retorna_false(self, request_factory, admin_user):
+        """Com ordem aprovada, não permite adicionar."""
+        inline = ItemOrdemCompraGerenteInline(OrdemCompra, gerente_site)
+        request = request_factory.get("/")
+        request.user = admin_user
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.APROVADA)
+        assert inline.has_add_permission(request, obj=ordem) is False
+
+    def test_gerente_inline_has_delete_permission_pendente_retorna_true(self, request_factory, admin_user):
+        """Com ordem pendente, permite deletar."""
+        inline = ItemOrdemCompraGerenteInline(OrdemCompra, gerente_site)
+        request = request_factory.get("/")
+        request.user = admin_user
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.PENDENTE_APROVACAO)
+        assert inline.has_delete_permission(request, obj=ordem) is True
+
+    def test_gerente_inline_has_delete_permission_aprovada_retorna_false(self, request_factory, admin_user):
+        """Com ordem aprovada, não permite deletar."""
+        inline = ItemOrdemCompraGerenteInline(OrdemCompra, gerente_site)
+        request = request_factory.get("/")
+        request.user = admin_user
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.APROVADA)
+        assert inline.has_delete_permission(request, obj=ordem) is False
 
     def test_gerente_inline_get_subtotal(self):
         inline = ItemOrdemCompraGerenteInline(OrdemCompra, gerente_site)
@@ -203,11 +236,21 @@ class TestItemOrdemCompraInlines:
         resultado = inline.get_subtotal(item)
         assert "300,00" in resultado
 
-    def test_padrao_inline_has_add_permission_retorna_false(self, admin_site, request_factory, admin_user):
+    def test_padrao_inline_has_add_permission_pendente_retorna_true(self, admin_site, request_factory, admin_user):
+        """Com ordem pendente, permite adicionar."""
         inline = ItemOrdemCompraInline(OrdemCompra, admin_site)
         request = request_factory.get("/")
         request.user = admin_user
-        assert inline.has_add_permission(request) is False
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.PENDENTE_APROVACAO)
+        assert inline.has_add_permission(request, obj=ordem) is True
+
+    def test_padrao_inline_has_add_permission_aprovada_retorna_false(self, admin_site, request_factory, admin_user):
+        """Com ordem aprovada, não permite adicionar."""
+        inline = ItemOrdemCompraInline(OrdemCompra, admin_site)
+        request = request_factory.get("/")
+        request.user = admin_user
+        ordem = OrdemCompraFactory(status=StatusOrdemCompra.APROVADA)
+        assert inline.has_add_permission(request, obj=ordem) is False
 
     def test_padrao_inline_get_subtotal(self, admin_site):
         inline = ItemOrdemCompraInline(OrdemCompra, admin_site)

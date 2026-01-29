@@ -7,6 +7,7 @@ from unfold.admin import TabularInline
 
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueItens
+from plataforma_de_servicos.estoque.models.proxys.transferencia import Transferencia
 from plataforma_de_servicos.produto.models import VariacaoProduto
 
 
@@ -238,5 +239,65 @@ class EstoqueSaidaAdmin(ModelAdmin):
 
             for instance in instances:
                 instance.inventario = inventario
+                instance.save()
+            formset.save_m2m()
+
+
+class TransferenciaAdmin(ModelAdmin):
+    inlines = (EstoqueItensInline,)
+    list_display = ("__str__", "funcionario", "inventario_origem", "inventario_destino", "data")
+    search_fields = ("data",)
+    list_filter = ("funcionario",)
+
+    compressed_fields = True
+    warn_unsaved_form = True
+
+    list_filter_submit = True
+    list_fullwidth = True
+
+    list_horizontal_scrollbar_top = True
+    list_disable_select_all = True
+
+    actions_list = []
+    actions_row = []
+    actions_detail = []
+    actions_submit_line = []
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj and obj.pk:
+            return ["inventario_origem", "inventario_destino", "funcionario", "observacao"]
+        return ()
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        form.base_fields["movimento"].initial = Movimento.TRANSFERENCIA.value
+        form.base_fields["movimento"].widget = forms.HiddenInput()
+        if "nf" in form.base_fields:
+            form.base_fields["nf"].widget = forms.HiddenInput()
+        if "origem_saida" in form.base_fields:
+            form.base_fields["origem_saida"].widget = forms.HiddenInput()
+        if "processado" in form.base_fields:
+            form.base_fields["processado"].widget = forms.HiddenInput()
+        return form
+
+    def has_delete_permission(self, request, obj=None):
+        if obj and obj.pk:
+            return False
+        return True
+
+    def save_related(self, request: Any, form: Any, formsets: Any, change: Any) -> None:
+        super().save_related(request, form, formsets, change)
+        if not change:
+            obj = form.instance
+            obj.processar()
+
+    def save_formset(self, request, form, formset, change):
+        if not change:
+            instances = formset.save(commit=False)
+            transferencia = form.instance
+            # Na transferência, os itens saem do inventário de origem
+            inventario_origem = transferencia.inventario_origem
+            for instance in instances:
+                instance.inventario = inventario_origem
                 instance.save()
             formset.save_m2m()
