@@ -7,6 +7,7 @@ from unfold.admin import TabularInline
 
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueItens
+from plataforma_de_servicos.estoque.models.proxys.transferencia import Transferencia
 from plataforma_de_servicos.produto.models import VariacaoProduto
 
 
@@ -16,6 +17,24 @@ class EstoqueItensInline(TabularInline):
     fields = ("produto", "variacao", "quantidade", "saldo", "inventario")
     readonly_fields = ("saldo", "inventario")
     autocomplete_fields = ("produto", "variacao")
+
+    def get_readonly_fields(self, request, obj=None):
+        """Se estoque já existe (edição), todos os campos são readonly."""
+        if obj and obj.pk:
+            return ("produto", "variacao", "quantidade", "saldo", "inventario")
+        return ("saldo", "inventario")
+
+    def has_add_permission(self, request, obj=None):
+        """Não permite adicionar itens em estoque já criado."""
+        if obj and obj.pk:
+            return False
+        return True
+
+    def has_delete_permission(self, request, obj=None):
+        """Não permite deletar itens em estoque já criado."""
+        if obj and obj.pk:
+            return False
+        return True
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "variacao":
@@ -55,12 +74,23 @@ class EstoqueEntradaAdmin(ModelAdmin):
     actions_detail = []  # Displayed at the top of for in object detail
     actions_submit_line = []  # Displayed near save in object detail
 
+    def get_readonly_fields(self, request, obj=None):
+        """
+        Se estoque já existe (edição), todos os campos são readonly,
+        exceto 'nf' se estiver vazio.
+        """
+        if obj and obj.pk:
+            readonly = ["inventario_destino", "funcionario", "observacao"]
+            if obj.nf:
+                readonly.append("nf")
+            return readonly
+        return ()
+
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
 
-        form.base_fields["movimento"].initial = Movimento.ENTRADA.value
-
         if "movimento" in form.base_fields:
+            form.base_fields["movimento"].initial = Movimento.ENTRADA.value
             form.base_fields["movimento"].widget = forms.HiddenInput()
         if "processado" in form.base_fields:
             form.base_fields["processado"].widget = forms.HiddenInput()
@@ -68,44 +98,35 @@ class EstoqueEntradaAdmin(ModelAdmin):
             form.base_fields["inventario_origem"].widget = forms.HiddenInput()
         return form
 
+    def has_delete_permission(self, request, obj=None):
+        """Não permite deletar entradas de estoque já processadas."""
+        if obj and obj.pk:
+            return False
+        return True
+
     def save_related(self, request: Any, form: Any, formsets: Any, change: Any) -> None:
         """
-        ### Portuguese
         O método save_related é chamado após o salvamento
         do formulário principal e dos formulários inline.
-        Ou seja, após salvar todos os itens de estoque
-        relacionados a esta instancia de estoque de estoque.
-
-        Desta forma, após salvar todos os itens de estoque,
-        chamamos o método processar da instancia de estoque
-        de estoque para atualizar
-        o saldo dos produtos relacionados a cada item.
-
-        ### English
-        The save_related method is called after
-        saving the main form and inline forms.
-        That is, after saving all stock items related
-        to this stock entry instance.
-
-        In this way, after saving all stock items,
-        we call the process method of the stock entry
-        instance to update the balance of the products
-        related to each item.
+        Só processa na criação (change=False), não na edição.
         """
         super().save_related(request, form, formsets, change)
-        obj = form.instance
-        obj.processar()
+        if not change:
+            obj = form.instance
+            obj.processar()
 
     def save_formset(self, request, form, formset, change):
-        instances = formset.save(commit=False)
-        entrada = form.instance
+        # Só processa na criação
+        if not change:
+            instances = formset.save(commit=False)
+            entrada = form.instance
 
-        inventario = get_inventario(entrada)
+            inventario = get_inventario(entrada)
 
-        for instance in instances:
-            instance.inventario = inventario
-            instance.save()
-        formset.save_m2m()
+            for instance in instances:
+                instance.inventario = inventario
+                instance.save()
+            formset.save_m2m()
 
 
 class EstoqueSaidaAdmin(ModelAdmin):
@@ -113,7 +134,6 @@ class EstoqueSaidaAdmin(ModelAdmin):
     list_display = ("__str__", "nf", "funcionario", "origem_saida", "pedido_id")
     search_fields = ("nf",)
     list_filter = ("funcionario", "origem_saida")
-    readonly_fields = ("pedido_id",)
 
     compressed_fields = True
     warn_unsaved_form = True
@@ -163,12 +183,25 @@ class EstoqueSaidaAdmin(ModelAdmin):
         ),
     ]
 
+    def get_readonly_fields(self, request, obj=None):
+        """
+        Se estoque já existe (edição), todos os campos são readonly,
+        exceto 'nf' se estiver vazio (para permitir adicionar NF em saídas automáticas).
+        """
+        if obj and obj.pk:
+            # Campos sempre readonly em edição
+            readonly = ["inventario_origem", "funcionario", "origem_saida", "observacao", "pedido_id"]
+            # Se NF já tem valor, também é readonly
+            if obj.nf:
+                readonly.append("nf")
+            return readonly
+        return ("pedido_id",)
+
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
 
-        form.base_fields["movimento"].initial = Movimento.SAIDA.value
-
         if "movimento" in form.base_fields:
+            form.base_fields["movimento"].initial = Movimento.SAIDA.value
             form.base_fields["movimento"].widget = forms.HiddenInput()
 
         if "processado" in form.base_fields:
@@ -183,18 +216,88 @@ class EstoqueSaidaAdmin(ModelAdmin):
 
         return form
 
+    def has_delete_permission(self, request, obj=None):
+        """Não permite deletar saídas de estoque já processadas."""
+        if obj and obj.pk:
+            return False
+        return True
+
     def save_related(self, request: Any, form: Any, formsets: Any, change: Any) -> None:
         super().save_related(request, form, formsets, change)
-        obj = form.instance
-        obj.processar()
+        # Só processa na criação (change=False), não na edição
+        if not change:
+            obj = form.instance
+            obj.processar()
 
     def save_formset(self, request, form, formset, change):
-        instances = formset.save(commit=False)
-        saida = form.instance
+        # Só processa na criação
+        if not change:
+            instances = formset.save(commit=False)
+            saida = form.instance
 
-        inventario = get_inventario(saida)
+            inventario = get_inventario(saida)
 
-        for instance in instances:
-            instance.inventario = inventario
-            instance.save()
-        formset.save_m2m()
+            for instance in instances:
+                instance.inventario = inventario
+                instance.save()
+            formset.save_m2m()
+
+
+class TransferenciaAdmin(ModelAdmin):
+    inlines = (EstoqueItensInline,)
+    list_display = ("__str__", "funcionario", "inventario_origem", "inventario_destino", "data")
+    search_fields = ("data",)
+    list_filter = ("funcionario",)
+
+    compressed_fields = True
+    warn_unsaved_form = True
+
+    list_filter_submit = True
+    list_fullwidth = True
+
+    list_horizontal_scrollbar_top = True
+    list_disable_select_all = True
+
+    actions_list = []
+    actions_row = []
+    actions_detail = []
+    actions_submit_line = []
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj and obj.pk:
+            return ["inventario_origem", "inventario_destino", "funcionario", "observacao"]
+        return ()
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        form.base_fields["movimento"].initial = Movimento.TRANSFERENCIA.value
+        form.base_fields["movimento"].widget = forms.HiddenInput()
+        if "nf" in form.base_fields:
+            form.base_fields["nf"].widget = forms.HiddenInput()
+        if "origem_saida" in form.base_fields:
+            form.base_fields["origem_saida"].widget = forms.HiddenInput()
+        if "processado" in form.base_fields:
+            form.base_fields["processado"].widget = forms.HiddenInput()
+        return form
+
+    def has_delete_permission(self, request, obj=None):
+        if obj and obj.pk:
+            return False
+        return True
+
+    def save_related(self, request: Any, form: Any, formsets: Any, change: Any) -> None:
+        super().save_related(request, form, formsets, change)
+        if not change:
+            obj = form.instance
+            obj.processar()
+
+    def save_formset(self, request, form, formset, change):
+        if not change:
+            instances = formset.save(commit=False)
+            transferencia = form.instance
+            # Na transferência, os itens saem do inventário de origem
+            inventario_origem = transferencia.inventario_origem
+            for instance in instances:
+                instance.inventario = inventario_origem
+                instance.save()
+            formset.save_m2m()

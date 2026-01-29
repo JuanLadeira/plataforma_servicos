@@ -7,6 +7,10 @@ from plataforma_de_servicos.corretor.models import StatusInteresse
 from plataforma_de_servicos.corretor.tests.factories import CorretorFactory
 from plataforma_de_servicos.corretor.tests.factories import InteresseCompraFactory
 from plataforma_de_servicos.corretor.tests.factories import ItemInteresseFactory
+from plataforma_de_servicos.produto.tests.factories import AtributoFactory
+from plataforma_de_servicos.produto.tests.factories import ProdutoFactory
+from plataforma_de_servicos.produto.tests.factories import ValorAtributoFactory
+from plataforma_de_servicos.produto.tests.factories import VariacaoProdutoFactory
 from plataforma_de_servicos.users.tests.factories import UserFactory
 from plataforma_de_servicos.vendas.models import OrdemCompra
 from plataforma_de_servicos.vendas.models import StatusOrdemCompra
@@ -289,3 +293,101 @@ class TestSignalCriarOrdemAoConverter:
         interesse = InteresseCompraFactory(status=StatusInteresse.EM_ATENDIMENTO)
 
         assert not OrdemCompra.objects.filter(interesse=interesse).exists()
+
+
+@pytest.mark.django_db
+class TestOrdemCompraServiceVinculaProdutos:
+    """Testes para validar a vinculação automática de produtos ao criar ordem."""
+
+    def test_criar_ordem_vincula_produto_existente(self):
+        """Testa que o produto é vinculado quando existe no banco."""
+        # Criar produto real
+        produto = ProdutoFactory(produto="Camisa Polo")
+
+        # Criar interesse com item que tem o mesmo nome do produto
+        interesse = InteresseCompraFactory(status=StatusInteresse.NOVO)
+        ItemInteresseFactory(
+            interesse=interesse,
+            produto_nome="Camisa Polo",
+            quantidade=1,
+            preco_unitario=Decimal("99.00"),
+        )
+
+        # Converter dispara criação da ordem
+        interesse.status = StatusInteresse.CONVERTIDO
+        interesse.save()
+
+        # Verificar vinculação
+        item_ordem = interesse.ordem_compra.itens.first()
+        assert item_ordem.produto == produto
+        assert item_ordem.variacao is None
+
+    def test_criar_ordem_vincula_variacao_existente(self):
+        """Testa que a variação é vinculada quando existe no banco."""
+        # Criar produto com variação
+        produto = ProdutoFactory(produto="Camiseta Básica")
+        atributo_cor = AtributoFactory(nome="Cor")
+        atributo_tamanho = AtributoFactory(nome="Tamanho")
+        valor_azul = ValorAtributoFactory(atributo=atributo_cor, valor="Azul")
+        valor_m = ValorAtributoFactory(atributo=atributo_tamanho, valor="M")
+
+        variacao = VariacaoProdutoFactory(produto=produto)
+        variacao.valores.set([valor_azul, valor_m])
+
+        # Criar interesse com item que corresponde à variação
+        interesse = InteresseCompraFactory(status=StatusInteresse.NOVO)
+        ItemInteresseFactory(
+            interesse=interesse,
+            produto_nome="Camiseta Básica",
+            variacao_info="Cor: Azul, Tamanho: M",
+            quantidade=2,
+            preco_unitario=Decimal("59.00"),
+        )
+
+        # Converter
+        interesse.status = StatusInteresse.CONVERTIDO
+        interesse.save()
+
+        # Verificar vinculação
+        item_ordem = interesse.ordem_compra.itens.first()
+        assert item_ordem.produto == produto
+        assert item_ordem.variacao == variacao
+
+    def test_criar_ordem_produto_nao_encontrado_fica_null(self):
+        """Testa que produto fica None se não existir no banco."""
+        interesse = InteresseCompraFactory(status=StatusInteresse.NOVO)
+        ItemInteresseFactory(
+            interesse=interesse,
+            produto_nome="Produto Inexistente",
+            quantidade=1,
+            preco_unitario=Decimal("10.00"),
+        )
+
+        interesse.status = StatusInteresse.CONVERTIDO
+        interesse.save()
+
+        item_ordem = interesse.ordem_compra.itens.first()
+        assert item_ordem.produto is None
+        assert item_ordem.variacao is None
+        assert item_ordem.produto_nome == "Produto Inexistente"
+
+    def test_criar_ordem_variacao_nao_encontrada_vincula_so_produto(self):
+        """Testa que só produto é vinculado se variação não corresponder."""
+        produto = ProdutoFactory(produto="Tênis Runner")
+        # Não criar variação
+
+        interesse = InteresseCompraFactory(status=StatusInteresse.NOVO)
+        ItemInteresseFactory(
+            interesse=interesse,
+            produto_nome="Tênis Runner",
+            variacao_info="Cor: Verde, Tamanho: 42",  # Variação não existe
+            quantidade=1,
+            preco_unitario=Decimal("199.00"),
+        )
+
+        interesse.status = StatusInteresse.CONVERTIDO
+        interesse.save()
+
+        item_ordem = interesse.ordem_compra.itens.first()
+        assert item_ordem.produto == produto
+        assert item_ordem.variacao is None

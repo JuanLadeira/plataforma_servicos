@@ -1,18 +1,11 @@
 import pytest
-from django import forms
-from django.test import RequestFactory
 
-from plataforma_de_servicos.produto.admin.gerente_admin import (
-    ProdutoGerenteAdmin,
-    VariacaoProdutoInlineFormSet,
-)
-from plataforma_de_servicos.produto.models import Produto, VariacaoProduto
-from plataforma_de_servicos.produto.tests.factories import (
-    AtributoFactory,
-    ProdutoFactory,
-    ValorAtributoFactory,
-    VariacaoProdutoFactory,
-)
+from plataforma_de_servicos.produto.admin.gerente_admin import ProdutoGerenteAdmin
+from plataforma_de_servicos.produto.models import Produto
+from plataforma_de_servicos.produto.models import VariacaoProduto
+from plataforma_de_servicos.produto.tests.factories import AtributoFactory
+from plataforma_de_servicos.produto.tests.factories import ProdutoFactory
+from plataforma_de_servicos.produto.tests.factories import ValorAtributoFactory
 
 
 @pytest.fixture
@@ -35,7 +28,7 @@ class TestVariacaoProdutoInlineFormSet:
     """Testes para validação do estoque entre produto e variações."""
 
     def test_variacao_estoque_soma_igual_produto_estoque_valido(
-        self, produto_com_estoque, atributo_tamanho
+        self, produto_com_estoque, atributo_tamanho,
     ):
         """
         Quando a soma do estoque das variações é igual ao estoque do produto,
@@ -58,7 +51,7 @@ class TestVariacaoProdutoInlineFormSet:
         assert total <= produto.estoque
 
     def test_variacao_estoque_soma_menor_produto_estoque_valido(
-        self, produto_com_estoque, atributo_tamanho
+        self, produto_com_estoque, atributo_tamanho,
     ):
         """
         Quando a soma do estoque das variações é menor que o estoque do produto,
@@ -93,7 +86,7 @@ class TestVariacaoProdutoInlineFormSet:
         # A validação não deve ser aplicada quando estoque do produto é 0
 
     def test_variacao_estoque_soma_excede_produto_invalido(
-        self, produto_com_estoque, atributo_tamanho
+        self, produto_com_estoque, atributo_tamanho,
     ):
         """
         Quando a soma do estoque das variações excede o estoque do produto,
@@ -116,7 +109,7 @@ class TestVariacaoProdutoInlineFormSet:
         assert total > produto.estoque  # 16 > 10
 
     def test_deletar_variacao_libera_estoque(
-        self, produto_com_estoque, atributo_tamanho
+        self, produto_com_estoque, atributo_tamanho,
     ):
         """
         Quando uma variação é deletada, seu estoque é liberado para outras variações.
@@ -168,7 +161,7 @@ class TestProdutoGerenteAdminEstoqueDisplay:
         assert result == "-"
 
     def test_estoque_variacoes_display(
-        self, admin_instance, produto_com_estoque, atributo_tamanho
+        self, admin_instance, produto_com_estoque, atributo_tamanho,
     ):
         """Deve mostrar a soma do estoque das variações."""
         produto = produto_com_estoque
@@ -185,14 +178,14 @@ class TestProdutoGerenteAdminEstoqueDisplay:
         assert result == "7"
 
     def test_estoque_variacoes_display_sem_variacoes(
-        self, admin_instance, produto_com_estoque
+        self, admin_instance, produto_com_estoque,
     ):
         """Deve mostrar '0' quando não há variações."""
         result = admin_instance.estoque_variacoes_display(produto_com_estoque)
         assert result == "0"
 
     def test_estoque_disponivel_display(
-        self, admin_instance, produto_com_estoque, atributo_tamanho
+        self, admin_instance, produto_com_estoque, atributo_tamanho,
     ):
         """Deve mostrar estoque disponível para alocação."""
         produto = produto_com_estoque  # estoque = 10
@@ -205,7 +198,7 @@ class TestProdutoGerenteAdminEstoqueDisplay:
         assert result == "7"  # 10 - 3 = 7
 
     def test_estoque_disponivel_display_excedido(
-        self, admin_instance, produto_com_estoque, atributo_tamanho
+        self, admin_instance, produto_com_estoque, atributo_tamanho,
     ):
         """Deve mostrar alerta quando estoque é excedido."""
         produto = produto_com_estoque  # estoque = 10

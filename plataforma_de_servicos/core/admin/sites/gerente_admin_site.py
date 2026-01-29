@@ -10,8 +10,10 @@ from plataforma_de_servicos.corretor.models import Corretor
 from plataforma_de_servicos.corretor.models import InteresseCompra
 from plataforma_de_servicos.estoque.admin.gerente_admin import EstoqueEntradaAdmin
 from plataforma_de_servicos.estoque.admin.gerente_admin import EstoqueSaidaAdmin
+from plataforma_de_servicos.estoque.admin.gerente_admin import TransferenciaAdmin
 from plataforma_de_servicos.estoque.models.proxys.estoque_entrada import EstoqueEntrada
 from plataforma_de_servicos.estoque.models.proxys.estoque_saida import EstoqueSaida
+from plataforma_de_servicos.estoque.models.proxys.transferencia import Transferencia
 from plataforma_de_servicos.inventario.admin.gerente_admin import InventarioGerenteAdmin
 from plataforma_de_servicos.inventario.models import Inventario
 from plataforma_de_servicos.produto.admin.gerente_admin import AtributoGerenteAdmin
@@ -58,6 +60,7 @@ gerente_site.register(ValorAtributo, ValorAtributoGerenteAdmin)
 gerente_site.register(VariacaoProduto, VariacaoProdutoGerenteAdmin)
 gerente_site.register(EstoqueEntrada, EstoqueEntradaAdmin)
 gerente_site.register(EstoqueSaida, EstoqueSaidaAdmin)
+gerente_site.register(Transferencia, TransferenciaAdmin)
 gerente_site.register(Inventario, InventarioGerenteAdmin)
 gerente_site.register(Corretor, CorretorGerenteAdmin)
 gerente_site.register(InteresseCompra, InteresseCompraGerenteAdmin)
