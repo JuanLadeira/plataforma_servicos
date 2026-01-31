@@ -1,0 +1,35 @@
+{% extends "admin/change_form.html" %}
+
+{% block admin_change_form_document_ready %}
+{{ block.super }}
+<script>
+(function() {
+    function reorderFormElements() {
+        const fieldsets = document.querySelectorAll('fieldset');
+        let observacoesFieldset = null;
+
+        fieldsets.forEach(function(fieldset) {
+            const legend = fieldset.querySelector('h2, legend, .title');
+            if (legend && legend.textContent.trim().toLowerCase().includes('observ')) {
+                observacoesFieldset = fieldset;
+            }
+        });
+
+        const inlineGroups = document.querySelectorAll('.inline-group, [data-inline-type]');
+
+        if (observacoesFieldset && inlineGroups.length > 0) {
+            const lastInline = inlineGroups[inlineGroups.length - 1];
+            if (lastInline.parentNode) {
+                lastInline.parentNode.insertBefore(observacoesFieldset, lastInline.nextSibling);
+            }
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', reorderFormElements);
+    } else {
+        setTimeout(reorderFormElements, 100);
+    }
+})();
+</script>
+{% endblock %}
