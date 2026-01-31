@@ -7,10 +7,12 @@ from typing import TYPE_CHECKING
 from django.db.models import Exists
 from django.db.models import OuterRef
 from django.db.models import QuerySet
+from django.db.models import Q
 
 from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models.categoria_model import Categoria
 from plataforma_de_servicos.produto.models.produto_model import Produto
+from plataforma_de_servicos.produto.models import VariacaoProduto
 
 if TYPE_CHECKING:
     from plataforma_de_servicos.produto.models import VariacaoProduto
@@ -35,6 +37,19 @@ class ProdutoVitrine:
 
 
 @dataclass
+class VariacaoVitrine:
+    """Representação de uma variação de produto para exibição na vitrine."""
+    id: int
+    nome_completo: str
+    imagem: str | None
+    sku: str
+    categoria: str
+    preco_formatado: str
+    estoque: int
+    url: str
+
+
+@dataclass
 class VariacaoPrecoResult:
     """Resultado do cálculo de preço de uma variação."""
 
@@ -48,23 +63,6 @@ class VariacaoPrecoResult:
 
 class ProdutoService:
     """Serviço para gerenciar operações de Produto."""
-
-    @staticmethod
-    def _get_produtos_em_vitrine_subquery() -> Exists:
-        """
-        Retorna subquery para verificar se produto tem saldo em inventário exibível.
-
-        Returns:
-            Exists: Subquery para usar em annotate
-        """
-        return Exists(
-            InventarioSaldo.objects.filter(
-                produto=OuterRef("pk"),
-                quantidade__gt=0,
-                inventario__is_ativo=True,
-                inventario__exibir_na_vitrine=True,
-            ),
-        )
 
     @staticmethod
     def listar_produtos_vitrine(
@@ -81,33 +79,19 @@ class ProdutoService:
         Returns:
             tuple: (QuerySet de produtos, categoria selecionada ou string)
         """
-        produtos_em_vitrine = ProdutoService._get_produtos_em_vitrine_subquery()
         categoria: Categoria | str = "Todos os produtos"
+
+        produtos = Produto.objects.filter(disponivel=True).prefetch_related("images")
 
         if category_id:
             try:
                 category_id_int = int(category_id)
-                produtos = (
-                    Produto.objects.filter(categoria__id=category_id_int)
-                    .annotate(em_vitrine=produtos_em_vitrine)
-                    .filter(em_vitrine=True)
-                    .prefetch_related("images")
-                )
+                produtos = produtos.filter(categoria__id=category_id_int)
                 cat_obj = Categoria.objects.filter(id=category_id_int).first()
                 if cat_obj:
                     categoria = cat_obj
             except (ValueError, TypeError):
-                produtos = (
-                    Produto.objects.annotate(em_vitrine=produtos_em_vitrine)
-                    .filter(em_vitrine=True)
-                    .prefetch_related("images")
-                )
-        else:
-            produtos = (
-                Produto.objects.annotate(em_vitrine=produtos_em_vitrine)
-                .filter(em_vitrine=True)
-                .prefetch_related("images")
-            )
+                pass
 
         if search:
             produtos = produtos.filter(produto__icontains=search)
@@ -138,6 +122,58 @@ class ProdutoService:
             )
             for produto in produtos
             if produto.estoque > 0
+        ]
+
+    @staticmethod
+    def listar_variacoes_vitrine(
+        category_id: int | str | None = None,
+        search: str | None = None,
+    ) -> tuple[QuerySet[VariacaoProduto], Categoria | str]:
+        """
+        Lista variações de produtos disponíveis na vitrine com filtros opcionais.
+        """
+        variacoes = VariacaoProduto.objects.filter(
+            produto__disponivel=True,
+            estoque__gt=0
+        ).select_related('produto', 'produto__categoria').prefetch_related('valores__atributo')
+
+        categoria: Categoria | str = "Todos os produtos"
+
+        if category_id:
+            try:
+                category_id_int = int(category_id)
+                variacoes = variacoes.filter(produto__categoria__id=category_id_int)
+                cat_obj = Categoria.objects.filter(id=category_id_int).first()
+                if cat_obj:
+                    categoria = cat_obj
+            except (ValueError, TypeError):
+                pass
+
+        if search:
+            variacoes = variacoes.filter(
+                Q(produto__produto__icontains=search) |
+                Q(valores__valor__icontains=search)
+            ).distinct()
+
+        return variacoes, categoria
+
+    @staticmethod
+    def preparar_variacoes_para_vitrine(variacoes: QuerySet[VariacaoProduto]) -> list[VariacaoVitrine]:
+        """
+        Prepara lista de variações para exibição na vitrine.
+        """
+        return [
+            VariacaoVitrine(
+                id=variacao.id,
+                nome_completo=variacao.get_nome_completo(),
+                imagem=variacao.produto.get_image(),
+                sku=variacao.sku,
+                categoria=variacao.produto.categoria.categoria if variacao.produto.categoria else "Sem categoria",
+                preco_formatado=variacao.get_preco_display(),
+                estoque=variacao.estoque,
+                url=variacao.get_absolute_url(),
+            )
+            for variacao in variacoes
         ]
 
     @staticmethod
