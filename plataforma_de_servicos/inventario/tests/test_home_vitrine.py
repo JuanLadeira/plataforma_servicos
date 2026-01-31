@@ -86,7 +86,7 @@ class HomeVitrineFilterTest(TestCase):
 
         # Verificar contexto
         produtos = response.context["my_products"]
-        nomes_produtos = [p["produto"] for p in produtos]
+        nomes_produtos = [p.produto for p in produtos]
 
         self.assertIn("Produto Vitrine", nomes_produtos)
         self.assertNotIn("Produto Oculto", nomes_produtos)
@@ -105,7 +105,7 @@ class HomeVitrineFilterTest(TestCase):
 
         response = self.client.get(reverse("home"))
         produtos = response.context["my_products"]
-        nomes_produtos = [p["produto"] for p in produtos]
+        nomes_produtos = [p.produto for p in produtos]
 
         self.assertNotIn("Produto Sem Vitrine", nomes_produtos)
 
@@ -129,7 +129,7 @@ class HomeVitrineFilterTest(TestCase):
         # Filtrar pela categoria original
         response = self.client.get(reverse("home"), {"category": self.categoria.id})
         produtos = response.context["my_products"]
-        nomes_produtos = [p["produto"] for p in produtos]
+        nomes_produtos = [p.produto for p in produtos]
 
         self.assertIn("Produto Vitrine", nomes_produtos)
         self.assertNotIn("Produto Outra Categoria", nomes_produtos)
@@ -151,7 +151,7 @@ class HomeVitrineFilterTest(TestCase):
 
         response = self.client.get(reverse("home"))
         produtos = response.context["my_products"]
-        nomes_produtos = [p["produto"] for p in produtos]
+        nomes_produtos = [p.produto for p in produtos]
 
         self.assertNotIn("Produto Sem Estoque", nomes_produtos)
 
@@ -170,7 +170,7 @@ class HomeVitrineFilterTest(TestCase):
         """Testar que busca por texto também respeita filtro de vitrine."""
         response = self.client.get(reverse("home"), {"search": "Produto"})
         produtos = response.context["my_products"]
-        nomes_produtos = [p["produto"] for p in produtos]
+        nomes_produtos = [p.produto for p in produtos]
 
         # Deve encontrar apenas o produto na vitrine
         self.assertIn("Produto Vitrine", nomes_produtos)
@@ -233,7 +233,7 @@ class HomeVitrineEdgeCasesTest(TestCase):
 
         response = self.client.get(reverse("home"))
         produtos = response.context["my_products"]
-        nomes_produtos = [p["produto"] for p in produtos]
+        nomes_produtos = [p.produto for p in produtos]
 
         # Deve aparecer porque tem saldo em inventário vitrine
         self.assertIn("Produto Multi-Inventário", nomes_produtos)

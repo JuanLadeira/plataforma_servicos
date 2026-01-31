@@ -8,11 +8,24 @@ from unfold.admin import TabularInline
 from unfold.contrib.forms.widgets import ArrayWidget
 from unfold.contrib.forms.widgets import WysiwygWidget
 
+from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models import Atributo
 from plataforma_de_servicos.produto.models import Image
 from plataforma_de_servicos.produto.models import Produto
 from plataforma_de_servicos.produto.models import ValorAtributo
 from plataforma_de_servicos.produto.models import VariacaoProduto
+
+
+class InventarioSaldoInline(TabularInline):
+    model = InventarioSaldo
+    extra = 0
+    fields = ("inventario", "quantidade")
+    readonly_fields = ("inventario", "quantidade")
+    can_delete = False
+    verbose_name_plural = "Saldo por Inventário"
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 class VariacaoProdutoInlineFormSet(BaseInlineFormSet):
@@ -168,7 +181,7 @@ class ProdutoGerenteAdmin(ModelAdmin):
             },
         ),
     ]
-    inlines = [ImageInline, VariacaoProdutoInline]
+    inlines = [InventarioSaldoInline, ImageInline, VariacaoProdutoInline]
     readonly_fields = ["data", "estoque_display", "estoque_variacoes_display", "estoque_disponivel_display"]
 
     def get_queryset(self, request):

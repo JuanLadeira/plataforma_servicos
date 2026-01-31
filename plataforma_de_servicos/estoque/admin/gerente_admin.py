@@ -8,6 +8,7 @@ from unfold.admin import TabularInline
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueItens
 from plataforma_de_servicos.estoque.models.proxys.transferencia import Transferencia
+from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models import VariacaoProduto
 
 
@@ -44,6 +45,58 @@ class EstoqueItensInline(TabularInline):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
+class TransferenciaEstoqueItensInline(TabularInline):
+    model = EstoqueItens
+    extra = 0
+    autocomplete_fields = ("produto", "variacao")
+
+    def get_fields(self, request, obj=None):
+        if obj and obj.pk:  # a transfer object exists
+            return ("produto", "variacao", "quantidade", "saldo_origem", "saldo_destino")
+        return ("produto", "variacao", "quantidade")
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj and obj.pk:
+            return ("produto", "variacao", "quantidade", "saldo_origem", "saldo_destino")
+        return ()
+
+    def has_add_permission(self, request, obj=None):
+        return not obj or not obj.pk
+
+    def has_delete_permission(self, request, obj=None):
+        return not obj or not obj.pk
+
+    def saldo_origem(self, obj):
+        if obj.pk:
+            transferencia = obj.estoque
+            if transferencia.movimento == Movimento.TRANSFERENCIA.value and transferencia.processado:
+                try:
+                    saldo = InventarioSaldo.objects.get(
+                        inventario=transferencia.inventario_origem,
+                        produto=obj.produto
+                    )
+                    return saldo.quantidade
+                except InventarioSaldo.DoesNotExist:
+                    return 0
+        return "-"
+    saldo_origem.short_description = "Saldo Final Origem"
+
+    def saldo_destino(self, obj):
+        if obj.pk:
+            transferencia = obj.estoque
+            if transferencia.movimento == Movimento.TRANSFERENCIA.value and transferencia.processado:
+                try:
+                    saldo = InventarioSaldo.objects.get(
+                        inventario=transferencia.inventario_destino,
+                        produto=obj.produto
+                    )
+                    return saldo.quantidade
+                except InventarioSaldo.DoesNotExist:
+                    return 0
+        return "-"
+    saldo_destino.short_description = "Saldo Final Destino"
+
+
 def get_inventario(estoque):
     if estoque.movimento == Movimento.ENTRADA.value:
         return estoque.inventario_destino
@@ -59,6 +112,7 @@ class EstoqueEntradaAdmin(ModelAdmin):
     list_display = ("__str__", "nf", "funcionario", "data")
     search_fields = ("nf", "data")
     list_filter = ("funcionario",)
+    change_form_template = "admin/estoque/change_form_observacoes_final.html"
 
     compressed_fields = True
     warn_unsaved_form = True
@@ -73,6 +127,26 @@ class EstoqueEntradaAdmin(ModelAdmin):
     actions_row = []  # Displayed in a table row in results list
     actions_detail = []  # Displayed at the top of for in object detail
     actions_submit_line = []  # Displayed near save in object detail
+
+    fieldsets = [
+        (
+            "Informações da Entrada",
+            {
+                "fields": [
+                    "inventario_destino",
+                    "funcionario",
+                    "nf",
+                ],
+                "description": "Dados básicos da entrada de estoque."
+            },
+        ),
+        (
+            "Observações",
+            {
+                "fields": ["observacao"],
+            },
+        ),
+    ]
 
     def get_readonly_fields(self, request, obj=None):
         """
@@ -96,6 +170,11 @@ class EstoqueEntradaAdmin(ModelAdmin):
             form.base_fields["processado"].widget = forms.HiddenInput()
         if "inventario_origem" in form.base_fields:
             form.base_fields["inventario_origem"].widget = forms.HiddenInput()
+        # Campos específicos de saída - ocultar na entrada
+        if "origem_saida" in form.base_fields:
+            form.base_fields["origem_saida"].widget = forms.HiddenInput()
+        if "ordem_compra" in form.base_fields:
+            form.base_fields["ordem_compra"].widget = forms.HiddenInput()
         return form
 
     def has_delete_permission(self, request, obj=None):
@@ -131,9 +210,10 @@ class EstoqueEntradaAdmin(ModelAdmin):
 
 class EstoqueSaidaAdmin(ModelAdmin):
     inlines = (EstoqueItensInline,)
-    list_display = ("__str__", "nf", "funcionario", "origem_saida", "pedido_id")
+    list_display = ("__str__", "nf", "funcionario", "origem_saida", "ordem_compra")
     search_fields = ("nf",)
     list_filter = ("funcionario", "origem_saida")
+    change_form_template = "admin/estoque/change_form_observacoes_final.html"
 
     compressed_fields = True
     warn_unsaved_form = True
@@ -149,39 +229,52 @@ class EstoqueSaidaAdmin(ModelAdmin):
     actions_detail = []  # Displayed at the top of for in object detail
     actions_submit_line = []  # Displayed near save in object detail
 
-    fieldsets = [
-        (
-            "Informações da Saída",
-            {
-                "fields": [
-                    "inventario_origem",
-                    "funcionario",
-                    "nf",
-                ],
-                "description": "Dados básicos da saída de estoque."
-            },
-        ),
-        (
-            "Detalhes da Saída",
-            {
-                "fields": [
-                    "origem_saida",
-                    "observacao",
-                ],
-                "description": "Motivo da saída (opcional). Se for uma saída automática de pedido, o campo 'ID do Pedido' será preenchido automaticamente."
-            },
-        ),
-        (
-            "Informações do Sistema",
-            {
-                "fields": [
-                    "pedido_id",
-                ],
-                "classes": ["collapse"],
-                "description": "Campos preenchidos automaticamente pelo sistema."
-            },
-        ),
-    ]
+    def get_fieldsets(self, request, obj=None):
+        """
+        Retorna fieldsets dinamicamente:
+        - Na criação: não exibe 'Informações do Sistema'
+        - Na edição: exibe 'Informações do Sistema' apenas se ordem_compra tiver valor
+        """
+        fieldsets = [
+            (
+                "Informações da Saída",
+                {
+                    "fields": [
+                        "inventario_origem",
+                        "funcionario",
+                        "nf",
+                    ],
+                    "description": "Dados básicos da saída de estoque."
+                },
+            ),
+            (
+                "Detalhes da Saída",
+                {
+                    "fields": [
+                        "origem_saida",
+                    ],
+                    "description": "Motivo da saída (opcional)."
+                },
+            ),
+            (
+                "Observações",
+                {
+                    "fields": ["observacao"],
+                },
+            ),
+        ]
+
+        # Na edição, se tiver ordem_compra, adiciona o fieldset de sistema
+        if obj and obj.pk and obj.ordem_compra:
+            fieldsets.insert(2, (
+                "Informações do Sistema",
+                {
+                    "fields": ["ordem_compra"],
+                    "description": "Campos preenchidos automaticamente pelo sistema."
+                },
+            ))
+
+        return fieldsets
 
     def get_readonly_fields(self, request, obj=None):
         """
@@ -190,12 +283,12 @@ class EstoqueSaidaAdmin(ModelAdmin):
         """
         if obj and obj.pk:
             # Campos sempre readonly em edição
-            readonly = ["inventario_origem", "funcionario", "origem_saida", "observacao", "pedido_id"]
+            readonly = ["inventario_origem", "funcionario", "origem_saida", "observacao", "ordem_compra"]
             # Se NF já tem valor, também é readonly
             if obj.nf:
                 readonly.append("nf")
             return readonly
-        return ("pedido_id",)
+        return ("ordem_compra",)
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
@@ -244,10 +337,11 @@ class EstoqueSaidaAdmin(ModelAdmin):
 
 
 class TransferenciaAdmin(ModelAdmin):
-    inlines = (EstoqueItensInline,)
+    inlines = (TransferenciaEstoqueItensInline,)
     list_display = ("__str__", "funcionario", "inventario_origem", "inventario_destino", "data")
     search_fields = ("data",)
     list_filter = ("funcionario",)
+    change_form_template = "admin/estoque/change_form_observacoes_final.html"
 
     compressed_fields = True
     warn_unsaved_form = True
@@ -263,6 +357,26 @@ class TransferenciaAdmin(ModelAdmin):
     actions_detail = []
     actions_submit_line = []
 
+    fieldsets = [
+        (
+            "Informações da Transferência",
+            {
+                "fields": [
+                    "inventario_origem",
+                    "inventario_destino",
+                    "funcionario",
+                ],
+                "description": "Dados da transferência entre inventários."
+            },
+        ),
+        (
+            "Observações",
+            {
+                "fields": ["observacao"],
+            },
+        ),
+    ]
+
     def get_readonly_fields(self, request, obj=None):
         if obj and obj.pk:
             return ["inventario_origem", "inventario_destino", "funcionario", "observacao"]
@@ -270,14 +384,17 @@ class TransferenciaAdmin(ModelAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
-        form.base_fields["movimento"].initial = Movimento.TRANSFERENCIA.value
-        form.base_fields["movimento"].widget = forms.HiddenInput()
+        if "movimento" in form.base_fields:
+            form.base_fields["movimento"].initial = Movimento.TRANSFERENCIA.value
+            form.base_fields["movimento"].widget = forms.HiddenInput()
         if "nf" in form.base_fields:
             form.base_fields["nf"].widget = forms.HiddenInput()
         if "origem_saida" in form.base_fields:
             form.base_fields["origem_saida"].widget = forms.HiddenInput()
         if "processado" in form.base_fields:
             form.base_fields["processado"].widget = forms.HiddenInput()
+        if "ordem_compra" in form.base_fields:
+            form.base_fields["ordem_compra"].widget = forms.HiddenInput()
         return form
 
     def has_delete_permission(self, request, obj=None):

@@ -8,6 +8,7 @@ from django.shortcuts import render
 from django.template.context_processors import csrf
 from django.views.decorators.http import require_POST
 
+from plataforma_de_servicos.produto.models import VariacaoProduto
 from plataforma_de_servicos.produto.models.categoria_model import Categoria
 from plataforma_de_servicos.produto.models.produto_model import Produto
 from plataforma_de_servicos.produto.services import ProdutoService
@@ -19,6 +20,7 @@ def home(request):
     category_id = request.GET.get("category")
     search = request.GET.get("search")
 
+    # Use the old service methods for products
     produtos, categoria = ProdutoService.listar_produtos_vitrine(
         category_id=category_id,
         search=search,
@@ -27,6 +29,7 @@ def home(request):
     if search:
         logger.info("Filtro de busca aplicado: %s", search)
 
+    # Prepare products for the template
     produtos_vitrine = ProdutoService.preparar_produtos_para_vitrine(produtos)
 
     selected_category = None
@@ -37,12 +40,10 @@ def home(request):
             pass
 
     context = {
-        "my_products": [asdict(p) for p in produtos_vitrine],
+        "my_products": produtos_vitrine,
         "categoria": categoria,
         "selected_category": selected_category,
     }
-
-    logger.info(context)
 
     if request.headers.get("HX-Request"):
         logger.info("Requisição HTMX detectada, retornando apenas o template parcial")
@@ -103,3 +104,24 @@ def calcular_preco_variacao(request):
     resultado = ProdutoService.calcular_preco_variacao(produto, valores_ids or None)
 
     return JsonResponse(asdict(resultado))
+
+
+def variacao_detail(request, sku):
+    """
+    Exibe os detalhes de uma variação específica de um produto.
+    """
+    variacao = get_object_or_404(
+        VariacaoProduto.objects.select_related('produto__categoria'),
+        sku=sku
+    )
+    produto = variacao.produto
+
+    context = {
+        "variacao": variacao,
+        "produto": produto,
+        "imagens": produto.get_images(),
+        "atributos": variacao.valores.select_related('atributo'),
+    }
+    context.update(csrf(request))
+
+    return render(request, "pages/variacao-detail.html", context)
