@@ -4,8 +4,11 @@ from plataforma_de_servicos.produto.models.categoria_model import Categoria
 
 
 def categories(request):
-    # Annotate with product count (only available products with stock > 0)
+    # Annotate with variation count for available products with stock
     all_categories = Categoria.objects.annotate(
-        produto_count=Count('produtos', filter=Q(produtos__estoque__gt=0, produtos__disponivel=True))
+        produto_count=Count(
+            'produtos__variacoes',
+            filter=Q(produtos__variacoes__estoque__gt=0, produtos__variacoes__produto__disponivel=True)
+        )
     ).order_by('categoria')
     return {"categories": all_categories}

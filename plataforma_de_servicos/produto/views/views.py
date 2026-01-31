@@ -20,8 +20,8 @@ def home(request):
     category_id = request.GET.get("category")
     search = request.GET.get("search")
 
-    # Use the old service methods for products
-    produtos, categoria = ProdutoService.listar_produtos_vitrine(
+    # Busca e prepara as variações de produtos para a vitrine
+    variacoes, categoria = ProdutoService.listar_variacoes_vitrine(
         category_id=category_id,
         search=search,
     )
@@ -29,8 +29,8 @@ def home(request):
     if search:
         logger.info("Filtro de busca aplicado: %s", search)
 
-    # Prepare products for the template
-    produtos_vitrine = ProdutoService.preparar_produtos_para_vitrine(produtos)
+    # Prepara as variações para o template
+    variacoes_vitrine = ProdutoService.preparar_variacoes_para_vitrine(variacoes)
 
     selected_category = None
     if category_id:
@@ -40,7 +40,7 @@ def home(request):
             pass
 
     context = {
-        "my_products": produtos_vitrine,
+        "my_variations": variacoes_vitrine,
         "categoria": categoria,
         "selected_category": selected_category,
     }
@@ -111,8 +111,8 @@ def variacao_detail(request, sku):
     Exibe os detalhes de uma variação específica de um produto.
     """
     variacao = get_object_or_404(
-        VariacaoProduto.objects.select_related('produto__categoria'),
-        sku=sku
+        VariacaoProduto.objects.select_related("produto__categoria"),
+        sku=sku,
     )
     produto = variacao.produto
 
@@ -120,7 +120,7 @@ def variacao_detail(request, sku):
         "variacao": variacao,
         "produto": produto,
         "imagens": produto.get_images(),
-        "atributos": variacao.valores.select_related('atributo'),
+        "atributos": variacao.valores.select_related("atributo"),
     }
     context.update(csrf(request))
 

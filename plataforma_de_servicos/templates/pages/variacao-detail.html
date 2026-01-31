@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block css %}
+{{ block.super }}
+<style>
+    .product-detail-card {
+        border: none;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.07);
+    }
+
+    .carousel-cover-flow {
+        position: relative;
+        height: 400px; /* Adjust as needed */
+        display: flex;
+        align-items: center;
+    }
+
+    .carousel-cover-flow .carousel-inner {
+        overflow: visible;
+        width: 100%;
+        height: 100%;
+    }
+
+    .carousel-cover-flow .carousel-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+        z-index: 1;
+    }
+
+    .carousel-cover-flow .carousel-item img {
+        width: auto;
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .carousel-cover-flow .carousel-item.active {
+        transform: scale(1);
+        opacity: 1;
+        z-index: 3;
+    }
+    
+    .carousel-cover-flow .carousel-item.active img {
+        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    }
+
+    .carousel-cover-flow .carousel-item-prev,
+    .carousel-cover-flow .carousel-item-next {
+        opacity: 0.4;
+        z-index: 2;
+    }
+
+    .carousel-cover-flow .carousel-item-prev {
+        transform: translateX(-45%) scale(0.75);
+    }
+
+    .carousel-cover-flow .carousel-item-next {
+        transform: translateX(45%) scale(0.75);
+    }
+
+    .carousel-cover-flow .carousel-control-prev,
+    .carousel-cover-flow .carousel-control-next {
+        width: 15%;
+        z-index: 4;
+        background: none;
+        border: none;
+    }
+    .carousel-control-prev-icon, .carousel-control-next-icon {
+        filter: invert(1) drop-shadow(0 0 2px rgba(0,0,0,0.5));
+    }
+
+    .attribute-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    .attribute-pills .attribute-item {
+        background-color: #f1f5f9;
+        border-radius: 9999px;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .attribute-pills .attribute-name {
+        font-weight: 500;
+        color: #475569;
+    }
+    .attribute-pills .attribute-value {
+        color: #1e293b;
+        font-weight: 600;
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+<div class="container my-5">
+    <main>
+        <div class="card product-detail-card">
+            <div class="card-body p-lg-5">
+                <div class="row g-5">
+                    <!-- Galeria de imagens -->
+                    <div class="col-lg-6">
+                        {% if imagens %}
+                            <div id="imageCarousel" class="carousel carousel-cover-flow slide" data-bs-ride="carousel">
+                                <div class="carousel-inner">
+                                    {% for imagem in imagens %}
+                                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                            <img src="{{ imagem }}" alt="Imagem {{ forloop.counter }} de {{ produto.produto }}">
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {% if imagens|length > 1 %}
+                                <button class="carousel-control-prev" type="button" data-bs-target="#imageCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#imageCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="d-flex align-items-center justify-content-center bg-light rounded h-100">
+                                <img alt="Foto não disponível" src="{% static 'images/no-image.png' %}" style="width: 150px; opacity: 0.7;" />
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Detalhes do produto -->
+                    <div class="col-lg-6">
+                        <span class="badge bg-primary mb-2">{{ produto.categoria }}</span>
+                        <h1 class="h2 fw-bold">{{ variacao.get_nome_completo }}</h1>
+
+                        {% if produto.descricao %}
+                            <p class="product-description text-muted mt-3">{{ produto.descricao }}</p>
+                        {% endif %}
+
+                        <!-- Atributos Estáticos -->
+                        <div class="my-4">
+                            <h5 class="mb-3">Características</h5>
+                            <div class="attribute-pills">
+                                {% for valor_atributo in atributos %}
+                                    <div class="attribute-item">
+                                        <span class="attribute-name">{{ valor_atributo.atributo.nome }}:</span>
+                                        <span class="attribute-value">{{ valor_atributo.valor }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="action-box my-4 p-4 rounded bg-light">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="h5 text-muted mb-0">Preço</span>
+                                <span id="preco-total" class="h2 fw-bold text-primary mb-0">{{ variacao.get_preco_display }}</span>
+                            </div>
+
+                            <div class="row g-2 align-items-center">
+                                <div class="col-md-5">
+                                    <select class="form-select quantity-select" id="select-{{ variacao.id }}" {% if variacao.estoque == 0 %}disabled{% endif %}>
+                                        {% for i in variacao.get_stock_range %}
+                                            <option value="{{ i }}">{{ i }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-7">
+                                    <button
+                                        type="button"
+                                        id="add-button"
+                                        class="btn btn-primary w-100 py-2"
+                                        hx-post="{% url 'cart:cart-add' %}"
+                                        hx-include="#select-{{ variacao.id }}"
+                                        hx-vals='{"variation_id": "{{ variacao.id }}", "action": "post", "no_redirect": "true"}'
+                                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                        hx-target="#cart-badge"
+                                        hx-swap="outerHTML"
+                                        hx-indicator="#add-button"
+                                        {% if variacao.estoque == 0 %}disabled{% endif %}>
+                                        <span class="htmx-indicator spinner-border spinner-border-sm me-1" role="status"></span>
+                                        <i class="fa fa-plus htmx-hide-on-request"></i>
+                                        <span class="htmx-hide-on-request">Adicionar</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="stock-info" class="d-flex align-items-center text-muted">
+                            <i class="fa fa-archive me-2"></i>
+                            <span id="estoque-display" class="{% if variacao.estoque > 10 %}text-success{% elif variacao.estoque > 0 %}text-warning{% else %}text-danger{% endif %}">
+                                {% if variacao.estoque > 0 %}
+                                    <strong>{{ variacao.estoque }}</strong> unidades em estoque
+                                {% else %}
+                                    Produto indisponível
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock content %}

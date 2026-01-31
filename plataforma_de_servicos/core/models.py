@@ -26,22 +26,22 @@ class SiteConfig(TimeStampedModel):
     site_name = models.CharField(
         "Nome do Site",
         max_length=100,
-        default="Plataforma de Serviços",
+        default="AutoPrime",
         help_text="Título exibido no navbar",
     )
     hero_title = models.CharField(
         "Título do Banner",
         max_length=200,
-        default="Pizzas Artesanais, Sabor Inesquecível",
+        default="Veículos e Imóveis Premium",
     )
     hero_description = models.TextField(
         "Descrição do Banner",
-        default="Feitas com os melhores ingredientes, direto do forno para sua casa.",
+        default="Encontre carros, motos e imóveis selecionados com as melhores condições do mercado.",
     )
     hero_button_text = models.CharField(
         "Texto do Botão",
         max_length=50,
-        default="Ver o Cardápio",
+        default="Ver Ofertas",
     )
     hero_image = models.ImageField(
         "Imagem do Banner",
@@ -53,7 +53,7 @@ class SiteConfig(TimeStampedModel):
     hero_image_url = models.URLField(
         "URL da Imagem do Banner",
         blank=True,
-        default="https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop",
+        default="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?q=80&w=2083&auto=format&fit=crop",
         help_text="URL externa para imagem do banner (usada se não houver upload)",
     )
 

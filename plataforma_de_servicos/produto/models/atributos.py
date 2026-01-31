@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.urls import reverse
 from django_extensions.db.models import AutoSlugField
 
 from .produto_model import Produto
@@ -99,17 +100,9 @@ class VariacaoProduto(models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Gera um SKU automaticamente se não for fornecido.
-        O SKU é composto pelo slug do produto e os IDs dos valores de atributo.
+        O SKU é gerado automaticamente via signal post_save.
         """
-        # A geração do SKU depende da relação ManyToMany, que só é salva após o objeto principal.
-        # Portanto, o SKU é gerado após o primeiro save.
-        is_new = self._state.adding
         super().save(*args, **kwargs)
-        if is_new and not self.sku:
-            # É necessário um segundo save para construir o SKU com os IDs dos valores.
-            # Isso pode ser melhorado com um signal post_save para evitar o duplo save aqui.
-            pass
 
     def gerar_sku(self):
         """
@@ -165,3 +158,25 @@ class VariacaoProduto(models.Model):
         """
         preco = self.calcular_preco_final()
         return f"R$ {preco:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+
+    def get_nome_completo(self):
+        """
+        Retorna o nome completo da variação, incluindo atributos.
+        Ex: "Toyota Corolla Cross XRE - Branco - Automático"
+        """
+        valores_str = " - ".join(str(valor.valor) for valor in self.valores.all())
+        if valores_str:
+            return f"{self.produto.produto} - {valores_str}"
+        return self.produto.produto
+
+    def get_absolute_url(self):
+        """
+        Retorna a URL para a página de detalhes desta variação.
+        """
+        return reverse("variacao-detail", kwargs={"sku": self.sku})
+
+    def get_stock_range(self):
+        """
+        Retorna uma lista de números para o seletor de quantidade.
+        """
+        return [str(i) for i in range(1, min(self.estoque, 20) + 1)]

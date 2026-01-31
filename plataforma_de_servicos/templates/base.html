@@ -6,12 +6,12 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>
       {% block title %}
-      Bella Pizza
+      {{ site_config.site_name|default:"AutoPrime" }}
     {% endblock title %}
   </title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description"
-        content="Projeto de plataforma de serviços" />
+        content="Plataforma de venda de veículos e imóveis premium" />
   <meta name="author"
         content="Juan" />
   <link rel="icon" href="{% static 'images/favicons/favicon.ico' %}" />

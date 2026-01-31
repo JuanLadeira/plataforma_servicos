@@ -60,6 +60,7 @@ class Produto(models.Model):
     ncm = models.CharField("NCM", max_length=8)
     produto = models.CharField(max_length=100, unique=True)
     slug = AutoSlugField(populate_from="produto", unique=True)
+    disponivel = models.BooleanField("Disponível", default=True, help_text="Marque para exibir o produto na vitrine.")
     descricao = models.TextField(
         "descrição",
         blank=True,

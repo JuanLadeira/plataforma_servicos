@@ -118,13 +118,13 @@ class TestEstoqueEntradaAdminReadOnly:
 class TestEstoqueSaidaAdminReadOnly:
     """Testes para verificar comportamento read-only após criação."""
 
-    def test_get_readonly_fields_sem_obj_retorna_pedido_id(self, admin_site, request_factory, admin_user):
-        """Na criação (sem obj), apenas pedido_id é readonly."""
+    def test_get_readonly_fields_sem_obj_retorna_ordem_compra(self, admin_site, request_factory, admin_user):
+        """Na criação (sem obj), apenas ordem_compra é readonly."""
         admin = EstoqueSaidaAdmin(EstoqueSaida, admin_site)
         request = request_factory.get("/")
         request.user = admin_user
         readonly = admin.get_readonly_fields(request, obj=None)
-        assert "pedido_id" in readonly
+        assert "ordem_compra" in readonly
 
     def test_get_readonly_fields_com_obj_retorna_campos(self, admin_site, request_factory, admin_user, inventario):
         """Na edição (com obj), retorna campos readonly."""
@@ -144,7 +144,7 @@ class TestEstoqueSaidaAdminReadOnly:
         assert "funcionario" in readonly
         assert "origem_saida" in readonly
         assert "observacao" in readonly
-        assert "pedido_id" in readonly
+        assert "ordem_compra" in readonly
 
     def test_get_readonly_fields_nf_vazia_editavel(self, admin_site, request_factory, admin_user, inventario):
         """Se NF está vazia (None), permite editar (para saídas automáticas)."""

@@ -1,11 +1,12 @@
-/* Modern Dark Theme */
+/* Modern Dark Theme - Veículos e Imóveis */
 
 :root {
-    --dark-bg: #222831;
-    --dark-surface: #393E46;
-    --dark-primary: #00ADB5;
-    --dark-text: #EEEEEE;
-    --dark-border: #4a4a4a;
+    --dark-bg: #1a1d21;
+    --dark-surface: #2d3339;
+    --dark-primary: #4a90d9; /* Azul claro para contraste no dark mode */
+    --dark-accent: #d4af37; /* Dourado para destaques premium */
+    --dark-text: #e8eaed;
+    --dark-border: #3d4450;
 }
 
 body.dark-mode {
@@ -62,7 +63,7 @@ body.dark-mode {
     background-color: #2c2c2c;
     color: var(--dark-text);
     border-color: var(--dark-primary);
-    box-shadow: 0 0 0 0.25rem rgba(0, 173, 181, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(74, 144, 217, 0.25);
 }
 
 .dark-mode .btn-primary {
