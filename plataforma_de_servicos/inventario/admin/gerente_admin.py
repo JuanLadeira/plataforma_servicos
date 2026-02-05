@@ -2,6 +2,7 @@ from django.contrib import admin
 from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
 
+from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueItens
 from plataforma_de_servicos.inventario.models import InventarioSaldo
@@ -117,7 +118,7 @@ class EstoqueItensSaidaInline(TabularInline):
         return obj.estoque.get_origem_saida_display() if obj.estoque and obj.estoque.origem_saida else "-"
 
 
-class InventarioGerenteAdmin(ModelAdmin):
+class InventarioGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     list_display = ["nome", "slug", "is_ativo", "exibir_na_vitrine"]
     list_filter = ["is_ativo", "exibir_na_vitrine"]
     list_editable = ["exibir_na_vitrine"]

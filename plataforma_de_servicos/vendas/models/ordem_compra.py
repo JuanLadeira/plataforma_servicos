@@ -24,11 +24,19 @@ class StatusOrdemCompra(models.TextChoices):
 class OrdemCompra(TimeStampedModel):
     """Ordem de Compra gerada a partir de um interesse convertido."""
 
+    empresa = models.ForeignKey(
+        "empresa.Empresa",
+        on_delete=models.CASCADE,
+        related_name="ordens_compra",
+        verbose_name="Empresa",
+        null=True,  # Temporary: remove after data migration
+        blank=True,
+    )
+
     # Identificação
     numero = models.CharField(
         "número",
         max_length=20,
-        unique=True,
         help_text="Número único da ordem (ex: OC-2026-00001)",
     )
 
@@ -97,6 +105,7 @@ class OrdemCompra(TimeStampedModel):
         verbose_name = "ordem de compra"
         verbose_name_plural = "ordens de compra"
         ordering = ["-created"]
+        unique_together = [["empresa", "numero"]]
 
     def __str__(self):
         return f"{self.numero} - {self.nome_cliente}"

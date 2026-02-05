@@ -64,6 +64,14 @@ class User(AbstractUser):
 
 class Funcionario(models.Model):
     usuario = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    empresa = models.ForeignKey(
+        Empresa,
+        on_delete=models.CASCADE,
+        related_name="funcionarios",
+        verbose_name="Empresa",
+        null=True,  # Temporary: remove after data migration
+        blank=True,
+    )
     cargo = models.CharField(max_length=100)
     endereco = models.CharField(max_length=255)
     cpf = models.CharField(

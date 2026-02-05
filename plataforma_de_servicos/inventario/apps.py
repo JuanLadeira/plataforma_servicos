@@ -4,3 +4,6 @@ from django.apps import AppConfig
 class InventarioConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "plataforma_de_servicos.inventario"
+
+    def ready(self):
+        import plataforma_de_servicos.inventario.signals

@@ -39,11 +39,21 @@ class GerenteAdminSite(UnfoldAdminSite):
 
     def has_permission(self, request):
         """
-        Verifica se o usuário tem permissão para acessar o site
+        Verifica se o usuário tem permissão para acessar o site.
+        - Superusuários sempre têm acesso
+        - Funcionários precisam ter empresa associada
         """
-        if not request.user.is_authenticated:
+        if not request.user.is_authenticated or not request.user.is_active:
             return False
-        return request.user.is_active and (request.user.is_staff or request.user.is_superuser)
+
+        if request.user.is_superuser:
+            return True
+
+        # Funcionário precisa ter empresa associada
+        if hasattr(request.user, "funcionario") and request.user.funcionario:
+            return request.user.funcionario.empresa is not None
+
+        return False
 
     def each_context(self, request):
         context = super().each_context(request)

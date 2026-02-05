@@ -11,6 +11,8 @@ from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
 from unfold.decorators import action
 
+from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
+from plataforma_de_servicos.core.admin.mixins import TenantAwareInlineMixin
 from plataforma_de_servicos.produto.models import VariacaoProduto
 from plataforma_de_servicos.vendas.admin.forms import CancelamentoOrdemForm
 from plataforma_de_servicos.vendas.admin.forms import RejeicaoOrdemForm
@@ -248,7 +250,7 @@ class ItemOrdemCompraGerenteInline(TabularInline):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
-class OrdemCompraGerenteAdmin(ModelAdmin):
+class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     list_display = [
         "numero",
         "nome_cliente",

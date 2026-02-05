@@ -8,10 +8,17 @@ from plataforma_de_servicos.produto.models.produto_model import Produto
 
 
 class Inventario(TimeStampedModel):
-    nome = models.CharField(max_length=255, unique=True, verbose_name="Nome")
+    empresa = models.ForeignKey(
+        "empresa.Empresa",
+        on_delete=models.CASCADE,
+        related_name="inventarios",
+        verbose_name="Empresa",
+        null=True,  # Temporary: remove after data migration
+        blank=True,
+    )
+    nome = models.CharField(max_length=255, verbose_name="Nome")
     slug = AutoSlugField(
         populate_from="nome",
-        unique=True,
         max_length=255,
         verbose_name="Slug",
     )
@@ -29,6 +36,13 @@ class Inventario(TimeStampedModel):
         verbose_name = _("Inventário")
         verbose_name_plural = _("Inventários")
         ordering = ("-created",)
+        unique_together = [["empresa", "nome"]]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["empresa", "slug"],
+                name="unique_empresa_inventario_slug",
+            ),
+        ]
 
     def __str__(self):
         return _("Inventário: {nome}").format(nome=self.nome)

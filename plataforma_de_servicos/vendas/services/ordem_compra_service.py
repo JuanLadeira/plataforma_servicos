@@ -171,8 +171,8 @@ class OrdemCompraService:
                 })
 
         if itens_pedido:
-            EstoqueService.criar_saida_por_pedido(
-                pedido_id=ordem.pk,
+            EstoqueService.criar_saida_por_ordem_compra(
+                ordem_compra=ordem,
                 itens_pedido=itens_pedido,
                 funcionario=usuario,
             )

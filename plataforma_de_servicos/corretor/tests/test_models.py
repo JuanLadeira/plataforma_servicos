@@ -46,12 +46,22 @@ class TestCorretorModel:
         assert corretor.user is not None
         assert corretor.user.pk is not None
 
-    def test_corretor_email_unico(self):
-        """Email do corretor deve ser único."""
-        CorretorFactory(email="unico@email.com")
+    def test_corretor_email_unico_por_empresa(self):
+        """Email do corretor deve ser único dentro da mesma empresa."""
+        from plataforma_de_servicos.empresa.models import Empresa
 
+        # Criar duas empresas
+        empresa1 = Empresa.objects.create(nome="Empresa 1", slug="empresa-1")
+        empresa2 = Empresa.objects.create(nome="Empresa 2", slug="empresa-2")
+
+        # Mesmo email em empresas diferentes deve funcionar
+        CorretorFactory(email="unico@email.com", empresa=empresa1)
+        corretor2 = CorretorFactory(email="unico@email.com", empresa=empresa2)
+        assert corretor2.pk is not None
+
+        # Mesmo email na mesma empresa deve falhar
         with pytest.raises(IntegrityError):
-            CorretorFactory(email="unico@email.com")
+            CorretorFactory(email="unico@email.com", empresa=empresa1)
 
     def test_corretor_telefone_opcional(self):
         """Telefone deve ser opcional."""

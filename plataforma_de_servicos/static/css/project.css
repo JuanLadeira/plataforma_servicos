@@ -1,13 +1,15 @@
 /* These styles are generated from project.scss. */
-/* Cores principais */
+/* Cores principais - Tema Veículos e Imóveis */
 :root {
-  --primary-color: #d9534f; /* Vermelho tomate */
-  --secondary-color: #fafafa; /* Branco-gelo, mais claro */
+  --primary-color: #1e3a5f; /* Azul profissional */
+  --secondary-color: #f8f9fa; /* Cinza claro */
   --tertiary-color: #fff; /* Branco */
-  --text-color: #333; /* Cinza escuro */
+  --text-color: #2c3e50; /* Cinza escuro elegante */
   --text-muted: #6c757d; /* Cinza médio */
-  --border-color: #eee; /* Cinza bem claro */
-  --hover-color: #c9302c; /* Vermelho mais escuro para hover */
+  --border-color: #e9ecef; /* Cinza claro */
+  --hover-color: #0d2137; /* Azul mais escuro para hover */
+  --accent-color: #c9a227; /* Dourado para destaque premium */
+  --success-color: #28a745; /* Verde sucesso */
 }
 
 /* Corpo */
@@ -296,7 +298,7 @@ input, select, textarea {
 
 input:focus, select:focus, textarea:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.2);
+  box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.2);
   outline: none;
 }
 
@@ -422,7 +424,7 @@ footer {
 
 .attribute-selector .form-select:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(217, 83, 79, 0.2);
+    box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.2);
 }
 
 /* Price Display Animation */

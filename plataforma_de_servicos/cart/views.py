@@ -74,7 +74,11 @@ def cart_add(request):
         quantidade_total_solicitada = quantidade_no_carrinho + product_quantity
 
         if quantidade_total_solicitada > estoque_disponivel:
-            error_msg = f"Estoque insuficiente para {produto_nome}. Disponível: {estoque_disponivel}."
+            if quantidade_no_carrinho > 0:
+                error_msg = f"Você já adicionou a quantidade máxima de '{produto_nome}' ao seu carrinho."
+            else:
+                error_msg = f"Estoque insuficiente para '{produto_nome}'. Disponível: {estoque_disponivel}."
+            
             messages.error(request, error_msg)
             if request.headers.get("HX-Request"):
                 if no_redirect:

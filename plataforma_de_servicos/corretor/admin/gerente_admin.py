@@ -1,10 +1,11 @@
 from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
 
+from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
 from plataforma_de_servicos.corretor.models import ItemInteresse
 
 
-class CorretorGerenteAdmin(ModelAdmin):
+class CorretorGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     list_display = ["nome", "email", "telefone", "ativo", "created"]
     list_filter = ["ativo", "created"]
     search_fields = ["nome", "email", "telefone"]
@@ -36,7 +37,7 @@ class ItemInteresseGerenteInline(TabularInline):
         return False
 
 
-class InteresseCompraGerenteAdmin(ModelAdmin):
+class InteresseCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     list_display = [
         "id",
         "nome_cliente",

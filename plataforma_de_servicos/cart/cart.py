@@ -9,12 +9,19 @@ class Cart:
     """
     Uma classe de carrinho de compras otimista e baseada em sessão.
     O estoque é verificado apenas no momento do checkout.
+
+    O carrinho é isolado por tenant (empresa) usando chave única na sessão.
     """
     def __init__(self, request):
         self.session = request.session
-        cart = self.session.get("cart")
-        if "cart" not in request.session or not isinstance(cart, dict):
-            cart = self.session["cart"] = {}
+        self.tenant = getattr(request, "tenant", None)
+
+        # Cart key per tenant for data isolation
+        self.cart_key = f"cart_{self.tenant.slug}" if self.tenant else "cart"
+
+        cart = self.session.get(self.cart_key)
+        if self.cart_key not in request.session or not isinstance(cart, dict):
+            cart = self.session[self.cart_key] = {}
         self.cart = cart
 
     def add(self, variation: VariacaoProduto, product_qty: int):
@@ -111,11 +118,11 @@ class Cart:
 
     def clear(self):
         """Limpa o carrinho da sessão."""
-        self.session["cart"] = {}
+        self.session[self.cart_key] = {}
         self.cart = {}
         self._save()
 
     def _save(self):
         """Salva o carrinho na sessão."""
-        self.session["cart"] = self.cart
+        self.session[self.cart_key] = self.cart
         self.session.modified = True

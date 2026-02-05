@@ -80,23 +80,25 @@
                                         class="btn btn-primary w-100"
                                         hx-post="{% url 'cart:cart-add' %}"
                                         hx-include="#select-{{ produto.id }}, #variation-id"
-                                        hx-vals='{"product_id": "{{ produto.id }}", "action": "post"}'
+                                        hx-vals='{"product_id": "{{ produto.id }}", "action": "post", "no_redirect": "true"}'
                                         hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-                                        hx-swap="none"
-                                        hx-on="htmx:afterRequest: (function(event) {
-                                            const response = JSON.parse(event.detail.xhr.responseText);
-
-                                            if (response.error) {
-                                                window.location.href = response.redirect;
-                                            } else if (response.redirect) {
+                                        hx-target="#cart-badge"
+                                        hx-swap="outerHTML"
+                                        hx-indicator="#add-button"
+                                        hx-on::after-request="
+                                            if (event.detail.successful) {
                                                 const button = document.getElementById('add-button');
+                                                const originalHtml = button.innerHTML;
+                                                button.classList.remove('btn-primary');
                                                 button.classList.add('btn-success');
                                                 button.innerHTML = '<i class=&quot;fa fa-check&quot;></i> Adicionado!';
                                                 setTimeout(() => {
-                                                    window.location.href = response.redirect;
-                                                }, 1000);
+                                                    button.classList.remove('btn-success');
+                                                    button.classList.add('btn-primary');
+                                                    button.innerHTML = '<i class=&quot;fa fa-plus&quot;></i> Adicionar ao Carrinho';
+                                                }, 2000);
                                             }
-                                        })(event)">
+                                        ">
                                         <i class="fa fa-plus"></i> Adicionar ao Carrinho
                                     </button>
                                 </div>
