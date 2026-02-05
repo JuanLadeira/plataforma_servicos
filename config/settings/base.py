@@ -158,6 +158,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "plataforma_de_servicos.core.middleware.tenant.TenantMiddleware",
+    "plataforma_de_servicos.core.middleware.admin_url_rewrite.AdminUrlRewriteMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",

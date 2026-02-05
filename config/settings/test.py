@@ -61,3 +61,5 @@ STORAGES = {
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+# ALLOWED_HOSTS for multitenancy tests
+ALLOWED_HOSTS = ["*"]

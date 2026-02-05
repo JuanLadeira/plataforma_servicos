@@ -128,13 +128,36 @@ class ProdutoService:
     def listar_variacoes_vitrine(
         category_id: int | str | None = None,
         search: str | None = None,
+        empresa=None,
     ) -> tuple[QuerySet[VariacaoProduto], Categoria | str]:
         """
         Lista variações de produtos disponíveis na vitrine com filtros opcionais.
+
+        Args:
+            category_id: ID da categoria para filtrar (opcional)
+            search: Texto para busca (opcional)
+            empresa: Empresa (tenant) para filtrar produtos (opcional)
         """
+        # Sem empresa, retornar lista vazia
+        if not empresa:
+            return VariacaoProduto.objects.none(), "Todos os produtos"
+
+        # Subquery para filtrar produtos com saldo em inventário vitrine
+        inventario_vitrine_subquery = InventarioSaldo.objects.filter(
+            produto=OuterRef("produto"),
+            inventario__exibir_na_vitrine=True,
+            inventario__is_ativo=True,
+            quantidade__gt=0,
+        )
+
         variacoes = VariacaoProduto.objects.filter(
             produto__disponivel=True,
-            estoque__gt=0
+            produto__empresa=empresa,
+            estoque__gt=0,
+        ).annotate(
+            tem_saldo_vitrine=Exists(inventario_vitrine_subquery)
+        ).filter(
+            tem_saldo_vitrine=True
         ).select_related('produto', 'produto__categoria').prefetch_related('valores__atributo')
 
         categoria: Categoria | str = "Todos os produtos"
@@ -143,7 +166,10 @@ class ProdutoService:
             try:
                 category_id_int = int(category_id)
                 variacoes = variacoes.filter(produto__categoria__id=category_id_int)
-                cat_obj = Categoria.objects.filter(id=category_id_int).first()
+                cat_filter = {"id": category_id_int}
+                if empresa:
+                    cat_filter["empresa"] = empresa
+                cat_obj = Categoria.objects.filter(**cat_filter).first()
                 if cat_obj:
                     categoria = cat_obj
             except (ValueError, TypeError):

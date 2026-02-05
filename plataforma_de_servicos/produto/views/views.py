@@ -24,6 +24,7 @@ def home(request):
     variacoes, categoria = ProdutoService.listar_variacoes_vitrine(
         category_id=category_id,
         search=search,
+        empresa=request.tenant,
     )
 
     if search:
@@ -54,7 +55,11 @@ def home(request):
 
 
 def categories(request):
-    all_categories = Categoria.objects.all()
+    tenant = getattr(request, "tenant", None)
+    if tenant:
+        all_categories = Categoria.objects.filter(empresa=tenant)
+    else:
+        all_categories = Categoria.objects.none()
     return {"categories": all_categories}
 
 

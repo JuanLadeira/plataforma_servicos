@@ -19,6 +19,14 @@ log = getLogger(__name__)
 
 
 class Estoque(TimeStampedModel):
+    empresa = models.ForeignKey(
+        "empresa.Empresa",
+        on_delete=models.CASCADE,
+        related_name="estoques",
+        verbose_name="Empresa",
+        null=True,  # Temporary: remove after data migration
+        blank=True,
+    )
     funcionario = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     nf = models.PositiveIntegerField("nota fiscal", null=True, blank=True)
     movimento = models.CharField(max_length=1, choices=Movimento.choices, blank=True)

@@ -10,13 +10,28 @@ class Atributo(models.Model):
     """
     Modelo para armazenar os tipos de atributos, como 'Cor' ou 'Tamanho'.
     """
-    nome = models.CharField(max_length=50, unique=True, help_text="Ex: Cor, Tamanho")
-    slug = AutoSlugField(populate_from="nome", unique=True)
+    empresa = models.ForeignKey(
+        "empresa.Empresa",
+        on_delete=models.CASCADE,
+        related_name="atributos",
+        verbose_name="Empresa",
+        null=True,  # Temporary: remove after data migration
+        blank=True,
+    )
+    nome = models.CharField(max_length=50, help_text="Ex: Cor, Tamanho")
+    slug = AutoSlugField(populate_from="nome")
 
     class Meta:
         verbose_name = "Atributo"
         verbose_name_plural = "Atributos"
         ordering = ["nome"]
+        unique_together = [["empresa", "nome"]]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["empresa", "slug"],
+                name="unique_empresa_atributo_slug",
+            ),
+        ]
 
     def __str__(self):
         return self.nome

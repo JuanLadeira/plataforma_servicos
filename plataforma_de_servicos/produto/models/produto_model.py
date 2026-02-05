@@ -56,10 +56,18 @@ class Image(models.Model):
 
 
 class Produto(models.Model):
+    empresa = models.ForeignKey(
+        "empresa.Empresa",
+        on_delete=models.CASCADE,
+        related_name="produtos",
+        verbose_name="Empresa",
+        null=True,  # Temporary: remove after data migration
+        blank=True,
+    )
     importado = models.BooleanField(default=False)
     ncm = models.CharField("NCM", max_length=8)
-    produto = models.CharField(max_length=100, unique=True)
-    slug = AutoSlugField(populate_from="produto", unique=True)
+    produto = models.CharField(max_length=100)
+    slug = AutoSlugField(populate_from="produto")
     disponivel = models.BooleanField("Disponível", default=True, help_text="Marque para exibir o produto na vitrine.")
     descricao = models.TextField(
         "descrição",
@@ -83,6 +91,13 @@ class Produto(models.Model):
         ordering = ("produto",)
         verbose_name = "Produto"
         verbose_name_plural = "Produtos"
+        unique_together = [["empresa", "produto"]]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["empresa", "slug"],
+                name="unique_empresa_produto_slug",
+            ),
+        ]
 
     def __str__(self):
         return self.produto

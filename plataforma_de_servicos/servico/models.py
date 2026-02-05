@@ -10,8 +10,16 @@ class StatusCarrinho(models.TextChoices):
 
 
 class Carrinho(models.Model):
+    empresa = models.ForeignKey(
+        "empresa.Empresa",
+        on_delete=models.CASCADE,
+        related_name="carrinhos",
+        verbose_name="Empresa",
+        null=True,  # Temporary: remove after data migration
+        blank=True,
+    )
     identificador = models.CharField(max_length=100)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField()
     data_entrada = models.DateField()
     aprovacao = models.BooleanField(default=False)
     prazo_entrega = models.IntegerField()
@@ -21,6 +29,9 @@ class Carrinho(models.Model):
     )
     data_da_aprovacao = models.DateField(null=True, blank=True)
     local = models.CharField(max_length=255)
+
+    class Meta:
+        unique_together = [["empresa", "slug"]]
 
     def __str__(self):
         return super().__str__()
