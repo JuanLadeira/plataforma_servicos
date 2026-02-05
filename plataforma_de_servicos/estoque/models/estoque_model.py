@@ -12,12 +12,21 @@ from plataforma_de_servicos.estoque.choices.origem_saida import OrigemSaida
 from plataforma_de_servicos.inventario.models import Inventario
 from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.users.models import User
+from plataforma_de_servicos.vendas.models.ordem_compra import OrdemCompra
 
 basicConfig(level=DEBUG)
 log = getLogger(__name__)
 
 
 class Estoque(TimeStampedModel):
+    empresa = models.ForeignKey(
+        "empresa.Empresa",
+        on_delete=models.CASCADE,
+        related_name="estoques",
+        verbose_name="Empresa",
+        null=True,  # Temporary: remove after data migration
+        blank=True,
+    )
     funcionario = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     nf = models.PositiveIntegerField("nota fiscal", null=True, blank=True)
     movimento = models.CharField(max_length=1, choices=Movimento.choices, blank=True)
@@ -29,11 +38,14 @@ class Estoque(TimeStampedModel):
         blank=True,
         help_text="Motivo/origem da saída de estoque"
     )
-    pedido_id = models.PositiveIntegerField(
-        "ID do Pedido", 
-        null=True, 
+    ordem_compra = models.ForeignKey(
+        OrdemCompra,
+        on_delete=models.PROTECT,
+        verbose_name="Ordem de Compra",
+        related_name="saidas_estoque",
+        null=True,
         blank=True,
-        help_text="ID do pedido quando a saída é originada de uma venda"
+        help_text="Ordem de compra que originou esta saída de estoque"
     )
     observacao = models.TextField(
         "Observações",
@@ -73,9 +85,9 @@ class Estoque(TimeStampedModel):
                 message = "Saída requer inventário de origem"
                 raise ValidationError(message=message)
 
-            # Se origem for PEDIDO, exige o ID do pedido
-            if self.origem_saida == OrigemSaida.PEDIDO.value and not self.pedido_id:
-                message = "Saída por pedido requer ID do pedido"
+            # Se origem for PEDIDO, exige a ordem de compra
+            if self.origem_saida == OrigemSaida.PEDIDO.value and not self.ordem_compra:
+                message = "Saída por pedido requer uma ordem de compra"
                 raise ValidationError(message=message)
 
         if self.movimento == Movimento.TRANSFERENCIA.value and not (self.inventario_origem and self.inventario_destino):

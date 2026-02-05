@@ -1,0 +1,12 @@
+
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block object-tools-items %}
+  <li>
+    <a href="{{ report_url }}" class="addlink">
+      Relatório de Produtos Não Exibidos
+    </a>
+  </li>
+  {{ block.super }}
+{% endblock %}

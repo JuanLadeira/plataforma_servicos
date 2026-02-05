@@ -14,6 +14,7 @@ urlpatterns = [
     path("", views.home, name="home"),
     path("search/category/", views.category_search, name="category-search"),
     path("produto/<slug:produto_slug>/", views.produto_detail, name="produto-detail"),
+    path('variacao/<str:sku>/', views.variacao_detail, name='variacao-detail'),
     path("produto/calcular-preco/", views.calcular_preco_variacao, name="calcular-preco-variacao"),
     path("cart/", include("plataforma_de_servicos.cart.urls",  namespace="cart")),
     path("corretor/", include("plataforma_de_servicos.corretor.urls", namespace="corretor")),

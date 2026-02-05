@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from django.contrib.auth import get_user_model
 from django.db import transaction
 
@@ -8,6 +10,9 @@ from .choices.origem_saida import OrigemSaida
 from .models import Estoque
 from .models import EstoqueItens
 
+if TYPE_CHECKING:
+    from plataforma_de_servicos.vendas.models.ordem_compra import OrdemCompra
+
 User = get_user_model()
 
 
@@ -17,16 +22,16 @@ class EstoqueService:
     """
 
     @staticmethod
-    def criar_saida_por_pedido(pedido_id: int, itens_pedido: list, funcionario: User = None, inventario_origem: Inventario = None):
+    def criar_saida_por_ordem_compra(ordem_compra: "OrdemCompra", itens_pedido: list, funcionario: User = None, inventario_origem: Inventario = None):
         """
-        Cria uma saída de estoque para um pedido
-        
+        Cria uma saída de estoque para uma ordem de compra
+
         Args:
-            pedido_id: ID do pedido
+            ordem_compra: Ordem de compra que originou a saída
             itens_pedido: Lista de dicts com 'produto', 'quantidade', 'variacao' (opcional)
             funcionario: Usuário responsável pela operação
             inventario_origem: Inventário de origem (se None, usa o principal)
-        
+
         Returns:
             Estoque: Registro de saída criado
         """
@@ -39,9 +44,9 @@ class EstoqueService:
                 funcionario=funcionario,
                 movimento=Movimento.SAIDA.value,
                 origem_saida=OrigemSaida.PEDIDO.value,
-                pedido_id=pedido_id,
+                ordem_compra=ordem_compra,
                 inventario_origem=inventario_origem,
-                observacao=f"Saída automática para pedido #{pedido_id}",
+                observacao=f"Saída automática para ordem de compra #{ordem_compra.pk}",
             )
 
             # Criar itens da saída
@@ -95,13 +100,13 @@ class EstoqueService:
             return saida
 
     @staticmethod
-    def liberar_reserva_para_saida(reservas_carrinho: list, pedido_id: int, funcionario: User = None):
+    def liberar_reserva_para_saida(reservas_carrinho: list, ordem_compra: "OrdemCompra", funcionario: User = None):
         """
         Converte reservas do carrinho em saída efetiva de estoque
-        
+
         Args:
             reservas_carrinho: Lista de reservas do carrinho
-            pedido_id: ID do pedido gerado
+            ordem_compra: Ordem de compra gerada
             funcionario: Usuário (opcional)
         """
 
@@ -119,8 +124,8 @@ class EstoqueService:
                 "variacao": reserva.variacao_produto if reserva.variacao_produto else None,
             })
 
-        return EstoqueService.criar_saida_por_pedido(
-            pedido_id=pedido_id,
+        return EstoqueService.criar_saida_por_ordem_compra(
+            ordem_compra=ordem_compra,
             itens_pedido=itens_pedido,
             funcionario=funcionario,
         )

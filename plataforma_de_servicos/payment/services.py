@@ -76,13 +76,16 @@ class PaymentService:
                     'variacao': None
                 })
         
-        # Criar saída de estoque via service
+        # Criar saída de estoque manual (sem ordem de compra associada)
         try:
-            EstoqueService.criar_saida_por_pedido(
-                pedido_id=order.id,
-                itens_pedido=itens_estoque,
-                funcionario=user if user and user.is_authenticated else None
+            from plataforma_de_servicos.estoque.choices.origem_saida import OrigemSaida
+            saida = EstoqueService.criar_saida_manual(
+                origem=OrigemSaida.PEDIDO.value,
+                itens=itens_estoque,
+                funcionario=user if user and user.is_authenticated else None,
+                observacao=f"Saída automática para pagamento - Order #{order.id}",
             )
+            saida.processar()
             logger.info(f"Saída de estoque criada para pedido {order.id}")
         except Exception as e:
             logger.error(f"Erro ao criar saída de estoque para pedido {order.id}: {e}")

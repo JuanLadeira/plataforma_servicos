@@ -1,30 +1,30 @@
 <div class="card shadow-sm m-2">
-    <a href="{{ product.url }}">
-        <img class="img-fluid" alt="Imagem de {{ product.produto }}" src="{{ product.imagem }}">
+    <a href="{{ variacao.url }}">
+        <img class="img-fluid" alt="Imagem de {{ variacao.nome_completo }}" src="{{ variacao.imagem }}">
     </a>
     <div class="card-body">
         <div>
             <p class="card-text">
-                <a href="{{ product.url }}">
-                    {{ product.produto|truncatechars:25 }}
+                <a href="{{ variacao.url }}">
+                    {{ variacao.nome_completo|truncatechars:35 }}
                 </a>
             </p>
             <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">R$ {{ product.preco }}</h5>
-                <small class="text-muted">Estoque: {{ product.estoque }}</small>
+                <h5 class="mb-0">{{ variacao.preco_formatado }}</h5>
+                <small class="text-muted">Estoque: {{ variacao.estoque }}</small>
             </div>
         </div>
         <button
             type="button"
-            id="add-button-{{ product.id }}"
-            value="{{ product.id }}"
+            id="add-button-{{ variacao.id }}"
+            value="{{ variacao.id }}"
             class="btn btn-primary btn-sm mt-3 w-100"
             hx-post="{% url 'cart:cart-add' %}"
-            hx-vals='{"product_id": "{{ product.id }}", "action": "post", "product_quantity": 1, "no_redirect": "true"}'
+            hx-vals='{"variation_id": "{{ variacao.id }}", "action": "post", "product_quantity": 1, "no_redirect": "true"}'
             hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
             hx-target="#cart-badge"
             hx-swap="outerHTML"
-            hx-indicator="#add-button-{{ product.id }}"
+            hx-indicator="#add-button-{{ variacao.id }}"
         >
             <span class="htmx-indicator spinner-border spinner-border-sm me-1" role="status"></span>
             <i class="fa fa-plus htmx-hide-on-request" aria-hidden="true"></i>

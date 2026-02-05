@@ -45,6 +45,7 @@ class ProdutoFactory(DjangoModelFactory):
 
     importado = Faker("boolean")
     ncm = Faker("numerify", text="12345678")  # Exemplo de NCM fixo ou padrão
+    disponivel = False
     estoque_minimo = Faker("random_int", min=1, max=10)  # Estoque mínimo entre 1 e 10
     data = LazyFunction(timezone.now)
     categoria = factory.SubFactory(CategoriaFactory)

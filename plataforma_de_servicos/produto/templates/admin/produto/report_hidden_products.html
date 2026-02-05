@@ -1,0 +1,87 @@
+
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<div id="content-main">
+    <h1>Relatório de Produtos Não Exibidos na Vitrine</h1>
+    
+    <div class="module">
+        <h2>Variações com Estoque Zerado</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Variação (SKU)</th>
+                    <th>Produto Pai</th>
+                    <th>Estoque Atual</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for variacao in variacoes_sem_estoque %}
+                <tr>
+                    <td><a href="{% url 'admin:produto_variacaoproduto_change' variacao.id %}">{{ variacao.sku|default:"-" }}</a></td>
+                    <td><a href="{% url 'admin:produto_produto_change' variacao.produto.id %}">{{ variacao.produto.produto }}</a></td>
+                    <td>{{ variacao.estoque }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3">Nenhuma variação com estoque zerado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="module">
+        <h2>Variações em Inventários com "Vitrine Desligada"</h2>
+        <p>Estas variações têm estoque, mas estão em inventários que não estão marcados para "Exibir na Vitrine".</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Variação (SKU)</th>
+                    <th>Produto Pai</th>
+                    <th>Inventário</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for variacao in variacoes_em_inventario_oculto %}
+                <tr>
+                    <td><a href="{% url 'admin:produto_variacaoproduto_change' variacao.id %}">{{ variacao.sku|default:"-" }}</a></td>
+                    <td><a href="{% url 'admin:produto_produto_change' variacao.produto.id %}">{{ variacao.produto.produto }}</a></td>
+                    <td>
+                        {% for saldo in variacao.saldos.all %}
+                            {% if not saldo.inventario.exibir_na_vitrine %}
+                                {{ saldo.inventario.nome }} (Estoque: {{ saldo.quantidade }})<br>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3">Nenhuma variação encontrada apenas em inventários ocultos.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="module">
+        <h2>Produtos Simples com Estoque Zerado</h2>
+        <p>Estes são produtos que não possuem variações e estão com o estoque principal zerado.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Produto</th>
+                    <th>Estoque Atual</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for produto in produtos_simples_sem_estoque %}
+                <tr>
+                    <td><a href="{% url 'admin:produto_produto_change' produto.id %}">{{ produto.produto }}</a></td>
+                    <td>{{ produto.estoque }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="2">Nenhum produto simples com estoque zerado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

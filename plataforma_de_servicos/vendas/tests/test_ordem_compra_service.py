@@ -96,7 +96,7 @@ def ordem_compra_aprovada(produto_teste, usuario):
 
 class TestOrdemCompraServiceAprovar:
 
-    @patch("plataforma_de_servicos.vendas.services.ordem_compra_service.EstoqueService.criar_saida_por_pedido")
+    @patch("plataforma_de_servicos.vendas.services.ordem_compra_service.EstoqueService.criar_saida_por_ordem_compra")
     def test_aprovar_ordem_pendente_deve_gerar_saida_estoque(self, mock_criar_saida, usuario, ordem_compra_pendente, produto_teste):
         """
         Verifica se ao aprovar uma ordem PENDENTE, a saída de estoque é gerada
@@ -114,7 +114,7 @@ class TestOrdemCompraServiceAprovar:
             "quantidade": 1,
         }]
         mock_criar_saida.assert_called_with(
-            pedido_id=ordem.pk,
+            ordem_compra=ordem,
             itens_pedido=itens_esperados,
             funcionario=usuario,
         )
@@ -123,7 +123,7 @@ class TestOrdemCompraServiceAprovar:
         assert ordem_aprovada.aprovado_por == usuario
         assert ordem_aprovada.data_aprovacao is not None
 
-    @patch("plataforma_de_servicos.vendas.services.ordem_compra_service.EstoqueService.criar_saida_por_pedido")
+    @patch("plataforma_de_servicos.vendas.services.ordem_compra_service.EstoqueService.criar_saida_por_ordem_compra")
     def test_aprovar_ordem_status_invalido_nao_deve_gerar_saida_estoque(self, mock_criar_saida, usuario, ordem_compra_aprovada):
         """
         Verifica se ao tentar aprovar uma ordem com status inválido (ex: APROVADA),

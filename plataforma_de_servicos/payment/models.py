@@ -48,6 +48,15 @@ class ShippingAddress(models.Model):
 
 class Order(models.Model):
 
+    empresa = models.ForeignKey(
+        "empresa.Empresa",
+        on_delete=models.CASCADE,
+        related_name="orders",
+        verbose_name="Empresa",
+        null=True,  # Temporary: remove after data migration
+        blank=True,
+    )
+
     full_name = models.CharField(max_length=300)
 
     email = models.EmailField(max_length=255)

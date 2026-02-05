@@ -5,6 +5,8 @@ from django.contrib import admin
 from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
 
+from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
+from plataforma_de_servicos.core.admin.mixins import TenantAwareInlineMixin
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueItens
 from plataforma_de_servicos.estoque.models.proxys.transferencia import Transferencia
@@ -107,7 +109,7 @@ def get_inventario(estoque):
     return None
 
 
-class EstoqueEntradaAdmin(ModelAdmin):
+class EstoqueEntradaAdmin(TenantAwareAdminMixin, ModelAdmin):
     inlines = (EstoqueItensInline,)
     list_display = ("__str__", "nf", "funcionario", "data")
     search_fields = ("nf", "data")
@@ -208,7 +210,7 @@ class EstoqueEntradaAdmin(ModelAdmin):
             formset.save_m2m()
 
 
-class EstoqueSaidaAdmin(ModelAdmin):
+class EstoqueSaidaAdmin(TenantAwareAdminMixin, ModelAdmin):
     inlines = (EstoqueItensInline,)
     list_display = ("__str__", "nf", "funcionario", "origem_saida", "ordem_compra")
     search_fields = ("nf",)
@@ -336,7 +338,7 @@ class EstoqueSaidaAdmin(ModelAdmin):
             formset.save_m2m()
 
 
-class TransferenciaAdmin(ModelAdmin):
+class TransferenciaAdmin(TenantAwareAdminMixin, ModelAdmin):
     inlines = (TransferenciaEstoqueItensInline,)
     list_display = ("__str__", "funcionario", "inventario_origem", "inventario_destino", "data")
     search_fields = ("data",)

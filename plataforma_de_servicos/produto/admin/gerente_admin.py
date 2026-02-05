@@ -8,6 +8,8 @@ from unfold.admin import TabularInline
 from unfold.contrib.forms.widgets import ArrayWidget
 from unfold.contrib.forms.widgets import WysiwygWidget
 
+from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
+from plataforma_de_servicos.core.admin.mixins import TenantAwareInlineMixin
 from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models import Atributo
 from plataforma_de_servicos.produto.models import Image
@@ -83,7 +85,7 @@ class ImageInline(TabularInline):
     readonly_fields = ["order"]
 
 
-class VariacaoProdutoInline(TabularInline):
+class VariacaoProdutoInline(TenantAwareInlineMixin, TabularInline):
     model = VariacaoProduto
     formset = VariacaoProdutoInlineFormSet
     extra = 1
@@ -95,9 +97,11 @@ class VariacaoProdutoInline(TabularInline):
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "valores":
-            kwargs["queryset"] = ValorAtributo.objects.select_related(
-                "atributo",
-            ).order_by("atributo__nome", "valor")
+            qs = ValorAtributo.objects.select_related("atributo").order_by("atributo__nome", "valor")
+            # Filter by tenant if available
+            if request.tenant and hasattr(ValorAtributo, "atributo"):
+                qs = qs.filter(atributo__empresa=request.tenant)
+            kwargs["queryset"] = qs
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     @admin.display(description="Atributos Selecionados")
@@ -124,7 +128,7 @@ class VariacaoProdutoInline(TabularInline):
         return "-"
 
 
-class ProdutoGerenteAdmin(ModelAdmin):
+class ProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     list_display = ["produto", "preco", "categoria", "count_variations"]
     list_display_links = ["produto"]
     list_per_page = 30
@@ -277,7 +281,7 @@ class ProdutoInline(TabularInline):
     readonly_fields = ["produto", "data", "ncm", "importado"]
 
 
-class CategoriaGerenteAdmin(ModelAdmin):
+class CategoriaGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     list_display = ["categoria"]
     list_order_by = ["categoria"]
     list_order_by_desc = ["-categoria"]
@@ -311,7 +315,7 @@ class ValorAtributoGerenteInline(TabularInline):
     verbose_name_plural = "Valores do Atributo (escolha preço OU percentual, não ambos)"
 
 
-class AtributoGerenteAdmin(ModelAdmin):
+class AtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     list_display = ["nome", "count_valores"]
     search_fields = ["nome"]
     list_order_by = ["nome"]
@@ -336,7 +340,7 @@ class AtributoGerenteAdmin(ModelAdmin):
         return obj.valores.count()
 
 
-class ValorAtributoGerenteAdmin(ModelAdmin):
+class ValorAtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     form = ValorAtributoGerenteForm
     list_display = ["atributo", "valor", "modificador_display"]
     list_filter = ["atributo"]
@@ -372,7 +376,7 @@ class ValorAtributoGerenteAdmin(ModelAdmin):
         return "-"
 
 
-class VariacaoProdutoGerenteAdmin(ModelAdmin):
+class VariacaoProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     """Admin para VariacaoProduto - usado principalmente para autocomplete no Estoque."""
     list_display = ["produto", "sku", "estoque", "preco_final_display"]
     list_filter = ["produto__categoria"]

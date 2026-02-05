@@ -9,8 +9,16 @@ from plataforma_de_servicos.users.models import User
 class Corretor(TimeStampedModel):
     """Modelo para representar um corretor/vendedor no sistema."""
 
+    empresa = models.ForeignKey(
+        "empresa.Empresa",
+        on_delete=models.CASCADE,
+        related_name="corretores",
+        verbose_name="Empresa",
+        null=True,  # Temporary: remove after data migration
+        blank=True,
+    )
     nome = models.CharField("nome", max_length=255)
-    email = models.EmailField("e-mail", unique=True)
+    email = models.EmailField("e-mail")
     telefone = models.CharField("telefone", max_length=20, blank=True)
     user = models.OneToOneField(
         User,
@@ -27,6 +35,7 @@ class Corretor(TimeStampedModel):
         verbose_name = "corretor"
         verbose_name_plural = "corretores"
         ordering = ["nome"]
+        unique_together = [["empresa", "email"]]
 
     def __str__(self):
         return self.nome
@@ -41,6 +50,15 @@ class StatusInteresse(models.TextChoices):
 
 class InteresseCompra(TimeStampedModel):
     """Modelo para armazenar demonstrações de interesse (leads)."""
+
+    empresa = models.ForeignKey(
+        "empresa.Empresa",
+        on_delete=models.CASCADE,
+        related_name="interesses_compra",
+        verbose_name="Empresa",
+        null=True,  # Temporary: remove after data migration
+        blank=True,
+    )
 
     # Dados do cliente/lead
     nome_cliente = models.CharField("nome do cliente", max_length=255)
