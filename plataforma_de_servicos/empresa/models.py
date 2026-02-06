@@ -24,6 +24,97 @@ class Empresa(models.Model):
         verbose_name="URL do Admin",
     )
 
+    # ========================================
+    # Personalização da UI do Admin
+    # ========================================
+    admin_title = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Título do Admin",
+        help_text="Título exibido no cabeçalho do painel administrativo. Se vazio, usa o nome da empresa.",
+    )
+    admin_subtitle = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name="Subtítulo do Admin",
+        help_text="Subtítulo exibido abaixo do título no painel administrativo.",
+    )
+    admin_logo = models.ImageField(
+        upload_to="empresas/logos/",
+        blank=True,
+        null=True,
+        verbose_name="Logo do Admin",
+        help_text="Logo exibido no cabeçalho do painel (recomendado: 180x40px).",
+    )
+    admin_favicon = models.ImageField(
+        upload_to="empresas/favicons/",
+        blank=True,
+        null=True,
+        verbose_name="Favicon",
+        help_text="Ícone exibido na aba do navegador (recomendado: 32x32px).",
+    )
+
+    # Cores do tema
+    primary_color = models.CharField(
+        max_length=7,
+        default="#0ea5e9",
+        verbose_name="Cor Primária",
+        help_text="Cor principal do tema (hex). Ex: #0ea5e9 (azul)",
+        validators=[
+            RegexValidator(
+                regex=r'^#[0-9A-Fa-f]{6}$',
+                message='Use formato hexadecimal. Ex: #0ea5e9',
+            ),
+        ],
+    )
+    secondary_color = models.CharField(
+        max_length=7,
+        default="#64748b",
+        verbose_name="Cor Secundária",
+        help_text="Cor secundária do tema (hex). Ex: #64748b (cinza)",
+        validators=[
+            RegexValidator(
+                regex=r'^#[0-9A-Fa-f]{6}$',
+                message='Use formato hexadecimal. Ex: #64748b',
+            ),
+        ],
+    )
+    accent_color = models.CharField(
+        max_length=7,
+        default="#f59e0b",
+        verbose_name="Cor de Destaque",
+        help_text="Cor para elementos de destaque (hex). Ex: #f59e0b (amarelo)",
+        validators=[
+            RegexValidator(
+                regex=r'^#[0-9A-Fa-f]{6}$',
+                message='Use formato hexadecimal. Ex: #f59e0b',
+            ),
+        ],
+    )
+    sidebar_style = models.CharField(
+        max_length=10,
+        choices=[
+            ("light", "Claro"),
+            ("dark", "Escuro"),
+        ],
+        default="dark",
+        verbose_name="Estilo do Sidebar",
+        help_text="Tema do menu lateral.",
+    )
+
+    # Textos personalizados
+    welcome_message = models.TextField(
+        blank=True,
+        verbose_name="Mensagem de Boas-vindas",
+        help_text="Mensagem exibida na página inicial do admin.",
+    )
+    footer_text = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Texto do Rodapé",
+        help_text="Texto exibido no rodapé do admin. Ex: '© 2024 Sua Empresa'",
+    )
+
     class Meta:
         verbose_name = "Empresa"
         verbose_name_plural = "Empresas"
@@ -35,3 +126,15 @@ class Empresa(models.Model):
     def get_admin_url(self):
         """Retorna a URL completa do admin da empresa."""
         return f"/{self.admin_url}/"
+
+    def get_admin_title(self):
+        """Retorna o título do admin (personalizado ou nome da empresa)."""
+        return self.admin_title or self.nome
+
+    def get_theme_colors(self):
+        """Retorna as cores do tema como dicionário."""
+        return {
+            "primary": self.primary_color,
+            "secondary": self.secondary_color,
+            "accent": self.accent_color,
+        }

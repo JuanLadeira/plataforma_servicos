@@ -52,19 +52,28 @@ def cart_summary(request):
 
 def cart_add(request):
     cart = Cart(request)
+    tenant = getattr(request, "tenant", None)
+
     if request.POST.get("action") == "post":
         product_id = request.POST.get("product_id")
         variation_id = request.POST.get("variation_id")
         product_quantity = int(request.POST.get("product_quantity", 1))
         no_redirect = request.POST.get("no_redirect")  # Para requisições da home
 
+        # Filtra por tenant para evitar adicionar produtos de outras empresas
         if variation_id:
-            variation = get_object_or_404(VariacaoProduto, id=variation_id)
+            queryset = VariacaoProduto.objects.all()
+            if tenant:
+                queryset = queryset.filter(produto__empresa=tenant)
+            variation = get_object_or_404(queryset, id=variation_id)
             produto = variation.produto
             estoque_disponivel = variation.estoque
             produto_nome = f"{produto.produto} ({variation})"
         else:
-            produto = get_object_or_404(Produto, id=product_id)
+            queryset = Produto.objects.all()
+            if tenant:
+                queryset = queryset.filter(empresa=tenant)
+            produto = get_object_or_404(queryset, id=product_id)
             estoque_disponivel = produto.estoque
             produto_nome = produto.produto
             variation = None  # Para uso no método add_product
@@ -163,18 +172,26 @@ def cart_delete_mini(request):
 
 def cart_update(request):
     cart = Cart(request)
+    tenant = getattr(request, "tenant", None)
+
     if request.POST.get("action") == "post":
         variation_id = request.POST.get("variation_id")
         product_quantity = int(request.POST.get("product_quantity"))
 
-        # Validar quantidade máxima baseada no estoque
+        # Validar quantidade máxima baseada no estoque (filtrado por tenant)
         if variation_id.startswith("produto_"):
             produto_id = int(variation_id.replace("produto_", ""))
-            produto = get_object_or_404(Produto, id=produto_id)
+            queryset = Produto.objects.all()
+            if tenant:
+                queryset = queryset.filter(empresa=tenant)
+            produto = get_object_or_404(queryset, id=produto_id)
             max_estoque = produto.estoque
             preco_unitario = produto.preco
         else:
-            variation = get_object_or_404(VariacaoProduto, id=variation_id)
+            queryset = VariacaoProduto.objects.all()
+            if tenant:
+                queryset = queryset.filter(produto__empresa=tenant)
+            variation = get_object_or_404(queryset, id=variation_id)
             max_estoque = variation.estoque
             preco_unitario = variation.calcular_preco_final()
 

@@ -6,6 +6,7 @@ from decimal import Decimal
 
 import pytest
 
+from plataforma_de_servicos.empresa.tests.factories import EmpresaFactory
 from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.inventario.tests.factories import InventarioFactory
 from plataforma_de_servicos.produto.services import ProdutoService
@@ -29,16 +30,19 @@ class TestProdutoServiceListarProdutosVitrine:
 
     def test_retorna_produtos_de_inventario_vitrine(self):
         """Deve retornar apenas produtos em inventários com exibir_na_vitrine=True."""
-        categoria = CategoriaFactory()
+        empresa = EmpresaFactory()
+        categoria = CategoriaFactory(empresa=empresa)
         inventario_vitrine = InventarioFactory(
             is_ativo=True,
             exibir_na_vitrine=True,
+            empresa=empresa,
         )
 
         produto = ProdutoFactory(
             categoria=categoria,
             estoque=10,
             preco=Decimal("99.90"),
+            empresa=empresa,
         )
         InventarioSaldo.objects.create(
             inventario=inventario_vitrine,
@@ -46,7 +50,7 @@ class TestProdutoServiceListarProdutosVitrine:
             quantidade=10,
         )
 
-        produtos, categoria_result = ProdutoService.listar_produtos_vitrine()
+        produtos, categoria_result = ProdutoService.listar_produtos_vitrine(empresa=empresa)
 
         assert produtos.count() == 1
         assert produtos.first().id == produto.id
@@ -54,16 +58,19 @@ class TestProdutoServiceListarProdutosVitrine:
 
     def test_nao_retorna_produtos_de_inventario_oculto(self):
         """Não deve retornar produtos em inventários com exibir_na_vitrine=False."""
-        categoria = CategoriaFactory()
+        empresa = EmpresaFactory()
+        categoria = CategoriaFactory(empresa=empresa)
         inventario_oculto = InventarioFactory(
             is_ativo=True,
             exibir_na_vitrine=False,
+            empresa=empresa,
         )
 
         produto = ProdutoFactory(
             categoria=categoria,
             estoque=10,
             preco=Decimal("99.90"),
+            empresa=empresa,
         )
         InventarioSaldo.objects.create(
             inventario=inventario_oculto,
@@ -71,22 +78,25 @@ class TestProdutoServiceListarProdutosVitrine:
             quantidade=10,
         )
 
-        produtos, _ = ProdutoService.listar_produtos_vitrine()
+        produtos, _ = ProdutoService.listar_produtos_vitrine(empresa=empresa)
 
         assert produtos.count() == 0
 
     def test_nao_retorna_produtos_de_inventario_inativo(self):
         """Não deve retornar produtos em inventários inativos."""
-        categoria = CategoriaFactory()
+        empresa = EmpresaFactory()
+        categoria = CategoriaFactory(empresa=empresa)
         inventario_inativo = InventarioFactory(
             is_ativo=False,
             exibir_na_vitrine=True,
+            empresa=empresa,
         )
 
         produto = ProdutoFactory(
             categoria=categoria,
             estoque=10,
             preco=Decimal("99.90"),
+            empresa=empresa,
         )
         InventarioSaldo.objects.create(
             inventario=inventario_inativo,
@@ -94,24 +104,26 @@ class TestProdutoServiceListarProdutosVitrine:
             quantidade=10,
         )
 
-        produtos, _ = ProdutoService.listar_produtos_vitrine()
+        produtos, _ = ProdutoService.listar_produtos_vitrine(empresa=empresa)
 
         assert produtos.count() == 0
 
     def test_filtra_por_categoria(self):
         """Deve filtrar produtos pela categoria especificada."""
-        categoria1 = CategoriaFactory(categoria="Categoria 1")
-        categoria2 = CategoriaFactory(categoria="Categoria 2")
-        inventario = InventarioFactory(is_ativo=True, exibir_na_vitrine=True)
+        empresa = EmpresaFactory()
+        categoria1 = CategoriaFactory(categoria="Categoria 1", empresa=empresa)
+        categoria2 = CategoriaFactory(categoria="Categoria 2", empresa=empresa)
+        inventario = InventarioFactory(is_ativo=True, exibir_na_vitrine=True, empresa=empresa)
 
-        produto1 = ProdutoFactory(categoria=categoria1, estoque=10, preco=Decimal("50.00"))
-        produto2 = ProdutoFactory(categoria=categoria2, estoque=10, preco=Decimal("60.00"))
+        produto1 = ProdutoFactory(categoria=categoria1, estoque=10, preco=Decimal("50.00"), empresa=empresa)
+        produto2 = ProdutoFactory(categoria=categoria2, estoque=10, preco=Decimal("60.00"), empresa=empresa)
 
         InventarioSaldo.objects.create(inventario=inventario, produto=produto1, quantidade=10)
         InventarioSaldo.objects.create(inventario=inventario, produto=produto2, quantidade=10)
 
         produtos, categoria_result = ProdutoService.listar_produtos_vitrine(
             category_id=str(categoria1.id),
+            empresa=empresa,
         )
 
         assert produtos.count() == 1
@@ -120,43 +132,55 @@ class TestProdutoServiceListarProdutosVitrine:
 
     def test_filtra_por_busca(self):
         """Deve filtrar produtos pelo texto de busca."""
-        categoria = CategoriaFactory()
-        inventario = InventarioFactory(is_ativo=True, exibir_na_vitrine=True)
+        empresa = EmpresaFactory()
+        categoria = CategoriaFactory(empresa=empresa)
+        inventario = InventarioFactory(is_ativo=True, exibir_na_vitrine=True, empresa=empresa)
 
         produto1 = ProdutoFactory(
             produto="Pizza Margherita Especial",
             categoria=categoria,
             estoque=10,
             preco=Decimal("50.00"),
+            empresa=empresa,
         )
         produto2 = ProdutoFactory(
             produto="Refrigerante Cola",
             categoria=categoria,
             estoque=10,
             preco=Decimal("10.00"),
+            empresa=empresa,
         )
 
         InventarioSaldo.objects.create(inventario=inventario, produto=produto1, quantidade=10)
         InventarioSaldo.objects.create(inventario=inventario, produto=produto2, quantidade=10)
 
-        produtos, _ = ProdutoService.listar_produtos_vitrine(search="Pizza")
+        produtos, _ = ProdutoService.listar_produtos_vitrine(search="Pizza", empresa=empresa)
 
         assert produtos.count() == 1
         assert produtos.first().id == produto1.id
 
     def test_category_id_invalido_retorna_todos_produtos(self):
         """Com category_id inválido, deve retornar todos os produtos."""
-        categoria = CategoriaFactory()
-        inventario = InventarioFactory(is_ativo=True, exibir_na_vitrine=True)
+        empresa = EmpresaFactory()
+        categoria = CategoriaFactory(empresa=empresa)
+        inventario = InventarioFactory(is_ativo=True, exibir_na_vitrine=True, empresa=empresa)
 
-        produto = ProdutoFactory(categoria=categoria, estoque=10, preco=Decimal("50.00"))
+        produto = ProdutoFactory(categoria=categoria, estoque=10, preco=Decimal("50.00"), empresa=empresa)
         InventarioSaldo.objects.create(inventario=inventario, produto=produto, quantidade=10)
 
         produtos, categoria_result = ProdutoService.listar_produtos_vitrine(
             category_id="invalid",
+            empresa=empresa,
         )
 
         assert produtos.count() == 1
+        assert categoria_result == "Todos os produtos"
+
+    def test_sem_empresa_retorna_lista_vazia(self):
+        """Sem empresa, deve retornar lista vazia (isolamento multitenancy)."""
+        produtos, categoria_result = ProdutoService.listar_produtos_vitrine(empresa=None)
+
+        assert produtos.count() == 0
         assert categoria_result == "Todos os produtos"
 
 
@@ -165,18 +189,20 @@ class TestProdutoServicePrepararProdutosParaVitrine:
 
     def test_retorna_lista_de_produto_vitrine(self):
         """Deve retornar lista de ProdutoVitrine com dados corretos."""
-        categoria = CategoriaFactory(categoria="Pizzas")
-        inventario = InventarioFactory(is_ativo=True, exibir_na_vitrine=True)
+        empresa = EmpresaFactory()
+        categoria = CategoriaFactory(categoria="Pizzas", empresa=empresa)
+        inventario = InventarioFactory(is_ativo=True, exibir_na_vitrine=True, empresa=empresa)
 
         produto = ProdutoFactory(
             produto="Pizza Teste",
             categoria=categoria,
             estoque=10,
             preco=Decimal("49.90"),
+            empresa=empresa,
         )
         InventarioSaldo.objects.create(inventario=inventario, produto=produto, quantidade=10)
 
-        produtos_qs, _ = ProdutoService.listar_produtos_vitrine()
+        produtos_qs, _ = ProdutoService.listar_produtos_vitrine(empresa=empresa)
         resultado = ProdutoService.preparar_produtos_para_vitrine(produtos_qs)
 
         assert len(resultado) == 1
@@ -188,33 +214,37 @@ class TestProdutoServicePrepararProdutosParaVitrine:
 
     def test_exclui_produtos_com_estoque_zero(self):
         """Não deve incluir produtos com estoque zero."""
-        categoria = CategoriaFactory()
-        inventario = InventarioFactory(is_ativo=True, exibir_na_vitrine=True)
+        empresa = EmpresaFactory()
+        categoria = CategoriaFactory(empresa=empresa)
+        inventario = InventarioFactory(is_ativo=True, exibir_na_vitrine=True, empresa=empresa)
 
         produto = ProdutoFactory(
             categoria=categoria,
             estoque=0,
             preco=Decimal("49.90"),
+            empresa=empresa,
         )
         InventarioSaldo.objects.create(inventario=inventario, produto=produto, quantidade=5)
 
-        produtos_qs, _ = ProdutoService.listar_produtos_vitrine()
+        produtos_qs, _ = ProdutoService.listar_produtos_vitrine(empresa=empresa)
         resultado = ProdutoService.preparar_produtos_para_vitrine(produtos_qs)
 
         assert len(resultado) == 0
 
     def test_produto_sem_categoria_retorna_sem_categoria(self):
         """Produto sem categoria deve retornar 'Sem categoria'."""
-        inventario = InventarioFactory(is_ativo=True, exibir_na_vitrine=True)
+        empresa = EmpresaFactory()
+        inventario = InventarioFactory(is_ativo=True, exibir_na_vitrine=True, empresa=empresa)
 
         produto = ProdutoFactory(
             categoria=None,
             estoque=10,
             preco=Decimal("49.90"),
+            empresa=empresa,
         )
         InventarioSaldo.objects.create(inventario=inventario, produto=produto, quantidade=10)
 
-        produtos_qs, _ = ProdutoService.listar_produtos_vitrine()
+        produtos_qs, _ = ProdutoService.listar_produtos_vitrine(empresa=empresa)
         resultado = ProdutoService.preparar_produtos_para_vitrine(produtos_qs)
 
         assert len(resultado) == 1
@@ -228,8 +258,9 @@ class TestProdutoServiceObterAtributosVariacoes:
         """Deve retornar atributos únicos das variações."""
         produto = ProdutoFactory(preco=Decimal("100.00"))
 
-        cor_attr = AtributoFactory(nome="Cor")
-        tam_attr = AtributoFactory(nome="Tamanho")
+        # Atributos devem usar a mesma categoria do produto
+        cor_attr = AtributoFactory(nome="Cor", categoria=produto.categoria)
+        tam_attr = AtributoFactory(nome="Tamanho", categoria=produto.categoria)
 
         cor_vermelho = ValorAtributoFactory(atributo=cor_attr, valor="Vermelho")
         cor_azul = ValorAtributoFactory(atributo=cor_attr, valor="Azul")
@@ -251,7 +282,8 @@ class TestProdutoServiceObterAtributosVariacoes:
         """Valores de cada atributo devem estar ordenados alfabeticamente."""
         produto = ProdutoFactory(preco=Decimal("100.00"))
 
-        cor_attr = AtributoFactory(nome="Cor")
+        # Atributo deve usar a mesma categoria do produto
+        cor_attr = AtributoFactory(nome="Cor", categoria=produto.categoria)
         cor_z = ValorAtributoFactory(atributo=cor_attr, valor="Zebra")
         cor_a = ValorAtributoFactory(atributo=cor_attr, valor="Amarelo")
         cor_m = ValorAtributoFactory(atributo=cor_attr, valor="Marrom")
@@ -295,7 +327,8 @@ class TestProdutoServiceCalcularPrecoVariacao:
         """Com variação encontrada, deve retornar preço calculado."""
         produto = ProdutoFactory(preco=Decimal("100.00"), estoque=10)
 
-        cor_attr = AtributoFactory(nome="Cor")
+        # Atributo deve usar a mesma categoria do produto
+        cor_attr = AtributoFactory(nome="Cor", categoria=produto.categoria)
         cor_valor = ValorAtributoFactory(
             atributo=cor_attr,
             valor="Premium",
@@ -324,7 +357,8 @@ class TestProdutoServiceCalcularPrecoVariacao:
         """Variação sem estoque deve retornar disponivel=False."""
         produto = ProdutoFactory(preco=Decimal("100.00"), estoque=10)
 
-        cor_attr = AtributoFactory(nome="Cor")
+        # Atributo deve usar a mesma categoria do produto
+        cor_attr = AtributoFactory(nome="Cor", categoria=produto.categoria)
         cor_valor = ValorAtributoFactory(atributo=cor_attr, valor="Normal")
 
         VariacaoProdutoFactory(
@@ -345,7 +379,8 @@ class TestProdutoServiceCalcularPrecoVariacao:
         """Combinação inválida deve retornar preço base com flag combinacao_invalida."""
         produto = ProdutoFactory(preco=Decimal("100.00"), estoque=10)
 
-        cor_attr = AtributoFactory(nome="Cor")
+        # Atributo deve usar a mesma categoria do produto
+        cor_attr = AtributoFactory(nome="Cor", categoria=produto.categoria)
         cor_valor = ValorAtributoFactory(atributo=cor_attr, valor="Normal")
 
         # Não cria variação com esse valor
@@ -376,8 +411,9 @@ class TestProdutoServiceBuscarVariacaoPorValores:
         """Deve encontrar variação que corresponde exatamente aos valores."""
         produto = ProdutoFactory(preco=Decimal("100.00"))
 
-        cor_attr = AtributoFactory(nome="Cor")
-        tam_attr = AtributoFactory(nome="Tamanho")
+        # Atributos devem usar a mesma categoria do produto
+        cor_attr = AtributoFactory(nome="Cor", categoria=produto.categoria)
+        tam_attr = AtributoFactory(nome="Tamanho", categoria=produto.categoria)
 
         cor_valor = ValorAtributoFactory(atributo=cor_attr, valor="Azul")
         tam_valor = ValorAtributoFactory(atributo=tam_attr, valor="M")
@@ -399,8 +435,9 @@ class TestProdutoServiceBuscarVariacaoPorValores:
         """Não deve encontrar variação com apenas parte dos valores."""
         produto = ProdutoFactory(preco=Decimal("100.00"))
 
-        cor_attr = AtributoFactory(nome="Cor")
-        tam_attr = AtributoFactory(nome="Tamanho")
+        # Atributos devem usar a mesma categoria do produto
+        cor_attr = AtributoFactory(nome="Cor", categoria=produto.categoria)
+        tam_attr = AtributoFactory(nome="Tamanho", categoria=produto.categoria)
 
         cor_valor = ValorAtributoFactory(atributo=cor_attr, valor="Azul")
         tam_valor = ValorAtributoFactory(atributo=tam_attr, valor="M")
@@ -422,7 +459,8 @@ class TestProdutoServiceBuscarVariacaoPorValores:
         """Não deve encontrar variação para valores que não existem combinados."""
         produto = ProdutoFactory(preco=Decimal("100.00"))
 
-        cor_attr = AtributoFactory(nome="Cor")
+        # Atributo deve usar a mesma categoria do produto
+        cor_attr = AtributoFactory(nome="Cor", categoria=produto.categoria)
         cor_vermelho = ValorAtributoFactory(atributo=cor_attr, valor="Vermelho")
         cor_azul = ValorAtributoFactory(atributo=cor_attr, valor="Azul")
 

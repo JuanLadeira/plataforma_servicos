@@ -50,13 +50,17 @@ class TenantMiddleware:
                     request.tenant = self._get_tenant_from_user(request) or tenant
             return self.get_response(request)
 
-        # Domínio principal sem subdomínio
-        # Permite /gerentes/ para desenvolvimento (tenant via sessão/query)
+        # Domínio principal sem subdomínio (localhost/desenvolvimento)
+        # Suporta tenant via query param ou sessão para facilitar testes
+
+        # Para /gerentes/, tenta obter do usuário primeiro
         if request.path.startswith("/gerentes/"):
             request.tenant = self._get_tenant_from_user(request)
             if not request.tenant:
-                # Fallback para desenvolvimento: tenant via query param
                 request.tenant = self._get_dev_tenant(request)
+        else:
+            # Para outras URLs públicas, também suporta dev tenant
+            request.tenant = self._get_dev_tenant(request)
 
         return self.get_response(request)
 
@@ -64,14 +68,22 @@ class TenantMiddleware:
         """Verifica se a requisição é do domínio principal (sem subdomínio)."""
         host = request.get_host().split(":")[0]  # Remove porta
 
-        # Localhost sem subdomínio é considerado domínio principal
+        # Localhost/127.0.0.1 sem subdomínio é considerado domínio principal
         if host in ("localhost", "127.0.0.1"):
             return True
 
         # Verifica se tem subdomínio
         parts = host.split(".")
 
-        # dominio.com (2 partes) ou localhost = domínio principal
+        # Suporte a subdomínios de localhost (ex: autoprime.localhost)
+        if len(parts) == 2 and parts[1] == "localhost":
+            return False  # É um subdomínio de localhost
+
+        # Suporte a lvh.me para desenvolvimento (ex: autoprime.lvh.me)
+        if len(parts) == 3 and parts[1] == "lvh" and parts[2] == "me":
+            return False  # É um subdomínio de lvh.me
+
+        # dominio.com (2 partes) = domínio principal
         # empresa.dominio.com (3+ partes) = subdomínio
         if len(parts) < 3:
             return True
@@ -87,11 +99,21 @@ class TenantMiddleware:
         host = request.get_host().split(":")[0]
         parts = host.split(".")
 
-        if len(parts) < 3:
-            return None
+        empresa_slug = None
 
-        empresa_slug = parts[0]
-        if empresa_slug == "www":
+        # Subdomínio de localhost (ex: autoprime.localhost)
+        if len(parts) == 2 and parts[1] == "localhost":
+            empresa_slug = parts[0]
+
+        # Subdomínio de lvh.me (ex: autoprime.lvh.me)
+        elif len(parts) == 3 and parts[1] == "lvh" and parts[2] == "me":
+            empresa_slug = parts[0]
+
+        # Subdomínio normal (ex: autoprime.dominio.com)
+        elif len(parts) >= 3:
+            empresa_slug = parts[0]
+
+        if not empresa_slug or empresa_slug == "www":
             return None
 
         try:
@@ -104,16 +126,29 @@ class TenantMiddleware:
         if not request.user.is_authenticated:
             return None
 
-        # Superusuário pode selecionar tenant via sessão
+        # Funcionário: obtém empresa do perfil (tem prioridade)
+        if hasattr(request.user, "funcionario") and request.user.funcionario:
+            empresa = getattr(request.user.funcionario, "empresa", None)
+            if empresa:
+                return empresa
+
+        # Superusuário pode selecionar tenant via sessão ou query param
         if request.user.is_superuser:
+            # Tenta query param primeiro (para facilitar desenvolvimento)
+            tenant_slug = request.GET.get("tenant")
+            if tenant_slug:
+                empresa = Empresa.objects.filter(slug=tenant_slug).first()
+                if empresa:
+                    # Salva na sessão para não precisar passar sempre
+                    request.session["admin_tenant_id"] = empresa.pk
+                    return empresa
+
+            # Tenta sessão
             tenant_id = request.session.get("admin_tenant_id")
             if tenant_id:
                 return Empresa.objects.filter(pk=tenant_id).first()
-            return None
 
-        # Funcionário: obtém empresa do perfil
-        if hasattr(request.user, "funcionario") and request.user.funcionario:
-            return getattr(request.user.funcionario, "empresa", None)
+            return None
 
         # Cliente: obtém empresa do perfil
         if hasattr(request.user, "cliente") and request.user.cliente:

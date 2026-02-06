@@ -34,10 +34,23 @@ class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
     lookup_field = "slug"
 
+    def get_queryset(self):
+        """Filtra queryset por tenant."""
+        queryset = super().get_queryset()
+        tenant = getattr(self.request, "tenant", None)
+        if tenant:
+            return queryset.filter(empresa=tenant)
+        return queryset.none()
+
     def get_serializer_class(self):
         if self.request.method == "GET":
             return CategoriaGetSerializer
         return CategoriaPostSerializer
+
+    def perform_create(self, serializer):
+        """Auto-preenche empresa ao criar."""
+        tenant = getattr(self.request, "tenant", None)
+        serializer.save(empresa=tenant)
 
     @retrieve_categoria_schema
     def retrieve(self, request, *args, **kwargs):
@@ -46,12 +59,9 @@ class CategoriaViewSet(viewsets.ModelViewSet):
     @list_categoria_schema
     def list(self, request, *args, **kwargs):
         search = request.query_params.get("search", None)
+        queryset = self.get_queryset()
         if search:
-            queryset = Categoria.objects.filter(
-                Q(categoria__icontains=search),
-            )
-        else:
-            queryset = Categoria.objects.all()
+            queryset = queryset.filter(Q(categoria__icontains=search))
         serializer = CategoriaGetSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

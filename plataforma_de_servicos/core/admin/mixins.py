@@ -9,51 +9,109 @@ class TenantAwareAdminMixin:
     Mixin que filtra queryset por tenant e auto-preenche empresa.
 
     Aplica-se a ModelAdmin classes para modelos que têm campo 'empresa'.
+
+    Comportamento:
+    - No admin de gerentes (self.admin_site.name == 'gerentes'):
+      - SEMPRE filtra por tenant
+      - SEMPRE esconde campo empresa
+      - SEMPRE auto-preenche empresa ao criar
+      - Se não houver tenant, retorna queryset vazio (segurança)
+    - No admin principal (/admin/):
+      - Superusuários veem tudo
+      - Filtro opcional por tenant
     """
+
+    def _is_gerente_admin(self):
+        """Verifica se estamos no admin de gerentes."""
+        return getattr(self.admin_site, "name", "") == "gerentes"
 
     def get_queryset(self, request):
         """Filtra queryset por tenant do request."""
         qs = super().get_queryset(request)
+        tenant = getattr(request, "tenant", None)
 
-        # Superusuário sem tenant selecionado vê tudo
-        if request.user.is_superuser and not request.tenant:
+        # Se estamos no admin de gerentes
+        if self._is_gerente_admin():
+            # Sem tenant = queryset vazio (segurança)
+            if not tenant:
+                return qs.none()
+            # Com tenant = filtra por empresa
+            if hasattr(self.model, "empresa"):
+                return qs.filter(empresa=tenant)
+            return qs
+
+        # Admin principal: superusuário sem tenant vê tudo
+        if request.user.is_superuser and not tenant:
             return qs
 
         # Se o modelo tem campo empresa, filtra pelo tenant
-        if hasattr(self.model, "empresa") and request.tenant:
-            return qs.filter(empresa=request.tenant)
+        if hasattr(self.model, "empresa") and tenant:
+            return qs.filter(empresa=tenant)
 
         return qs
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         """Filtra FKs que apontam para modelos com empresa pelo tenant."""
-        if request.tenant:
+        tenant = getattr(request, "tenant", None)
+
+        # No admin de gerentes, sempre filtra
+        if self._is_gerente_admin() and tenant:
             related_model = db_field.remote_field.model
             if hasattr(related_model, "empresa"):
-                kwargs["queryset"] = related_model.objects.filter(empresa=request.tenant)
+                kwargs["queryset"] = related_model.objects.filter(empresa=tenant)
+        elif tenant:
+            related_model = db_field.remote_field.model
+            if hasattr(related_model, "empresa"):
+                kwargs["queryset"] = related_model.objects.filter(empresa=tenant)
+
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         """Filtra M2M que apontam para modelos com empresa pelo tenant."""
-        if request.tenant:
+        tenant = getattr(request, "tenant", None)
+
+        if tenant:
             related_model = db_field.remote_field.model
             if hasattr(related_model, "empresa"):
-                kwargs["queryset"] = related_model.objects.filter(empresa=request.tenant)
+                kwargs["queryset"] = related_model.objects.filter(empresa=tenant)
+
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
         """Auto-preenche empresa ao criar novos objetos."""
+        tenant = getattr(request, "tenant", None)
+
         if not change and hasattr(obj, "empresa") and not obj.empresa_id:
-            obj.empresa = request.tenant
+            if tenant:
+                obj.empresa = tenant
+
         super().save_model(request, obj, form, change)
 
     def get_form(self, request, obj=None, **kwargs):
-        """Esconde campo empresa para usuários não-superusuários."""
+        """Esconde campo empresa no admin de gerentes."""
         form = super().get_form(request, obj, **kwargs)
-        if "empresa" in form.base_fields and not request.user.is_superuser:
-            form.base_fields["empresa"].widget = forms.HiddenInput()
-            form.base_fields["empresa"].initial = request.tenant
+        tenant = getattr(request, "tenant", None)
+
+        if "empresa" in form.base_fields:
+            # No admin de gerentes: SEMPRE esconde e auto-preenche
+            if self._is_gerente_admin():
+                form.base_fields["empresa"].widget = forms.HiddenInput()
+                form.base_fields["empresa"].initial = tenant
+                form.base_fields["empresa"].required = False
+            # No admin principal: esconde para não-superusuários
+            elif not request.user.is_superuser and tenant:
+                form.base_fields["empresa"].widget = forms.HiddenInput()
+                form.base_fields["empresa"].initial = tenant
+
         return form
+
+    def get_exclude(self, request, obj=None):
+        """Exclui campo empresa do formulário no admin de gerentes."""
+        exclude = list(super().get_exclude(request, obj) or [])
+
+        # No admin de gerentes, excluímos empresa dos fieldsets visíveis
+        # mas mantemos via get_form para auto-preenchimento
+        return exclude
 
 
 class TenantAwareInlineMixin:
@@ -64,25 +122,40 @@ class TenantAwareInlineMixin:
     relação com empresa (direta ou via parent).
     """
 
+    def _is_gerente_admin(self):
+        """Verifica se estamos no admin de gerentes."""
+        if hasattr(self, "admin_site"):
+            return getattr(self.admin_site, "name", "") == "gerentes"
+        return False
+
     def get_queryset(self, request):
         """Filtra queryset por tenant do request."""
         qs = super().get_queryset(request)
-        if hasattr(self.model, "empresa") and request.tenant:
-            return qs.filter(empresa=request.tenant)
+        tenant = getattr(request, "tenant", None)
+
+        if hasattr(self.model, "empresa") and tenant:
+            return qs.filter(empresa=tenant)
+
         return qs
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         """Filtra FKs que apontam para modelos com empresa pelo tenant."""
-        if request.tenant:
+        tenant = getattr(request, "tenant", None)
+
+        if tenant:
             related_model = db_field.remote_field.model
             if hasattr(related_model, "empresa"):
-                kwargs["queryset"] = related_model.objects.filter(empresa=request.tenant)
+                kwargs["queryset"] = related_model.objects.filter(empresa=tenant)
+
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         """Filtra M2M que apontam para modelos com empresa pelo tenant."""
-        if request.tenant:
+        tenant = getattr(request, "tenant", None)
+
+        if tenant:
             related_model = db_field.remote_field.model
             if hasattr(related_model, "empresa"):
-                kwargs["queryset"] = related_model.objects.filter(empresa=request.tenant)
+                kwargs["queryset"] = related_model.objects.filter(empresa=tenant)
+
         return super().formfield_for_manytomany(db_field, request, **kwargs)

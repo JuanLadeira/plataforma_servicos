@@ -85,15 +85,24 @@ class Cart:
         """
         Itera sobre os itens do carrinho, buscando os objetos do banco de dados
         e preparando os dados para exibição.
+        Filtra por tenant para evitar vazamento de dados entre empresas.
         """
         all_variation_ids = [key for key in self.cart.keys() if not key.startswith("produto_")]
         produto_ids = [int(key.replace("produto_", "")) for key in self.cart.keys() if key.startswith("produto_")]
 
-        variations = VariacaoProduto.objects.filter(id__in=all_variation_ids).select_related(
+        # Filtra variações por tenant
+        variations_qs = VariacaoProduto.objects.filter(id__in=all_variation_ids).select_related(
             "produto",
         ).prefetch_related("valores__atributo")
+        if self.tenant:
+            variations_qs = variations_qs.filter(produto__empresa=self.tenant)
+        variations = variations_qs
 
-        produtos = Produto.objects.filter(id__in=produto_ids)
+        # Filtra produtos por tenant
+        produtos_qs = Produto.objects.filter(id__in=produto_ids)
+        if self.tenant:
+            produtos_qs = produtos_qs.filter(empresa=self.tenant)
+        produtos = produtos_qs
 
         cart = deepcopy(self.cart)
 

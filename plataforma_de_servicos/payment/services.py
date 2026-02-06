@@ -9,37 +9,39 @@ logger = logging.getLogger("django")
 
 class PaymentService:
     """Service para operações de pagamento e finalização de pedidos"""
-    
+
     @staticmethod
     @transaction.atomic
-    def complete_order(cart, user_data, user=None):
+    def complete_order(cart, user_data, user=None, empresa=None):
         """
         Finaliza um pedido criando Order, OrderItems, saída de estoque e limpando reservas
-        
+
         Args:
             cart: Instância do carrinho
             user_data: Dict com dados do usuário (name, email, address1, etc.)
             user: Usuário logado ou None para guest
-            
+            empresa: Empresa (tenant) associada ao pedido
+
         Returns:
             Order: Pedido criado
         """
         # All-in-one shipping address
         shipping_address = f"{user_data['address1']}\n{user_data.get('address2', '')}\n{user_data['city']}\n{user_data['state']}\n{user_data['zipcode']}"
-        
+
         total_cost = cart.get_total()
-        
-        # Criar o pedido
+
+        # Criar o pedido com empresa associada
         order_data = {
             'full_name': user_data['name'],
             'email': user_data['email'],
             'shipping_address': shipping_address,
             'amount_paid': total_cost,
+            'empresa': empresa,
         }
-        
+
         if user and user.is_authenticated:
             order_data['user'] = user
-            
+
         order = Order.objects.create(**order_data)
         
         # Criar itens do pedido e preparar para saída de estoque

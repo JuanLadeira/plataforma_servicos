@@ -243,10 +243,17 @@ class ItemOrdemCompraGerenteInline(TabularInline):
         return True
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        tenant = getattr(request, "tenant", None)
         if db_field.name == "variacao":
-            kwargs["queryset"] = VariacaoProduto.objects.select_related(
+            qs = VariacaoProduto.objects.select_related(
                 "produto"
             ).prefetch_related("valores", "valores__atributo")
+            if tenant:
+                qs = qs.filter(produto__empresa=tenant)
+            kwargs["queryset"] = qs
+        elif db_field.name == "produto" and tenant:
+            from plataforma_de_servicos.produto.models import Produto
+            kwargs["queryset"] = Produto.objects.filter(empresa=tenant)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 

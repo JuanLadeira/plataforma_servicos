@@ -97,12 +97,26 @@ class VariacaoProdutoInline(TenantAwareInlineMixin, TabularInline):
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "valores":
-            qs = ValorAtributo.objects.select_related("atributo").order_by("atributo__nome", "valor")
-            # Filter by tenant if available
-            if request.tenant and hasattr(ValorAtributo, "atributo"):
-                qs = qs.filter(atributo__empresa=request.tenant)
+            qs = ValorAtributo.objects.select_related("atributo", "atributo__categoria").order_by(
+                "atributo__nome", "valor"
+            )
+
+            # Filtra valores pela categoria do produto sendo editado
+            # O parent_obj é o Produto
+            parent_obj = getattr(self, "parent_obj", None)
+            if parent_obj and hasattr(parent_obj, "categoria") and parent_obj.categoria:
+                qs = qs.filter(atributo__categoria=parent_obj.categoria)
+            elif request.tenant:
+                # Fallback: filtra pela empresa
+                qs = qs.filter(atributo__categoria__empresa=request.tenant)
+
             kwargs["queryset"] = qs
         return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+    def get_formset(self, request, obj=None, **kwargs):
+        """Armazena o objeto pai para uso no formfield_for_manytomany."""
+        self.parent_obj = obj
+        return super().get_formset(request, obj, **kwargs)
 
     @admin.display(description="Atributos Selecionados")
     def valores_display(self, obj):
@@ -316,9 +330,12 @@ class ValorAtributoGerenteInline(TabularInline):
 
 
 class AtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
-    list_display = ["nome", "count_valores"]
-    search_fields = ["nome"]
-    list_order_by = ["nome"]
+    list_display = ["nome", "categoria", "count_valores"]
+    list_filter = ["categoria"]
+    search_fields = ["nome", "categoria__categoria"]
+    list_order_by = ["categoria", "nome"]
+    list_select_related = ["categoria"]
+    autocomplete_fields = ["categoria"]
     inlines = [ValorAtributoGerenteInline]
     compressed_fields = True
     warn_unsaved_form = True
@@ -326,14 +343,35 @@ class AtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
         (
             "Atributo",
             {
-                "fields": ["nome"],
+                "fields": ["categoria", "nome"],
                 "description": (
                     "Atributos são características do produto (ex: Cor, Tamanho, Sabor). "
+                    "Cada atributo pertence a uma categoria específica. "
                     "Abaixo você pode adicionar os valores possíveis para este atributo."
                 )
             },
         ),
     ]
+
+    def get_queryset(self, request):
+        """Filtra atributos pela empresa via categoria."""
+        qs = super(ModelAdmin, self).get_queryset(request)
+        qs = qs.select_related("categoria", "categoria__empresa")
+        tenant = getattr(request, "tenant", None)
+        if self._is_gerente_admin():
+            if not tenant:
+                return qs.none()
+            return qs.filter(categoria__empresa=tenant)
+        return qs
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Filtra categorias pela empresa do tenant."""
+        if db_field.name == "categoria":
+            tenant = getattr(request, "tenant", None)
+            if tenant:
+                from plataforma_de_servicos.produto.models import Categoria
+                kwargs["queryset"] = Categoria.objects.filter(empresa=tenant)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     @admin.display(description="Valores Cadastrados")
     def count_valores(self, obj):
@@ -342,12 +380,12 @@ class AtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
 
 class ValorAtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     form = ValorAtributoGerenteForm
-    list_display = ["atributo", "valor", "modificador_display"]
-    list_filter = ["atributo"]
-    search_fields = ["valor", "atributo__nome"]
+    list_display = ["atributo", "valor", "categoria_display", "modificador_display"]
+    list_filter = ["atributo__categoria", "atributo"]
+    search_fields = ["valor", "atributo__nome", "atributo__categoria__categoria"]
     autocomplete_fields = ["atributo"]
-    list_select_related = ["atributo"]
-    list_order_by = ["atributo__nome", "valor"]
+    list_select_related = ["atributo", "atributo__categoria"]
+    list_order_by = ["atributo__categoria", "atributo__nome", "valor"]
     compressed_fields = True
     warn_unsaved_form = True
     fieldsets = [
@@ -365,6 +403,34 @@ class ValorAtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
             )
         })
     ]
+
+    def get_queryset(self, request):
+        """Filtra valores de atributo pela empresa via categoria."""
+        qs = super(ModelAdmin, self).get_queryset(request)
+        qs = qs.select_related("atributo", "atributo__categoria", "atributo__categoria__empresa")
+        tenant = getattr(request, "tenant", None)
+        if self._is_gerente_admin():
+            if not tenant:
+                return qs.none()
+            return qs.filter(atributo__categoria__empresa=tenant)
+        return qs
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Filtra atributos pela empresa do tenant via categoria."""
+        if db_field.name == "atributo":
+            tenant = getattr(request, "tenant", None)
+            if tenant:
+                kwargs["queryset"] = Atributo.objects.filter(
+                    categoria__empresa=tenant
+                ).select_related("categoria")
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    @admin.display(description="Categoria")
+    def categoria_display(self, obj):
+        """Mostra a categoria do atributo."""
+        if obj.atributo and obj.atributo.categoria:
+            return obj.atributo.categoria.categoria
+        return "-"
 
     @admin.display(description="Modificador")
     def modificador_display(self, obj):

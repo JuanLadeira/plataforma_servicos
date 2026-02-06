@@ -25,8 +25,9 @@ class TestPriceModifiersCore(TestCase):
             categoria=self.categoria,
             ncm="12345678"
         )
-        self.cor_attr = Atributo.objects.create(nome="Cor")
-        self.tam_attr = Atributo.objects.create(nome="Tamanho")
+        # Atributos agora precisam estar vinculados a uma categoria
+        self.cor_attr = Atributo.objects.create(nome="Cor", categoria=self.categoria)
+        self.tam_attr = Atributo.objects.create(nome="Tamanho", categoria=self.categoria)
 
     def test_valor_atributo_default_modifiers(self):
         """Testa valores padrão dos modificadores"""
@@ -111,7 +112,7 @@ class TestPriceModifiersCore(TestCase):
 
     def test_calcular_preco_final_with_both_modifiers(self):
         """Testa cálculo com ambos modificadores"""
-        material_attr = Atributo.objects.create(nome="Material")
+        material_attr = Atributo.objects.create(nome="Material", categoria=self.categoria)
         valor = ValorAtributo.objects.create(
             atributo=material_attr,
             valor="Premium",
@@ -224,7 +225,7 @@ class TestPriceModifiersCore(TestCase):
 
     def test_calcular_preco_final_decimal_precision(self):
         """Testa precisão decimal nos cálculos"""
-        desconto_attr = Atributo.objects.create(nome="Desconto")
+        desconto_attr = Atributo.objects.create(nome="Desconto", categoria=self.categoria)
         valor = ValorAtributo.objects.create(
             atributo=desconto_attr,
             valor="Especial",

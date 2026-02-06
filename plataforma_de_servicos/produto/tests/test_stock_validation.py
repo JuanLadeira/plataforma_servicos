@@ -16,9 +16,10 @@ def produto_com_estoque(db):
 
 
 @pytest.fixture
-def atributo_tamanho(db):
-    """Cria atributo Tamanho com valores."""
-    atributo = AtributoFactory(nome="Tamanho")
+def atributo_tamanho(db, produto_com_estoque):
+    """Cria atributo Tamanho com valores, usando a mesma categoria do produto."""
+    # Atributo deve usar a mesma categoria do produto
+    atributo = AtributoFactory(nome="Tamanho", categoria=produto_com_estoque.categoria)
     ValorAtributoFactory(atributo=atributo, valor="Pequeno")
     ValorAtributoFactory(atributo=atributo, valor="Grande")
     return atributo
@@ -68,13 +69,15 @@ class TestVariacaoProdutoInlineFormSet:
         assert total == 3
         assert total < produto.estoque
 
-    def test_produto_sem_estoque_permite_variacoes_sem_limite(self, db, atributo_tamanho):
+    def test_produto_sem_estoque_permite_variacoes_sem_limite(self, db):
         """
         Quando o produto não tem estoque definido (0 ou None),
         as variações podem ter qualquer estoque.
         """
         produto = ProdutoFactory(estoque=0)
-        valor_pequeno = atributo_tamanho.valores.get(valor="Pequeno")
+        # Cria atributo com a mesma categoria do produto
+        atributo_tamanho = AtributoFactory(nome="Tamanho", categoria=produto.categoria)
+        valor_pequeno = ValorAtributoFactory(atributo=atributo_tamanho, valor="Pequeno")
 
         # Criar variação com estoque alto
         var1 = VariacaoProduto.objects.create(produto=produto, estoque=100)

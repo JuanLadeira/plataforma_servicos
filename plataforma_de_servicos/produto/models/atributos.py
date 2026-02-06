@@ -3,38 +3,48 @@ from django.db import models
 from django.urls import reverse
 from django_extensions.db.models import AutoSlugField
 
+from .categoria_model import Categoria
 from .produto_model import Produto
 
 
 class Atributo(models.Model):
     """
     Modelo para armazenar os tipos de atributos, como 'Cor' ou 'Tamanho'.
+
+    Atributos são vinculados a uma Categoria, permitindo:
+    - Atributos específicos por categoria (ex: "Motor" só em Carros)
+    - Mesmo nome de atributo em categorias diferentes (ex: "Tamanho" em Roupas e Bebidas)
+    - Filtragem automática no admin ao criar variações de produto
     """
-    empresa = models.ForeignKey(
-        "empresa.Empresa",
+    categoria = models.ForeignKey(
+        Categoria,
         on_delete=models.CASCADE,
         related_name="atributos",
-        verbose_name="Empresa",
-        null=True,  # Temporary: remove after data migration
-        blank=True,
+        verbose_name="Categoria",
+        help_text="Categoria à qual este atributo pertence",
     )
-    nome = models.CharField(max_length=50, help_text="Ex: Cor, Tamanho")
+    nome = models.CharField(max_length=50, help_text="Ex: Cor, Tamanho, Motor")
     slug = AutoSlugField(populate_from="nome")
 
     class Meta:
         verbose_name = "Atributo"
         verbose_name_plural = "Atributos"
-        ordering = ["nome"]
-        unique_together = [["empresa", "nome"]]
+        ordering = ["categoria", "nome"]
+        unique_together = [["categoria", "nome"]]
         constraints = [
             models.UniqueConstraint(
-                fields=["empresa", "slug"],
-                name="unique_empresa_atributo_slug",
+                fields=["categoria", "slug"],
+                name="unique_categoria_atributo_slug",
             ),
         ]
 
     def __str__(self):
-        return self.nome
+        return f"{self.nome} ({self.categoria.categoria})"
+
+    @property
+    def empresa(self):
+        """Retorna a empresa via categoria (para compatibilidade com TenantAwareAdminMixin)."""
+        return self.categoria.empresa if self.categoria else None
 
 
 class ValorAtributo(models.Model):

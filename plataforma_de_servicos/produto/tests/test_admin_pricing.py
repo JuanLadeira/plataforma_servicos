@@ -99,7 +99,8 @@ class TestPricingAdminInterface:
         # Cria dados de teste
         produto = ProdutoFactory(produto="Produto Teste", preco=Decimal("100.00"))
 
-        cor_attr = AtributoFactory(nome="Cor")
+        # Atributo deve usar a mesma categoria do produto
+        cor_attr = AtributoFactory(nome="Cor", categoria=produto.categoria)
         valor_cor = ValorAtributoFactory(
             atributo=cor_attr,
             valor="Premium",
@@ -140,9 +141,9 @@ class TestPricingAdminInterface:
         # Cria estrutura completa
         produto = ProdutoFactory(produto="Camiseta", preco=Decimal("50.00"))
 
-        # Múltiplos atributos com modificadores
-        cor_attr = AtributoFactory(nome="Cor")
-        tam_attr = AtributoFactory(nome="Tamanho")
+        # Múltiplos atributos com modificadores (usam categoria do produto)
+        cor_attr = AtributoFactory(nome="Cor", categoria=produto.categoria)
+        tam_attr = AtributoFactory(nome="Tamanho", categoria=produto.categoria)
 
         # Cor premium
         cor_premium = ValorAtributoFactory(
@@ -176,7 +177,8 @@ class TestPricingAdminInterface:
         """Testa admin com modificadores zerados"""
         produto = ProdutoFactory(produto="Produto Básico", preco=Decimal("30.00"))
 
-        cor_attr = AtributoFactory(nome="Cor")
+        # Atributo deve usar a mesma categoria do produto
+        cor_attr = AtributoFactory(nome="Cor", categoria=produto.categoria)
         cor_normal = ValorAtributoFactory(
             atributo=cor_attr,
             valor="Branco",
@@ -197,7 +199,8 @@ class TestPricingAdminInterface:
         """Testa formatação de preços no admin"""
         produto = ProdutoFactory(produto="Produto Caro", preco=Decimal("1234.56"))
 
-        cor_attr = AtributoFactory(nome="Material")
+        # Atributo deve usar a mesma categoria do produto
+        cor_attr = AtributoFactory(nome="Material", categoria=produto.categoria)
         cor_especial = ValorAtributoFactory(
             atributo=cor_attr,
             valor="Platina",

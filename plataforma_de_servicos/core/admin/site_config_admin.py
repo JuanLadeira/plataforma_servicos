@@ -1,17 +1,25 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 
+from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
 from plataforma_de_servicos.core.models import SiteConfig
 
 
 @admin.register(SiteConfig)
 class SiteConfigAdmin(ModelAdmin):
-    """Admin para configurações do site (singleton)."""
+    """Admin para configurações do site (singleton global)."""
 
-    list_display = ("site_name", "hero_title", "modified")
+    list_display = ("empresa", "site_name", "hero_title", "modified")
     readonly_fields = ("created", "modified")
 
     fieldsets = [
+        (
+            "Empresa",
+            {
+                "fields": ["empresa"],
+                "description": "Empresa dona desta configuração.",
+            },
+        ),
         (
             "Identidade do Site",
             {
@@ -46,17 +54,13 @@ class SiteConfigAdmin(ModelAdmin):
         ),
     ]
 
-    def has_add_permission(self, request):
-        # Permite adicionar apenas se não existir nenhuma instância
-        return not SiteConfig.objects.exists()
-
     def has_delete_permission(self, request, obj=None):
         # Não permite deletar a configuração
         return False
 
 
-class SiteConfigGerenteAdmin(ModelAdmin):
-    """Admin para configurações do site no painel de gerentes."""
+class SiteConfigGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
+    """Admin para configurações do site no painel de gerentes (filtrado por tenant)."""
 
     list_display = ("site_name", "hero_title", "modified")
     readonly_fields = ("created", "modified")
@@ -90,7 +94,11 @@ class SiteConfigGerenteAdmin(ModelAdmin):
     ]
 
     def has_add_permission(self, request):
-        return not SiteConfig.objects.exists()
+        # Permite adicionar apenas se não existir configuração para a empresa
+        tenant = getattr(request, "tenant", None)
+        if tenant:
+            return not SiteConfig.objects.filter(empresa=tenant).exists()
+        return False
 
     def has_delete_permission(self, request, obj=None):
         return False

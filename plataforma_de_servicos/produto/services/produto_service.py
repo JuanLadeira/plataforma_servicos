@@ -68,6 +68,7 @@ class ProdutoService:
     def listar_produtos_vitrine(
         category_id: int | str | None = None,
         search: str | None = None,
+        empresa=None,
     ) -> tuple[QuerySet[Produto], Categoria | str]:
         """
         Lista produtos disponíveis na vitrine com filtros opcionais.
@@ -75,19 +76,30 @@ class ProdutoService:
         Args:
             category_id: ID da categoria para filtrar (opcional)
             search: Texto para busca no nome do produto (opcional)
+            empresa: Empresa (tenant) para filtrar produtos (opcional)
 
         Returns:
             tuple: (QuerySet de produtos, categoria selecionada ou string)
         """
+        # Sem empresa, retornar lista vazia
+        if not empresa:
+            return Produto.objects.none(), "Todos os produtos"
+
         categoria: Categoria | str = "Todos os produtos"
 
-        produtos = Produto.objects.filter(disponivel=True).prefetch_related("images")
+        produtos = Produto.objects.filter(
+            disponivel=True,
+            empresa=empresa
+        ).prefetch_related("images")
 
         if category_id:
             try:
                 category_id_int = int(category_id)
                 produtos = produtos.filter(categoria__id=category_id_int)
-                cat_obj = Categoria.objects.filter(id=category_id_int).first()
+                cat_obj = Categoria.objects.filter(
+                    id=category_id_int,
+                    empresa=empresa
+                ).first()
                 if cat_obj:
                     categoria = cat_obj
             except (ValueError, TypeError):

@@ -3,14 +3,16 @@ from factory import Faker
 from factory.django import DjangoModelFactory
 
 from ...models import Atributo, ValorAtributo, VariacaoProduto
+from .categoria_factory import CategoriaFactory
 from .produto_factory import ProdutoFactory
 
 
 class AtributoFactory(DjangoModelFactory):
     class Meta:
         model = Atributo
-        django_get_or_create = ('nome',)
+        django_get_or_create = ('categoria', 'nome',)
 
+    categoria = factory.SubFactory(CategoriaFactory)
     nome = factory.Iterator(["Cor", "Tamanho", "Material"])
 
 
@@ -47,9 +49,10 @@ class VariacaoProdutoFactory(DjangoModelFactory):
                 self.valores.add(valor)
         else:
             # Cria um valor padrão se nenhum for passado
-            cor_attr = AtributoFactory(nome="Cor")
+            # Usa a mesma categoria do produto para garantir consistência
+            cor_attr = AtributoFactory(nome="Cor", categoria=self.produto.categoria)
             valor_cor = ValorAtributoFactory(
-                atributo=cor_attr, 
+                atributo=cor_attr,
                 valor="Azul",
                 preco_adicional=0,
                 percentual_adicional=0
