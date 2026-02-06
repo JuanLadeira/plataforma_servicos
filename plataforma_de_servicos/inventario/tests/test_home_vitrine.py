@@ -27,14 +27,15 @@ class HomeVitrineFilterTest(TestCase):
         self.empresa = EmpresaFactory(slug="loja-teste")
         self.tenant_host = "loja-teste.dominio.com"
 
+        # Categoria deve ser criada antes do atributo
+        self.categoria = CategoriaFactory(empresa=self.empresa)
+
         # Atributo e valor compartilhados
-        self.atributo_cor = AtributoFactory(nome="Cor", empresa=self.empresa)
+        self.atributo_cor = AtributoFactory(nome="Cor", categoria=self.categoria)
         self.valor_azul = ValorAtributoFactory(
             atributo=self.atributo_cor,
             valor="Azul",
         )
-
-        self.categoria = CategoriaFactory(empresa=self.empresa)
 
         # Inventário que deve aparecer na vitrine
         self.inventario_vitrine = InventarioFactory(
@@ -263,7 +264,9 @@ class HomeVitrineEdgeCasesTest(TestCase):
         self.empresa = EmpresaFactory(slug="loja-edge")
         self.tenant_host = "loja-edge.dominio.com"
 
-        self.atributo_cor = AtributoFactory(nome="Cor", empresa=self.empresa)
+        # Categoria é necessária para criar o atributo
+        self.categoria = CategoriaFactory(empresa=self.empresa)
+        self.atributo_cor = AtributoFactory(nome="Cor", categoria=self.categoria)
         self.valor_verde = ValorAtributoFactory(
             atributo=self.atributo_cor,
             valor="Verde",
