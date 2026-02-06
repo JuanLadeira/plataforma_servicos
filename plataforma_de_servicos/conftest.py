@@ -4,6 +4,9 @@ import pytest
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
 
+from plataforma_de_servicos.corretor.tests.factories import CorretorFactory
+from plataforma_de_servicos.corretor.tests.factories import InteresseCompraFactory
+from plataforma_de_servicos.corretor.tests.factories import ItemInteresseFactory
 from plataforma_de_servicos.estoque.tests.factories.estoque_entrada_factory import (
     EstoqueEntradaFactory,
 )
@@ -14,10 +17,9 @@ from plataforma_de_servicos.inventario.tests.factories import InventarioFactory
 from plataforma_de_servicos.produto.tests.factories.categoria_factory import (
     CategoriaFactory,
 )
-from plataforma_de_servicos.produto.tests.factories.produto_factory import ProdutoFactory
-from plataforma_de_servicos.corretor.tests.factories import CorretorFactory
-from plataforma_de_servicos.corretor.tests.factories import InteresseCompraFactory
-from plataforma_de_servicos.corretor.tests.factories import ItemInteresseFactory
+from plataforma_de_servicos.produto.tests.factories.produto_factory import (
+    ProdutoFactory,
+)
 from plataforma_de_servicos.users.models import User
 from plataforma_de_servicos.users.tests.factories import UserFactory
 
@@ -35,7 +37,7 @@ def user(db) -> User:
 logger = getLogger("django")
 
 
-@pytest.fixture()
+@pytest.fixture
 def api_client():
     return APIClient()
 

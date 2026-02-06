@@ -95,12 +95,10 @@ LOCAL_APPS = [
     "plataforma_de_servicos.core",
     "plataforma_de_servicos.users",
     "plataforma_de_servicos.empresa",
-    "plataforma_de_servicos.servico",
     "plataforma_de_servicos.produto",
     "plataforma_de_servicos.estoque",
     "plataforma_de_servicos.inventario",
     "plataforma_de_servicos.cart",
-    "plataforma_de_servicos.payment",
     "plataforma_de_servicos.corretor",
     "plataforma_de_servicos.vendas",
     # Your stuff: custom apps go here

@@ -1,7 +1,0 @@
-from django.apps import AppConfig
-
-
-class ServicoConfig(AppConfig):
-    default_auto_field = "django.db.models.BigAutoField"
-    name = "plataforma_de_servicos.servico"
-    verbose_name = "Gestão de Serviços"

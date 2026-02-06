@@ -13,7 +13,9 @@ from django.test import TestCase
 
 from plataforma_de_servicos.cart.cart import Cart
 from plataforma_de_servicos.cart.views import cart_add
-from plataforma_de_servicos.produto.models import Categoria, Produto, VariacaoProduto
+from plataforma_de_servicos.produto.models import Categoria
+from plataforma_de_servicos.produto.models import Produto
+from plataforma_de_servicos.produto.models import VariacaoProduto
 
 pytestmark = pytest.mark.cart
 

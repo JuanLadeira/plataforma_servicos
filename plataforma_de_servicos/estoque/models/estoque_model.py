@@ -31,12 +31,12 @@ class Estoque(TimeStampedModel):
     nf = models.PositiveIntegerField("nota fiscal", null=True, blank=True)
     movimento = models.CharField(max_length=1, choices=Movimento.choices, blank=True)
     origem_saida = models.CharField(
-        "Origem da Saída", 
-        max_length=15, 
-        choices=OrigemSaida.choices, 
-        null=True, 
+        "Origem da Saída",
+        max_length=15,
+        choices=OrigemSaida.choices,
+        null=True,
         blank=True,
-        help_text="Motivo/origem da saída de estoque"
+        help_text="Motivo/origem da saída de estoque",
     )
     ordem_compra = models.ForeignKey(
         OrdemCompra,
@@ -45,13 +45,13 @@ class Estoque(TimeStampedModel):
         related_name="saidas_estoque",
         null=True,
         blank=True,
-        help_text="Ordem de compra que originou esta saída de estoque"
+        help_text="Ordem de compra que originou esta saída de estoque",
     )
     observacao = models.TextField(
         "Observações",
         null=True,
         blank=True,
-        help_text="Observações adicionais sobre o movimento"
+        help_text="Observações adicionais sobre o movimento",
     )
     processado = models.BooleanField(default=False)
     data = models.DateField("data", auto_now_add=True, help_text="Data do movimento")
