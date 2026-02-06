@@ -45,14 +45,14 @@ class VariacaoProdutoInlineFormSet(BaseInlineFormSet):
 
         total_variacao_estoque = 0
         for form in self.forms:
-            if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
-                estoque = form.cleaned_data.get('estoque', 0) or 0
+            if form.cleaned_data and not form.cleaned_data.get("DELETE", False):
+                estoque = form.cleaned_data.get("estoque", 0) or 0
                 total_variacao_estoque += estoque
 
         if total_variacao_estoque > produto_estoque:
             raise forms.ValidationError(
                 f"O estoque total das variações ({total_variacao_estoque}) "
-                f"não pode exceder o estoque do produto ({produto_estoque})."
+                f"não pode exceder o estoque do produto ({produto_estoque}).",
             )
 
 
@@ -61,16 +61,16 @@ class ValorAtributoGerenteForm(forms.ModelForm):
 
     class Meta:
         model = ValorAtributo
-        fields = '__all__'
+        fields = "__all__"
 
     def clean(self):
         cleaned_data = super().clean()
-        preco = cleaned_data.get('preco_adicional') or 0
-        percentual = cleaned_data.get('percentual_adicional') or 0
+        preco = cleaned_data.get("preco_adicional") or 0
+        percentual = cleaned_data.get("percentual_adicional") or 0
 
         if preco > 0 and percentual > 0:
             raise forms.ValidationError(
-                "Escolha apenas uma opção: preço adicional OU percentual adicional, não ambos."
+                "Escolha apenas uma opção: preço adicional OU percentual adicional, não ambos.",
             )
         return cleaned_data
 
@@ -98,7 +98,7 @@ class VariacaoProdutoInline(TenantAwareInlineMixin, TabularInline):
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "valores":
             qs = ValorAtributo.objects.select_related("atributo", "atributo__categoria").order_by(
-                "atributo__nome", "valor"
+                "atributo__nome", "valor",
             )
 
             # Filtra valores pela categoria do produto sendo editado
@@ -127,7 +127,7 @@ class VariacaoProdutoInline(TenantAwareInlineMixin, TabularInline):
         for valor in obj.valores.select_related("atributo").all():
             texto = f"{valor.atributo.nome}: {valor.valor}"
             if valor.preco_adicional and valor.preco_adicional > 0:
-                texto += f" (+R$ {valor.preco_adicional:,.2f})".replace(',', 'X').replace('.', ',').replace('X', '.')
+                texto += f" (+R$ {valor.preco_adicional:,.2f})".replace(",", "X").replace(".", ",").replace("X", ".")
             elif valor.percentual_adicional and valor.percentual_adicional > 0:
                 texto += f" (+{valor.percentual_adicional}%)"
             partes.append(texto)
@@ -138,7 +138,7 @@ class VariacaoProdutoInline(TenantAwareInlineMixin, TabularInline):
         """Calcula o preço final baseado no preço base + modificadores."""
         if obj.pk:
             preco_final = obj.calcular_preco_final()
-            return f"R$ {preco_final:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+            return f"R$ {preco_final:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         return "-"
 
 
@@ -159,7 +159,7 @@ class ProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
                     "descricao",
                     "categoria",
                 ],
-                "description": "Dados principais do produto que aparecem na listagem e página de detalhe."
+                "description": "Dados principais do produto que aparecem na listagem e página de detalhe.",
             },
         ),
         (
@@ -168,7 +168,7 @@ class ProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
                 "fields": [
                     "preco",
                 ],
-                "description": "Este é o preço base do produto. As variações podem ter preços diferentes ou usar modificadores (valor fixo ou percentual) definidos nos atributos."
+                "description": "Este é o preço base do produto. As variações podem ter preços diferentes ou usar modificadores (valor fixo ou percentual) definidos nos atributos.",
             },
         ),
         (
@@ -182,7 +182,7 @@ class ProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
                 "description": (
                     "O estoque total do produto é gerenciado pelo sistema de movimentações de estoque (Entrada/Saída). "
                     "A soma do estoque de todas as variações não pode exceder o estoque total do produto."
-                )
+                ),
             },
         ),
         (
@@ -195,7 +195,7 @@ class ProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
                     "data",
                 ],
                 "classes": ["collapse"],
-                "description": "Informações fiscais e controle de estoque mínimo."
+                "description": "Informações fiscais e controle de estoque mínimo.",
             },
         ),
     ]
@@ -324,7 +324,7 @@ class ValorAtributoGerenteInline(TabularInline):
     model = ValorAtributo
     form = ValorAtributoGerenteForm
     extra = 1
-    fields = ['valor', 'preco_adicional', 'percentual_adicional']
+    fields = ["valor", "preco_adicional", "percentual_adicional"]
     verbose_name = "Valor do Atributo"
     verbose_name_plural = "Valores do Atributo (escolha preço OU percentual, não ambos)"
 
@@ -348,7 +348,7 @@ class AtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
                     "Atributos são características do produto (ex: Cor, Tamanho, Sabor). "
                     "Cada atributo pertence a uma categoria específica. "
                     "Abaixo você pode adicionar os valores possíveis para este atributo."
-                )
+                ),
             },
         ),
     ]
@@ -391,7 +391,7 @@ class ValorAtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     fieldsets = [
         ("Identificação", {
             "fields": ["atributo", "valor"],
-            "description": "Selecione o atributo (ex: Cor) e digite o valor (ex: Vermelho)."
+            "description": "Selecione o atributo (ex: Cor) e digite o valor (ex: Vermelho).",
         }),
         ("Modificador de Preço (escolha apenas um)", {
             "fields": ["preco_adicional", "percentual_adicional"],
@@ -400,8 +400,8 @@ class ValorAtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
                 "- Preço adicional de R$ 5,00: produto de R$ 30 vira R$ 35\n"
                 "- Percentual de 10%: produto de R$ 30 vira R$ 33\n\n"
                 "IMPORTANTE: Use apenas UM dos campos (preço OU percentual)."
-            )
-        })
+            ),
+        }),
     ]
 
     def get_queryset(self, request):
@@ -421,7 +421,7 @@ class ValorAtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
             tenant = getattr(request, "tenant", None)
             if tenant:
                 kwargs["queryset"] = Atributo.objects.filter(
-                    categoria__empresa=tenant
+                    categoria__empresa=tenant,
                 ).select_related("categoria")
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
@@ -436,8 +436,8 @@ class ValorAtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     def modificador_display(self, obj):
         """Mostra o modificador de preço de forma legível."""
         if obj.preco_adicional and obj.preco_adicional > 0:
-            return f"+R$ {obj.preco_adicional:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-        elif obj.percentual_adicional and obj.percentual_adicional > 0:
+            return f"+R$ {obj.preco_adicional:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        if obj.percentual_adicional and obj.percentual_adicional > 0:
             return f"+{obj.percentual_adicional}%"
         return "-"
 
@@ -456,7 +456,7 @@ class VariacaoProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(
-            "produto"
+            "produto",
         ).prefetch_related("valores", "valores__atributo")
 
     @admin.display(description="Preço Final")
@@ -464,5 +464,5 @@ class VariacaoProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
         """Mostra o preço final calculado."""
         if obj.pk:
             preco = obj.calcular_preco_final()
-            return f"R$ {preco:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+            return f"R$ {preco:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         return "-"
