@@ -455,9 +455,29 @@ class VariacaoProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     warn_unsaved_form = True
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related(
+        """Filtra variações pela empresa do tenant."""
+        qs = super().get_queryset(request).select_related(
             "produto",
         ).prefetch_related("valores", "valores__atributo")
+
+        tenant = getattr(request, "tenant", None)
+
+        # No admin de gerentes, sempre filtra por tenant
+        if self._is_gerente_admin():
+            if not tenant:
+                return qs.none()  # Segurança: sem tenant, sem dados
+            return qs.filter(produto__empresa=tenant)
+
+        # No admin principal, superusuário sem tenant vê tudo
+        if request.user.is_superuser and not tenant:
+            return qs
+
+        # Para outros casos (ex: superuser com tenant), filtra
+        if tenant:
+            return qs.filter(produto__empresa=tenant)
+
+        # Fallback seguro para não vazar dados
+        return qs.none()
 
     @admin.display(description="Preço Final")
     def preco_final_display(self, obj):
