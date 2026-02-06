@@ -27,6 +27,7 @@ def interesse_compra_view(request):
         form = InteresseCompraForm(request.POST)
         if form.is_valid():
             interesse = form.save(commit=False)
+            interesse.empresa = getattr(request, "tenant", None)
             interesse.valor_total = Decimal(str(cart.get_total()))
             interesse.save()
 

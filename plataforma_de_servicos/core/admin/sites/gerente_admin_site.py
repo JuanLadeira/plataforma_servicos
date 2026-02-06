@@ -1,3 +1,4 @@
+from django.contrib import messages
 from unfold.sites import UnfoldAdminSite
 
 from plataforma_de_servicos.core.admin.site_config_admin import SiteConfigGerenteAdmin
@@ -8,6 +9,7 @@ from plataforma_de_servicos.corretor.admin.gerente_admin import (
 )
 from plataforma_de_servicos.corretor.models import Corretor
 from plataforma_de_servicos.corretor.models import InteresseCompra
+from plataforma_de_servicos.empresa.models import Empresa
 from plataforma_de_servicos.estoque.admin.gerente_admin import EstoqueEntradaAdmin
 from plataforma_de_servicos.estoque.admin.gerente_admin import EstoqueSaidaAdmin
 from plataforma_de_servicos.estoque.admin.gerente_admin import TransferenciaAdmin
@@ -31,6 +33,7 @@ from plataforma_de_servicos.vendas.models import OrdemCompra
 
 
 class GerenteAdminSite(UnfoldAdminSite):
+    # Valores padrão (serão sobrescritos por tenant)
     site_header = "Portal dos Gerentes"
     site_title = "Gestão de Produtos e Serviços"
     index_title = "Administração dos Gerentes"
@@ -55,10 +58,102 @@ class GerenteAdminSite(UnfoldAdminSite):
 
         return False
 
+    def _get_tenant_customization(self, tenant):
+        """Retorna dicionário com customizações do tenant."""
+        if not tenant:
+            return {
+                "site_header": "Portal dos Gerentes",
+                "site_title": "Gestão de Produtos e Serviços",
+                "index_title": "Administração dos Gerentes",
+                "admin_logo_url": None,
+                "admin_favicon_url": None,
+                "primary_color": "#0ea5e9",
+                "secondary_color": "#64748b",
+                "accent_color": "#f59e0b",
+                "sidebar_style": "dark",
+                "welcome_message": "",
+                "footer_text": "",
+            }
+
+        return {
+            "site_header": tenant.get_admin_title(),
+            "site_title": tenant.admin_subtitle or f"Gestão - {tenant.nome}",
+            "index_title": f"Bem-vindo ao {tenant.get_admin_title()}",
+            "admin_logo_url": tenant.admin_logo.url if tenant.admin_logo else None,
+            "admin_favicon_url": tenant.admin_favicon.url if tenant.admin_favicon else None,
+            "primary_color": tenant.primary_color,
+            "secondary_color": tenant.secondary_color,
+            "accent_color": tenant.accent_color,
+            "sidebar_style": tenant.sidebar_style,
+            "welcome_message": tenant.welcome_message,
+            "footer_text": tenant.footer_text or f"© {tenant.nome}",
+        }
+
     def each_context(self, request):
         context = super().each_context(request)
         context["site_url"] = "/gerentes"
+
+        # Adiciona informações do tenant ao contexto
+        tenant = getattr(request, "tenant", None)
+        context["tenant"] = tenant
+        context["tenant_name"] = tenant.nome if tenant else None
+
+        # Customizações baseadas no tenant
+        customization = self._get_tenant_customization(tenant)
+
+        # Atualiza atributos do site dinamicamente
+        self.site_header = customization["site_header"]
+        self.site_title = customization["site_title"]
+
+        # Adiciona customizações ao contexto
+        context["tenant_customization"] = customization
+        context["admin_logo_url"] = customization["admin_logo_url"]
+        context["admin_favicon_url"] = customization["admin_favicon_url"]
+        context["theme_colors"] = {
+            "primary": customization["primary_color"],
+            "secondary": customization["secondary_color"],
+            "accent": customization["accent_color"],
+        }
+        context["sidebar_style"] = customization["sidebar_style"]
+        context["welcome_message"] = customization["welcome_message"]
+        context["footer_text"] = customization["footer_text"]
+
+        # Lista empresas disponíveis para superusuários (para seleção)
+        if request.user.is_superuser and not tenant:
+            context["available_empresas"] = Empresa.objects.all().order_by("nome")
+
+        # Mostra aviso se não houver tenant selecionado
+        if not tenant and request.user.is_superuser:
+            # Verifica se já não mostrou a mensagem nesta sessão
+            if not request.session.get("_tenant_warning_shown"):
+                messages.warning(
+                    request,
+                    "Nenhuma empresa selecionada. Os dados não serão filtrados. "
+                    "Use ?tenant=SLUG para selecionar uma empresa. "
+                    "Ex: /gerentes/?tenant=empresa-teste"
+                )
+                request.session["_tenant_warning_shown"] = True
+
+        # Se tenant foi setado, limpa o aviso
+        if tenant:
+            request.session.pop("_tenant_warning_shown", None)
+
         return context
+
+    def index(self, request, extra_context=None):
+        """Sobrescreve index para adicionar contexto extra."""
+        extra_context = extra_context or {}
+        tenant = getattr(request, "tenant", None)
+        customization = self._get_tenant_customization(tenant)
+
+        extra_context["index_title"] = customization["index_title"]
+        self.index_title = customization["index_title"]
+
+        # Adiciona mensagem de boas-vindas se existir
+        if customization["welcome_message"]:
+            extra_context["welcome_message"] = customization["welcome_message"]
+
+        return super().index(request, extra_context)
 
 
 gerente_site = GerenteAdminSite(name="gerentes")

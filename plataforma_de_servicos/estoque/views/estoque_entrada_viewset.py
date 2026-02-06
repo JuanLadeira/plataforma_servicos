@@ -24,10 +24,23 @@ from plataforma_de_servicos.estoque.views.decorators.estoque_entrada_decorators 
 class EstoqueEntradaViewSet(CreateListRetriveModelViewSet):
     queryset = EstoqueEntrada.objects.all()
 
+    def get_queryset(self):
+        """Filtra queryset por tenant."""
+        queryset = super().get_queryset()
+        tenant = getattr(self.request, "tenant", None)
+        if tenant:
+            return queryset.filter(empresa=tenant)
+        return queryset.none()
+
     def get_serializer_class(self):
         if self.request.method == "GET":
             return EstoqueEntradaGetSerializer
         return EstoqueEntradaPostSerializer
+
+    def perform_create(self, serializer):
+        """Auto-preenche empresa ao criar."""
+        tenant = getattr(self.request, "tenant", None)
+        serializer.save(empresa=tenant)
 
     @retrieve_estoque_entrada_schema
     def retrieve(self, request, *args, **kwargs):

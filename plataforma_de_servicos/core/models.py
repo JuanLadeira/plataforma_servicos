@@ -20,9 +20,18 @@ class TimeStampedModel(models.Model):
 class SiteConfig(TimeStampedModel):
     """
     Configurações do site editáveis via admin.
-    Modelo singleton - apenas uma instância deve existir.
+    Singleton por empresa - cada empresa tem sua própria configuração.
     """
 
+    empresa = models.OneToOneField(
+        "empresa.Empresa",
+        on_delete=models.CASCADE,
+        related_name="site_config",
+        verbose_name="Empresa",
+        null=True,
+        blank=True,
+        help_text="Empresa dona desta configuração de site",
+    )
     site_name = models.CharField(
         "Nome do Site",
         max_length=100,
@@ -65,16 +74,20 @@ class SiteConfig(TimeStampedModel):
         return "Configurações do Site"
 
     def save(self, *args, **kwargs):
-        # Garante que só exista uma instância (singleton)
-        if not self.pk and SiteConfig.objects.exists():
-            existing = SiteConfig.objects.first()
-            self.pk = existing.pk
+        # Garante que só exista uma instância por empresa (singleton por tenant)
+        if not self.pk and self.empresa:
+            existing = SiteConfig.objects.filter(empresa=self.empresa).first()
+            if existing:
+                self.pk = existing.pk
         super().save(*args, **kwargs)
 
     @classmethod
-    def get_config(cls):
-        """Retorna a configuração do site, criando se não existir."""
-        config, _ = cls.objects.get_or_create(pk=1)
+    def get_config(cls, empresa=None):
+        """Retorna a configuração do site para a empresa, criando se não existir."""
+        if empresa:
+            config, _ = cls.objects.get_or_create(empresa=empresa)
+        else:
+            config, _ = cls.objects.get_or_create(empresa__isnull=True)
         return config
 
     def get_hero_image_url(self):

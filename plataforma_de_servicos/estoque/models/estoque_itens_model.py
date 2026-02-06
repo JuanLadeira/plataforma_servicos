@@ -9,8 +9,8 @@ from plataforma_de_servicos.estoque.exceptions import ProdutoSaldoInsuficienteEr
 from plataforma_de_servicos.estoque.exceptions import VariacaoSaldoInsuficienteError
 from plataforma_de_servicos.estoque.models.estoque_model import Estoque
 from plataforma_de_servicos.inventario.models import Inventario
-from plataforma_de_servicos.produto.models.produto_model import Produto
 from plataforma_de_servicos.produto.models.atributos import VariacaoProduto
+from plataforma_de_servicos.produto.models.produto_model import Produto
 
 log = getLogger("django")
 

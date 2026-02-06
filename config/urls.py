@@ -18,7 +18,6 @@ urlpatterns = [
     path("produto/calcular-preco/", views.calcular_preco_variacao, name="calcular-preco-variacao"),
     path("cart/", include("plataforma_de_servicos.cart.urls",  namespace="cart")),
     path("corretor/", include("plataforma_de_servicos.corretor.urls", namespace="corretor")),
-    path("payment/", include("plataforma_de_servicos.payment.urls", namespace="payment")),
     path(
         "about/",
         TemplateView.as_view(template_name="pages/about.html"),

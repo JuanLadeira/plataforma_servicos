@@ -34,10 +34,23 @@ class ProdutoViewSet(viewsets.ModelViewSet):
     queryset = Produto.objects.all()
     lookup_field = "slug"
 
+    def get_queryset(self):
+        """Filtra queryset por tenant."""
+        queryset = super().get_queryset()
+        tenant = getattr(self.request, "tenant", None)
+        if tenant:
+            return queryset.filter(empresa=tenant)
+        return queryset.none()
+
     def get_serializer_class(self):
         if self.request.method == "GET":
             return ProdutoGetSerializer
         return ProdutoPostSerializer
+
+    def perform_create(self, serializer):
+        """Auto-preenche empresa ao criar."""
+        tenant = getattr(self.request, "tenant", None)
+        serializer.save(empresa=tenant)
 
     @retrieve_product_schema
     def retrieve(self, request, *args, **kwargs):
@@ -46,32 +59,22 @@ class ProdutoViewSet(viewsets.ModelViewSet):
     @list_product_schema
     def list(self, request, *args, **kwargs):
         search = request.query_params.get("search", None)
+        queryset = self.get_queryset()
         if search:
-            queryset = Produto.objects.filter(
+            queryset = queryset.filter(
                 Q(produto__icontains=search)
                 | Q(categoria__categoria__icontains=search),
             )
-        else:
-            queryset = Produto.objects.all()
         serializer = ProdutoGetSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @create_product_schema
     def create(self, request, *args, **kwargs):
-        serializer = ProdutoPostSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return super().create(request, *args, **kwargs)
 
     @update_product_schema
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = ProdutoPostSerializer(instance, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return super().update(request, *args, **kwargs)
 
     @partial_update_product_schema
     def partial_update(self, request, *args, **kwargs):
@@ -79,6 +82,4 @@ class ProdutoViewSet(viewsets.ModelViewSet):
 
     @destroy_product_schema
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        instance.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return super().destroy(request, *args, **kwargs)

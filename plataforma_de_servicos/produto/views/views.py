@@ -64,7 +64,14 @@ def categories(request):
 
 
 def produto_detail(request, produto_slug):
-    produto = get_object_or_404(Produto, slug=produto_slug)
+    tenant = getattr(request, "tenant", None)
+
+    # Filtra por tenant para evitar vazamento de dados entre empresas
+    queryset = Produto.objects.all()
+    if tenant:
+        queryset = queryset.filter(empresa=tenant)
+
+    produto = get_object_or_404(queryset, slug=produto_slug)
 
     variacoes = produto.variacoes.prefetch_related("valores__atributo").all()
     atributos = ProdutoService.obter_atributos_variacoes(produto)
@@ -84,9 +91,13 @@ def produto_detail(request, produto_slug):
 
 def category_search(request):
     search_text = request.POST.get("search")
+    tenant = getattr(request, "tenant", None)
 
-    if search_text:
-        results = Categoria.objects.filter(categoria__icontains=search_text)
+    if search_text and tenant:
+        results = Categoria.objects.filter(
+            categoria__icontains=search_text,
+            empresa=tenant
+        )
     else:
         results = Categoria.objects.none()
 
@@ -100,11 +111,17 @@ def calcular_preco_variacao(request):
     """Endpoint HTMX para calcular preço baseado nos atributos selecionados"""
     produto_id = request.POST.get("produto_id")
     valores_ids = request.POST.getlist("valores[]")
+    tenant = getattr(request, "tenant", None)
 
     if not produto_id:
         return JsonResponse({"error": "Produto não informado"}, status=400)
 
-    produto = get_object_or_404(Produto, id=produto_id)
+    # Filtra por tenant para evitar vazamento de dados entre empresas
+    queryset = Produto.objects.all()
+    if tenant:
+        queryset = queryset.filter(empresa=tenant)
+
+    produto = get_object_or_404(queryset, id=produto_id)
 
     resultado = ProdutoService.calcular_preco_variacao(produto, valores_ids or None)
 
@@ -115,10 +132,14 @@ def variacao_detail(request, sku):
     """
     Exibe os detalhes de uma variação específica de um produto.
     """
-    variacao = get_object_or_404(
-        VariacaoProduto.objects.select_related("produto__categoria"),
-        sku=sku,
-    )
+    tenant = getattr(request, "tenant", None)
+
+    # Filtra por tenant para evitar vazamento de dados entre empresas
+    queryset = VariacaoProduto.objects.select_related("produto__categoria")
+    if tenant:
+        queryset = queryset.filter(produto__empresa=tenant)
+
+    variacao = get_object_or_404(queryset, sku=sku)
     produto = variacao.produto
 
     context = {

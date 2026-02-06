@@ -45,14 +45,14 @@ class VariacaoProdutoInlineFormSet(BaseInlineFormSet):
 
         total_variacao_estoque = 0
         for form in self.forms:
-            if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
-                estoque = form.cleaned_data.get('estoque', 0) or 0
+            if form.cleaned_data and not form.cleaned_data.get("DELETE", False):
+                estoque = form.cleaned_data.get("estoque", 0) or 0
                 total_variacao_estoque += estoque
 
         if total_variacao_estoque > produto_estoque:
             raise forms.ValidationError(
                 f"O estoque total das variações ({total_variacao_estoque}) "
-                f"não pode exceder o estoque do produto ({produto_estoque})."
+                f"não pode exceder o estoque do produto ({produto_estoque}).",
             )
 
 
@@ -61,16 +61,16 @@ class ValorAtributoGerenteForm(forms.ModelForm):
 
     class Meta:
         model = ValorAtributo
-        fields = '__all__'
+        fields = "__all__"
 
     def clean(self):
         cleaned_data = super().clean()
-        preco = cleaned_data.get('preco_adicional') or 0
-        percentual = cleaned_data.get('percentual_adicional') or 0
+        preco = cleaned_data.get("preco_adicional") or 0
+        percentual = cleaned_data.get("percentual_adicional") or 0
 
         if preco > 0 and percentual > 0:
             raise forms.ValidationError(
-                "Escolha apenas uma opção: preço adicional OU percentual adicional, não ambos."
+                "Escolha apenas uma opção: preço adicional OU percentual adicional, não ambos.",
             )
         return cleaned_data
 
@@ -90,19 +90,33 @@ class VariacaoProdutoInline(TenantAwareInlineMixin, TabularInline):
     formset = VariacaoProdutoInlineFormSet
     extra = 1
     autocomplete_fields = ("valores",)
-    readonly_fields = ("sku", "valores_display", "preco_final_calculado")
+    readonly_fields = ("sku", "valores_display", "preco_final_calculado", "estoque")
     fields = ("valores", "valores_display", "preco", "estoque", "preco_final_calculado", "sku")
     verbose_name = "Variação"
     verbose_name_plural = "Variações do Produto"
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "valores":
-            qs = ValorAtributo.objects.select_related("atributo").order_by("atributo__nome", "valor")
-            # Filter by tenant if available
-            if request.tenant and hasattr(ValorAtributo, "atributo"):
-                qs = qs.filter(atributo__empresa=request.tenant)
+            qs = ValorAtributo.objects.select_related("atributo", "atributo__categoria").order_by(
+                "atributo__nome", "valor",
+            )
+
+            # Filtra valores pela categoria do produto sendo editado
+            # O parent_obj é o Produto
+            parent_obj = getattr(self, "parent_obj", None)
+            if parent_obj and hasattr(parent_obj, "categoria") and parent_obj.categoria:
+                qs = qs.filter(atributo__categoria=parent_obj.categoria)
+            elif request.tenant:
+                # Fallback: filtra pela empresa
+                qs = qs.filter(atributo__categoria__empresa=request.tenant)
+
             kwargs["queryset"] = qs
         return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+    def get_formset(self, request, obj=None, **kwargs):
+        """Armazena o objeto pai para uso no formfield_for_manytomany."""
+        self.parent_obj = obj
+        return super().get_formset(request, obj, **kwargs)
 
     @admin.display(description="Atributos Selecionados")
     def valores_display(self, obj):
@@ -113,7 +127,7 @@ class VariacaoProdutoInline(TenantAwareInlineMixin, TabularInline):
         for valor in obj.valores.select_related("atributo").all():
             texto = f"{valor.atributo.nome}: {valor.valor}"
             if valor.preco_adicional and valor.preco_adicional > 0:
-                texto += f" (+R$ {valor.preco_adicional:,.2f})".replace(',', 'X').replace('.', ',').replace('X', '.')
+                texto += f" (+R$ {valor.preco_adicional:,.2f})".replace(",", "X").replace(".", ",").replace("X", ".")
             elif valor.percentual_adicional and valor.percentual_adicional > 0:
                 texto += f" (+{valor.percentual_adicional}%)"
             partes.append(texto)
@@ -124,7 +138,7 @@ class VariacaoProdutoInline(TenantAwareInlineMixin, TabularInline):
         """Calcula o preço final baseado no preço base + modificadores."""
         if obj.pk:
             preco_final = obj.calcular_preco_final()
-            return f"R$ {preco_final:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+            return f"R$ {preco_final:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         return "-"
 
 
@@ -145,7 +159,7 @@ class ProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
                     "descricao",
                     "categoria",
                 ],
-                "description": "Dados principais do produto que aparecem na listagem e página de detalhe."
+                "description": "Dados principais do produto que aparecem na listagem e página de detalhe.",
             },
         ),
         (
@@ -154,7 +168,7 @@ class ProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
                 "fields": [
                     "preco",
                 ],
-                "description": "Este é o preço base do produto. As variações podem ter preços diferentes ou usar modificadores (valor fixo ou percentual) definidos nos atributos."
+                "description": "Este é o preço base do produto. As variações podem ter preços diferentes ou usar modificadores (valor fixo ou percentual) definidos nos atributos.",
             },
         ),
         (
@@ -168,7 +182,7 @@ class ProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
                 "description": (
                     "O estoque total do produto é gerenciado pelo sistema de movimentações de estoque (Entrada/Saída). "
                     "A soma do estoque de todas as variações não pode exceder o estoque total do produto."
-                )
+                ),
             },
         ),
         (
@@ -181,7 +195,7 @@ class ProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
                     "data",
                 ],
                 "classes": ["collapse"],
-                "description": "Informações fiscais e controle de estoque mínimo."
+                "description": "Informações fiscais e controle de estoque mínimo.",
             },
         ),
     ]
@@ -310,15 +324,18 @@ class ValorAtributoGerenteInline(TabularInline):
     model = ValorAtributo
     form = ValorAtributoGerenteForm
     extra = 1
-    fields = ['valor', 'preco_adicional', 'percentual_adicional']
+    fields = ["valor", "preco_adicional", "percentual_adicional"]
     verbose_name = "Valor do Atributo"
     verbose_name_plural = "Valores do Atributo (escolha preço OU percentual, não ambos)"
 
 
 class AtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
-    list_display = ["nome", "count_valores"]
-    search_fields = ["nome"]
-    list_order_by = ["nome"]
+    list_display = ["nome", "categoria", "count_valores"]
+    list_filter = ["categoria"]
+    search_fields = ["nome", "categoria__categoria"]
+    list_order_by = ["categoria", "nome"]
+    list_select_related = ["categoria"]
+    autocomplete_fields = ["categoria"]
     inlines = [ValorAtributoGerenteInline]
     compressed_fields = True
     warn_unsaved_form = True
@@ -326,14 +343,35 @@ class AtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
         (
             "Atributo",
             {
-                "fields": ["nome"],
+                "fields": ["categoria", "nome"],
                 "description": (
                     "Atributos são características do produto (ex: Cor, Tamanho, Sabor). "
+                    "Cada atributo pertence a uma categoria específica. "
                     "Abaixo você pode adicionar os valores possíveis para este atributo."
-                )
+                ),
             },
         ),
     ]
+
+    def get_queryset(self, request):
+        """Filtra atributos pela empresa via categoria."""
+        qs = super(ModelAdmin, self).get_queryset(request)
+        qs = qs.select_related("categoria", "categoria__empresa")
+        tenant = getattr(request, "tenant", None)
+        if self._is_gerente_admin():
+            if not tenant:
+                return qs.none()
+            return qs.filter(categoria__empresa=tenant)
+        return qs
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Filtra categorias pela empresa do tenant."""
+        if db_field.name == "categoria":
+            tenant = getattr(request, "tenant", None)
+            if tenant:
+                from plataforma_de_servicos.produto.models import Categoria
+                kwargs["queryset"] = Categoria.objects.filter(empresa=tenant)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     @admin.display(description="Valores Cadastrados")
     def count_valores(self, obj):
@@ -342,18 +380,18 @@ class AtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
 
 class ValorAtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     form = ValorAtributoGerenteForm
-    list_display = ["atributo", "valor", "modificador_display"]
-    list_filter = ["atributo"]
-    search_fields = ["valor", "atributo__nome"]
+    list_display = ["atributo", "valor", "categoria_display", "modificador_display"]
+    list_filter = ["atributo__categoria", "atributo"]
+    search_fields = ["valor", "atributo__nome", "atributo__categoria__categoria"]
     autocomplete_fields = ["atributo"]
-    list_select_related = ["atributo"]
-    list_order_by = ["atributo__nome", "valor"]
+    list_select_related = ["atributo", "atributo__categoria"]
+    list_order_by = ["atributo__categoria", "atributo__nome", "valor"]
     compressed_fields = True
     warn_unsaved_form = True
     fieldsets = [
         ("Identificação", {
             "fields": ["atributo", "valor"],
-            "description": "Selecione o atributo (ex: Cor) e digite o valor (ex: Vermelho)."
+            "description": "Selecione o atributo (ex: Cor) e digite o valor (ex: Vermelho).",
         }),
         ("Modificador de Preço (escolha apenas um)", {
             "fields": ["preco_adicional", "percentual_adicional"],
@@ -362,16 +400,44 @@ class ValorAtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
                 "- Preço adicional de R$ 5,00: produto de R$ 30 vira R$ 35\n"
                 "- Percentual de 10%: produto de R$ 30 vira R$ 33\n\n"
                 "IMPORTANTE: Use apenas UM dos campos (preço OU percentual)."
-            )
-        })
+            ),
+        }),
     ]
+
+    def get_queryset(self, request):
+        """Filtra valores de atributo pela empresa via categoria."""
+        qs = super(ModelAdmin, self).get_queryset(request)
+        qs = qs.select_related("atributo", "atributo__categoria", "atributo__categoria__empresa")
+        tenant = getattr(request, "tenant", None)
+        if self._is_gerente_admin():
+            if not tenant:
+                return qs.none()
+            return qs.filter(atributo__categoria__empresa=tenant)
+        return qs
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """Filtra atributos pela empresa do tenant via categoria."""
+        if db_field.name == "atributo":
+            tenant = getattr(request, "tenant", None)
+            if tenant:
+                kwargs["queryset"] = Atributo.objects.filter(
+                    categoria__empresa=tenant,
+                ).select_related("categoria")
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    @admin.display(description="Categoria")
+    def categoria_display(self, obj):
+        """Mostra a categoria do atributo."""
+        if obj.atributo and obj.atributo.categoria:
+            return obj.atributo.categoria.categoria
+        return "-"
 
     @admin.display(description="Modificador")
     def modificador_display(self, obj):
         """Mostra o modificador de preço de forma legível."""
         if obj.preco_adicional and obj.preco_adicional > 0:
-            return f"+R$ {obj.preco_adicional:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-        elif obj.percentual_adicional and obj.percentual_adicional > 0:
+            return f"+R$ {obj.preco_adicional:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        if obj.percentual_adicional and obj.percentual_adicional > 0:
             return f"+{obj.percentual_adicional}%"
         return "-"
 
@@ -389,14 +455,34 @@ class VariacaoProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     warn_unsaved_form = True
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related(
-            "produto"
+        """Filtra variações pela empresa do tenant."""
+        qs = super().get_queryset(request).select_related(
+            "produto",
         ).prefetch_related("valores", "valores__atributo")
+
+        tenant = getattr(request, "tenant", None)
+
+        # No admin de gerentes, sempre filtra por tenant
+        if self._is_gerente_admin():
+            if not tenant:
+                return qs.none()  # Segurança: sem tenant, sem dados
+            return qs.filter(produto__empresa=tenant)
+
+        # No admin principal, superusuário sem tenant vê tudo
+        if request.user.is_superuser and not tenant:
+            return qs
+
+        # Para outros casos (ex: superuser com tenant), filtra
+        if tenant:
+            return qs.filter(produto__empresa=tenant)
+
+        # Fallback seguro para não vazar dados
+        return qs.none()
 
     @admin.display(description="Preço Final")
     def preco_final_display(self, obj):
         """Mostra o preço final calculado."""
         if obj.pk:
             preco = obj.calcular_preco_final()
-            return f"R$ {preco:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+            return f"R$ {preco:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         return "-"

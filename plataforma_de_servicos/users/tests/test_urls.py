@@ -1,7 +1,6 @@
 import pytest
-
-from django.urls import reverse
 from django.urls import resolve
+from django.urls import reverse
 
 from plataforma_de_servicos.users.models import User
 
