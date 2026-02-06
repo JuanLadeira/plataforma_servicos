@@ -90,7 +90,7 @@ class VariacaoProdutoInline(TenantAwareInlineMixin, TabularInline):
     formset = VariacaoProdutoInlineFormSet
     extra = 1
     autocomplete_fields = ("valores",)
-    readonly_fields = ("sku", "valores_display", "preco_final_calculado")
+    readonly_fields = ("sku", "valores_display", "preco_final_calculado", "estoque")
     fields = ("valores", "valores_display", "preco", "estoque", "preco_final_calculado", "sku")
     verbose_name = "Variação"
     verbose_name_plural = "Variações do Produto"
