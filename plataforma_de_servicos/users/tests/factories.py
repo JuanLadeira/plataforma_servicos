@@ -1,12 +1,11 @@
 from collections.abc import Sequence
 from typing import Any
 
-from factory import Faker, SubFactory
+from factory import Faker
 from factory import post_generation
 from factory.django import DjangoModelFactory
 
-from plataforma_de_servicos.empresa.tests.factories.empresa_factory import EmpresaFactory
-from plataforma_de_servicos.users.models import Funcionario, User, UserType
+from plataforma_de_servicos.users.models import User
 
 
 class UserFactory(DjangoModelFactory[User]):
@@ -39,30 +38,3 @@ class UserFactory(DjangoModelFactory[User]):
     class Meta:
         model = User
         django_get_or_create = ["email"]
-
-
-class FuncionarioUserFactory(UserFactory):
-    """
-    Uma UserFactory que define o user_type como FUNCIONARIO.
-    """
-
-    class Meta:
-        model = User
-        django_get_or_create = ["email"]
-
-    user_type = UserType.FUNCIONARIO
-
-
-class FuncionarioFactory(DjangoModelFactory):
-    """
-    Factory para o modelo Funcionario, que também cria um User associado.
-    """
-
-    class Meta:
-        model = Funcionario
-
-    usuario = SubFactory(FuncionarioUserFactory)
-    empresa = SubFactory(EmpresaFactory)
-    cargo = Faker("job")
-    endereco = Faker("address")
-    cpf = Faker("cpf", locale="pt_BR")
