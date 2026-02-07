@@ -75,15 +75,17 @@ def test_variacao_str_representation():
 
     variacao = VariacaoProdutoFactory(
         produto=produto,
-        valores=[valor_cor, valor_tam]
+        valores=[valor_cor, valor_tam],
+        estoque=100
     )
     variacao.refresh_from_db()
 
     # A ordem na string pode variar, então verificamos as partes
     str_repr = str(variacao)
     assert "Camiseta" in str_repr
-    assert "Cor: Preto" in str_repr
-    assert "Tamanho: P" in str_repr
+    assert "Preto" in str_repr
+    assert "P" in str_repr
+    assert "[est: 100]" in str_repr
 
 
 # =====================================

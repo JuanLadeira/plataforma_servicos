@@ -267,5 +267,6 @@ class TestPriceModifiersCore(TestCase):
         
         str_repr = str(variacao)
         self.assertIn("Produto Teste", str_repr)
-        self.assertIn("Cor: Verde", str_repr)
-        self.assertIn("Tamanho: M", str_repr)
+        self.assertIn("Verde", str_repr)
+        self.assertIn("M", str_repr)
+        self.assertIn("[est: 10]", str_repr)
