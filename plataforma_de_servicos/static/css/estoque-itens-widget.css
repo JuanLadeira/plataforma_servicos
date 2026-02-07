@@ -1,0 +1,92 @@
+/* Estilos para o inline de itens de estoque */
+
+/* Melhorar aparência do autocomplete de variação */
+.field-variacao .select2-container {
+    min-width: 350px !important;
+}
+
+.field-variacao .select2-selection__rendered {
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+/* Destaque para o saldo */
+.field-saldo_atual,
+.field-saldo_preview {
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Preview de saldo positivo (entrada) */
+.saldo-preview-positive {
+    color: var(--color-success-600, #16a34a);
+    background: var(--color-success-50, #f0fdf4);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+/* Preview de saldo negativo (saída) */
+.saldo-preview-negative {
+    color: var(--color-error-600, #dc2626);
+    background: var(--color-error-50, #fef2f2);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+/* Preview de saldo calculado dinamicamente */
+.saldo-preview-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+}
+
+.saldo-preview-label {
+    color: var(--color-base-500, #6b7280);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+}
+
+.saldo-preview-value {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+/* Dark mode */
+.dark .saldo-preview-positive {
+    color: var(--color-success-400, #4ade80);
+    background: rgba(74, 222, 128, 0.1);
+}
+
+.dark .saldo-preview-negative {
+    color: var(--color-error-400, #f87171);
+    background: rgba(248, 113, 113, 0.1);
+}
+
+/* Estilo para linha de item */
+.inline-related .form-row {
+    align-items: center;
+}
+
+/* Campo de quantidade */
+.field-quantidade input {
+    width: 80px;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Ajuste para campos readonly */
+.field-saldo_atual .readonly,
+.field-saldo_preview .readonly,
+.field-inventario .readonly {
+    padding: 0.5rem;
+    background: var(--color-base-50, #f9fafb);
+    border-radius: 0.25rem;
+    text-align: center;
+}
+
+.dark .field-saldo_atual .readonly,
+.dark .field-saldo_preview .readonly,
+.dark .field-inventario .readonly {
+    background: var(--color-base-800, #1f2937);
+}

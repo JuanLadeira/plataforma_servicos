@@ -14,18 +14,44 @@ from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models import VariacaoProduto
 
 
+class EstoqueItensForm(forms.ModelForm):
+    """Formulário customizado que preenche o produto automaticamente a partir da variação."""
+
+    class Meta:
+        model = EstoqueItens
+        fields = "__all__"
+
+    def clean(self):
+        cleaned_data = super().clean()
+        variacao = cleaned_data.get("variacao")
+
+        # Se tem variação, preenche o produto automaticamente
+        if variacao:
+            cleaned_data["produto"] = variacao.produto
+
+        return cleaned_data
+
+
 class EstoqueItensInline(TabularInline):
     model = EstoqueItens
-    extra = 0
-    fields = ("produto", "variacao", "quantidade", "saldo", "inventario")
-    readonly_fields = ("saldo", "inventario")
-    autocomplete_fields = ("produto", "variacao")
+    form = EstoqueItensForm
+    extra = 1
+    # Removido 'produto' - será inferido da variação
+    fields = ("variacao", "quantidade", "saldo_atual", "saldo_preview", "inventario")
+    readonly_fields = ("saldo_atual", "saldo_preview", "inventario")
+    autocomplete_fields = ("variacao",)
+
+    class Media:
+        css = {
+            "all": ("css/estoque-itens-widget.css",)
+        }
+        js = ("js/estoque-itens-widget.js",)
 
     def get_readonly_fields(self, request, obj=None):
         """Se estoque já existe (edição), todos os campos são readonly."""
         if obj and obj.pk:
-            return ("produto", "variacao", "quantidade", "saldo", "inventario")
-        return ("saldo", "inventario")
+            return ("variacao", "quantidade", "saldo_atual", "saldo_preview", "inventario")
+        return ("saldo_atual", "saldo_preview", "inventario")
 
     def has_add_permission(self, request, obj=None):
         """Não permite adicionar itens em estoque já criado."""
@@ -39,11 +65,27 @@ class EstoqueItensInline(TabularInline):
             return False
         return True
 
+    @admin.display(description="Saldo Atual")
+    def saldo_atual(self, obj):
+        """Mostra o saldo atual da variação no inventário."""
+        if obj and obj.pk and obj.variacao:
+            return obj.variacao.estoque
+        elif obj and obj.variacao:
+            return obj.variacao.estoque
+        return "-"
+
+    @admin.display(description="Saldo Após")
+    def saldo_preview(self, obj):
+        """Mostra o saldo após a operação (só exibe após salvar)."""
+        if obj and obj.pk and obj.saldo is not None:
+            return obj.saldo
+        return "-"
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         tenant = getattr(request, "tenant", None)
         if db_field.name == "variacao":
             qs = VariacaoProduto.objects.select_related(
-                "produto"
+                "produto", "produto__categoria"
             ).prefetch_related("valores", "valores__atributo")
             if tenant:
                 qs = qs.filter(produto__empresa=tenant)
@@ -56,18 +98,25 @@ class EstoqueItensInline(TabularInline):
 
 class TransferenciaEstoqueItensInline(TabularInline):
     model = EstoqueItens
-    extra = 0
-    autocomplete_fields = ("produto", "variacao")
+    form = EstoqueItensForm
+    extra = 1
+    autocomplete_fields = ("variacao",)
+
+    class Media:
+        css = {
+            "all": ("css/estoque-itens-widget.css",)
+        }
+        js = ("js/estoque-itens-widget.js",)
 
     def get_fields(self, request, obj=None):
         if obj and obj.pk:  # a transfer object exists
-            return ("produto", "variacao", "quantidade", "saldo_origem", "saldo_destino")
-        return ("produto", "variacao", "quantidade")
+            return ("variacao", "quantidade", "saldo_origem", "saldo_destino")
+        return ("variacao", "quantidade", "saldo_atual")
 
     def get_readonly_fields(self, request, obj=None):
         if obj and obj.pk:
-            return ("produto", "variacao", "quantidade", "saldo_origem", "saldo_destino")
-        return ()
+            return ("variacao", "quantidade", "saldo_origem", "saldo_destino")
+        return ("saldo_atual",)
 
     def has_add_permission(self, request, obj=None):
         return not obj or not obj.pk
@@ -75,18 +124,22 @@ class TransferenciaEstoqueItensInline(TabularInline):
     def has_delete_permission(self, request, obj=None):
         return not obj or not obj.pk
 
+    @admin.display(description="Saldo Atual")
+    def saldo_atual(self, obj):
+        """Mostra o saldo atual da variação."""
+        if obj and obj.variacao:
+            return obj.variacao.estoque
+        return "-"
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         tenant = getattr(request, "tenant", None)
         if db_field.name == "variacao":
             qs = VariacaoProduto.objects.select_related(
-                "produto"
+                "produto", "produto__categoria"
             ).prefetch_related("valores", "valores__atributo")
             if tenant:
                 qs = qs.filter(produto__empresa=tenant)
             kwargs["queryset"] = qs
-        elif db_field.name == "produto" and tenant:
-            from plataforma_de_servicos.produto.models import Produto
-            kwargs["queryset"] = Produto.objects.filter(empresa=tenant)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def saldo_origem(self, obj):
