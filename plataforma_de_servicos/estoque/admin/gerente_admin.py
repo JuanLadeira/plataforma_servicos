@@ -187,8 +187,10 @@ class EstoqueEntradaAdmin(TenantAwareAdminMixin, ModelAdmin):
         form = super().get_form(request, obj, **kwargs)
 
         if "movimento" in form.base_fields:
-            form.base_fields["movimento"].initial = Movimento.ENTRADA.value
+            # Usar widget Hidden com valor explícito em vez de apenas initial
             form.base_fields["movimento"].widget = forms.HiddenInput()
+            form.base_fields["movimento"].initial = Movimento.ENTRADA.value
+            form.base_fields["movimento"].required = False
         if "processado" in form.base_fields:
             form.base_fields["processado"].widget = forms.HiddenInput()
         if "inventario_origem" in form.base_fields:
@@ -199,6 +201,12 @@ class EstoqueEntradaAdmin(TenantAwareAdminMixin, ModelAdmin):
         if "ordem_compra" in form.base_fields:
             form.base_fields["ordem_compra"].widget = forms.HiddenInput()
         return form
+
+    def save_model(self, request, obj, form, change):
+        """Garante que movimento seja definido para entrada."""
+        if not change:
+            obj.movimento = Movimento.ENTRADA.value
+        super().save_model(request, obj, form, change)
 
     def has_delete_permission(self, request, obj=None):
         """Não permite deletar entradas de estoque já processadas."""
@@ -224,6 +232,14 @@ class EstoqueEntradaAdmin(TenantAwareAdminMixin, ModelAdmin):
             entrada = form.instance
 
             inventario = get_inventario(entrada)
+
+            if not inventario and instances:
+                from django.contrib import messages
+                messages.error(
+                    request,
+                    "Erro: É necessário selecionar um inventário de destino antes de adicionar itens."
+                )
+                return
 
             for instance in instances:
                 instance.inventario = inventario
@@ -317,8 +333,9 @@ class EstoqueSaidaAdmin(TenantAwareAdminMixin, ModelAdmin):
         form = super().get_form(request, obj, **kwargs)
 
         if "movimento" in form.base_fields:
-            form.base_fields["movimento"].initial = Movimento.SAIDA.value
             form.base_fields["movimento"].widget = forms.HiddenInput()
+            form.base_fields["movimento"].initial = Movimento.SAIDA.value
+            form.base_fields["movimento"].required = False
 
         if "processado" in form.base_fields:
             form.base_fields["processado"].widget = forms.HiddenInput()
@@ -331,6 +348,12 @@ class EstoqueSaidaAdmin(TenantAwareAdminMixin, ModelAdmin):
             form.base_fields["origem_saida"].required = False
 
         return form
+
+    def save_model(self, request, obj, form, change):
+        """Garante que movimento seja definido para saída."""
+        if not change:
+            obj.movimento = Movimento.SAIDA.value
+        super().save_model(request, obj, form, change)
 
     def has_delete_permission(self, request, obj=None):
         """Não permite deletar saídas de estoque já processadas."""
@@ -352,6 +375,14 @@ class EstoqueSaidaAdmin(TenantAwareAdminMixin, ModelAdmin):
             saida = form.instance
 
             inventario = get_inventario(saida)
+
+            if not inventario and instances:
+                from django.contrib import messages
+                messages.error(
+                    request,
+                    "Erro: É necessário selecionar um inventário de origem antes de adicionar itens."
+                )
+                return
 
             for instance in instances:
                 instance.inventario = inventario
@@ -408,8 +439,9 @@ class TransferenciaAdmin(TenantAwareAdminMixin, ModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         if "movimento" in form.base_fields:
-            form.base_fields["movimento"].initial = Movimento.TRANSFERENCIA.value
             form.base_fields["movimento"].widget = forms.HiddenInput()
+            form.base_fields["movimento"].initial = Movimento.TRANSFERENCIA.value
+            form.base_fields["movimento"].required = False
         if "nf" in form.base_fields:
             form.base_fields["nf"].widget = forms.HiddenInput()
         if "origem_saida" in form.base_fields:
@@ -419,6 +451,12 @@ class TransferenciaAdmin(TenantAwareAdminMixin, ModelAdmin):
         if "ordem_compra" in form.base_fields:
             form.base_fields["ordem_compra"].widget = forms.HiddenInput()
         return form
+
+    def save_model(self, request, obj, form, change):
+        """Garante que movimento seja definido para transferência."""
+        if not change:
+            obj.movimento = Movimento.TRANSFERENCIA.value
+        super().save_model(request, obj, form, change)
 
     def has_delete_permission(self, request, obj=None):
         if obj and obj.pk:
@@ -437,6 +475,15 @@ class TransferenciaAdmin(TenantAwareAdminMixin, ModelAdmin):
             transferencia = form.instance
             # Na transferência, os itens saem do inventário de origem
             inventario_origem = transferencia.inventario_origem
+
+            if not inventario_origem and instances:
+                from django.contrib import messages
+                messages.error(
+                    request,
+                    "Erro: É necessário selecionar um inventário de origem antes de adicionar itens."
+                )
+                return
+
             for instance in instances:
                 instance.inventario = inventario_origem
                 instance.save()

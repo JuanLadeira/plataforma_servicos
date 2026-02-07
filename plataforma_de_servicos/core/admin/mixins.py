@@ -4,6 +4,22 @@ Mixins para admin com suporte a multitenancy.
 from django import forms
 
 
+def _has_empresa_field(model):
+    """
+    Verifica se o modelo tem um campo 'empresa' real (não property).
+
+    Isso é necessário porque alguns modelos (como Atributo) têm uma property
+    'empresa' que retorna empresa via relacionamento, mas não é um campo
+    de banco de dados que pode ser usado em filter().
+    """
+    try:
+        field = model._meta.get_field("empresa")
+        # Verifica se é um campo real (ForeignKey, etc.) e não uma property
+        return hasattr(field, "remote_field")
+    except Exception:
+        return False
+
+
 class TenantAwareAdminMixin:
     """
     Mixin que filtra queryset por tenant e auto-preenche empresa.
@@ -35,8 +51,8 @@ class TenantAwareAdminMixin:
             # Sem tenant = queryset vazio (segurança)
             if not tenant:
                 return qs.none()
-            # Com tenant = filtra por empresa
-            if hasattr(self.model, "empresa"):
+            # Com tenant = filtra por empresa (se campo existe)
+            if _has_empresa_field(self.model):
                 return qs.filter(empresa=tenant)
             return qs
 
@@ -45,7 +61,7 @@ class TenantAwareAdminMixin:
             return qs
 
         # Se o modelo tem campo empresa, filtra pelo tenant
-        if hasattr(self.model, "empresa") and tenant:
+        if _has_empresa_field(self.model) and tenant:
             return qs.filter(empresa=tenant)
 
         return qs
@@ -57,11 +73,11 @@ class TenantAwareAdminMixin:
         # No admin de gerentes, sempre filtra
         if self._is_gerente_admin() and tenant:
             related_model = db_field.remote_field.model
-            if hasattr(related_model, "empresa"):
+            if _has_empresa_field(related_model):
                 kwargs["queryset"] = related_model.objects.filter(empresa=tenant)
         elif tenant:
             related_model = db_field.remote_field.model
-            if hasattr(related_model, "empresa"):
+            if _has_empresa_field(related_model):
                 kwargs["queryset"] = related_model.objects.filter(empresa=tenant)
 
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
@@ -72,7 +88,7 @@ class TenantAwareAdminMixin:
 
         if tenant:
             related_model = db_field.remote_field.model
-            if hasattr(related_model, "empresa"):
+            if _has_empresa_field(related_model):
                 kwargs["queryset"] = related_model.objects.filter(empresa=tenant)
 
         return super().formfield_for_manytomany(db_field, request, **kwargs)
@@ -81,7 +97,7 @@ class TenantAwareAdminMixin:
         """Auto-preenche empresa ao criar novos objetos."""
         tenant = getattr(request, "tenant", None)
 
-        if not change and hasattr(obj, "empresa") and not obj.empresa_id:
+        if not change and _has_empresa_field(type(obj)) and not obj.empresa_id:
             if tenant:
                 obj.empresa = tenant
 
@@ -133,7 +149,7 @@ class TenantAwareInlineMixin:
         qs = super().get_queryset(request)
         tenant = getattr(request, "tenant", None)
 
-        if hasattr(self.model, "empresa") and tenant:
+        if _has_empresa_field(self.model) and tenant:
             return qs.filter(empresa=tenant)
 
         return qs
@@ -144,7 +160,7 @@ class TenantAwareInlineMixin:
 
         if tenant:
             related_model = db_field.remote_field.model
-            if hasattr(related_model, "empresa"):
+            if _has_empresa_field(related_model):
                 kwargs["queryset"] = related_model.objects.filter(empresa=tenant)
 
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
@@ -155,7 +171,7 @@ class TenantAwareInlineMixin:
 
         if tenant:
             related_model = db_field.remote_field.model
-            if hasattr(related_model, "empresa"):
+            if _has_empresa_field(related_model):
                 kwargs["queryset"] = related_model.objects.filter(empresa=tenant)
 
         return super().formfield_for_manytomany(db_field, request, **kwargs)

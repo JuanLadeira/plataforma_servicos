@@ -25,6 +25,16 @@ class Atributo(models.Model):
     )
     nome = models.CharField(max_length=50, help_text="Ex: Cor, Tamanho, Motor")
     slug = AutoSlugField(populate_from="nome")
+    multipla_selecao = models.BooleanField(
+        "Permite múltipla seleção",
+        default=False,
+        help_text=(
+            "Se marcado, o usuário pode selecionar vários valores deste atributo. "
+            "Ex: 'Extras' pode ter múltiplos valores. "
+            "Se desmarcado, apenas um valor pode ser selecionado. "
+            "Ex: 'Cor' geralmente permite apenas uma seleção."
+        ),
+    )
 
     class Meta:
         verbose_name = "Atributo"

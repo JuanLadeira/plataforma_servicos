@@ -11,6 +11,7 @@ from unfold.contrib.forms.widgets import WysiwygWidget
 from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
 from plataforma_de_servicos.core.admin.mixins import TenantAwareInlineMixin
 from plataforma_de_servicos.inventario.models import InventarioSaldo
+from plataforma_de_servicos.produto.admin.widgets import GroupedCheckboxSelectMultiple
 from plataforma_de_servicos.produto.models import Atributo
 from plataforma_de_servicos.produto.models import Image
 from plataforma_de_servicos.produto.models import Produto
@@ -89,11 +90,16 @@ class VariacaoProdutoInline(TenantAwareInlineMixin, TabularInline):
     model = VariacaoProduto
     formset = VariacaoProdutoInlineFormSet
     extra = 1
-    autocomplete_fields = ("valores",)
-    readonly_fields = ("sku", "valores_display", "preco_final_calculado", "estoque")
-    fields = ("valores", "valores_display", "preco", "estoque", "preco_final_calculado", "sku")
+    readonly_fields = ("sku", "preco_final_calculado", "estoque")
+    fields = ("valores", "preco", "estoque", "preco_final_calculado", "sku")
     verbose_name = "Variação"
     verbose_name_plural = "Variações do Produto"
+
+    class Media:
+        css = {
+            "all": ("css/valores-atributo-widget.css",)
+        }
+        js = ("js/valores-atributo-widget.js",)
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "valores":
@@ -104,13 +110,29 @@ class VariacaoProdutoInline(TenantAwareInlineMixin, TabularInline):
             # Filtra valores pela categoria do produto sendo editado
             # O parent_obj é o Produto
             parent_obj = getattr(self, "parent_obj", None)
+            categoria_id = None
+            atributos_config = {}
+
             if parent_obj and hasattr(parent_obj, "categoria") and parent_obj.categoria:
                 qs = qs.filter(atributo__categoria=parent_obj.categoria)
+                categoria_id = parent_obj.categoria.pk
+
+                # Buscar configuração de multipla_selecao de cada atributo
+                atributos = Atributo.objects.filter(categoria=parent_obj.categoria)
+                atributos_config = {
+                    attr.nome: attr.multipla_selecao for attr in atributos
+                }
             elif request.tenant:
                 # Fallback: filtra pela empresa
                 qs = qs.filter(atributo__categoria__empresa=request.tenant)
 
             kwargs["queryset"] = qs
+            # Usa widget de checkboxes agrupados por atributo, passando a categoria
+            kwargs["widget"] = GroupedCheckboxSelectMultiple(
+                categoria_id=categoria_id,
+                admin_site="gerentes",
+                atributos_config=atributos_config,
+            )
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def get_formset(self, request, obj=None, **kwargs):
@@ -330,8 +352,8 @@ class ValorAtributoGerenteInline(TabularInline):
 
 
 class AtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
-    list_display = ["nome", "categoria", "count_valores"]
-    list_filter = ["categoria"]
+    list_display = ["nome", "categoria", "multipla_selecao_display", "count_valores"]
+    list_filter = ["categoria", "multipla_selecao"]
     search_fields = ["nome", "categoria__categoria"]
     list_order_by = ["categoria", "nome"]
     list_select_related = ["categoria"]
@@ -343,7 +365,7 @@ class AtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
         (
             "Atributo",
             {
-                "fields": ["categoria", "nome"],
+                "fields": ["categoria", "nome", "multipla_selecao"],
                 "description": (
                     "Atributos são características do produto (ex: Cor, Tamanho, Sabor). "
                     "Cada atributo pertence a uma categoria específica. "
@@ -352,6 +374,10 @@ class AtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
             },
         ),
     ]
+
+    @admin.display(description="Seleção", boolean=True)
+    def multipla_selecao_display(self, obj):
+        return obj.multipla_selecao
 
     def get_queryset(self, request):
         """Filtra atributos pela empresa via categoria."""
@@ -372,6 +398,25 @@ class AtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
                 from plataforma_de_servicos.produto.models import Categoria
                 kwargs["queryset"] = Categoria.objects.filter(empresa=tenant)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def get_changeform_initial_data(self, request):
+        """Pre-fill categoria from URL parameter when coming from product context."""
+        initial = super().get_changeform_initial_data(request)
+        categoria_id = request.GET.get("_categoria")
+        if categoria_id:
+            initial["categoria"] = categoria_id
+        return initial
+
+    def get_form(self, request, obj=None, **kwargs):
+        """Hide categoria field when it's pre-filled from product context."""
+        form = super().get_form(request, obj, **kwargs)
+        categoria_id = request.GET.get("_categoria")
+        # Only hide on add (not edit) and when _categoria is in URL
+        if categoria_id and not obj:
+            if "categoria" in form.base_fields:
+                form.base_fields["categoria"].widget = forms.HiddenInput()
+                form.base_fields["categoria"].required = False
+        return form
 
     @admin.display(description="Valores Cadastrados")
     def count_valores(self, obj):
@@ -416,14 +461,30 @@ class ValorAtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
         return qs
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        """Filtra atributos pela empresa do tenant via categoria."""
+        """Filtra atributos pela empresa e categoria do produto."""
         if db_field.name == "atributo":
             tenant = getattr(request, "tenant", None)
-            if tenant:
-                kwargs["queryset"] = Atributo.objects.filter(
-                    categoria__empresa=tenant,
-                ).select_related("categoria")
+            categoria_id = request.GET.get("_categoria")
+
+            qs = Atributo.objects.select_related("categoria")
+
+            # Filtra pela categoria se fornecida via URL (contexto de produto)
+            if categoria_id:
+                qs = qs.filter(categoria_id=categoria_id)
+            elif tenant:
+                # Fallback: filtra apenas pela empresa
+                qs = qs.filter(categoria__empresa=tenant)
+
+            kwargs["queryset"] = qs
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def add_view(self, request, form_url="", extra_context=None):
+        """Passa parâmetro _categoria para o template de adicionar atributo."""
+        extra_context = extra_context or {}
+        categoria_id = request.GET.get("_categoria")
+        if categoria_id:
+            extra_context["_categoria"] = categoria_id
+        return super().add_view(request, form_url, extra_context)
 
     @admin.display(description="Categoria")
     def categoria_display(self, obj):
