@@ -6,10 +6,8 @@ from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
 
 from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
-from plataforma_de_servicos.core.admin.mixins import TenantAwareInlineMixin
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueItens
-from plataforma_de_servicos.estoque.models.proxys.transferencia import Transferencia
 from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models import VariacaoProduto
 
@@ -31,27 +29,49 @@ class EstoqueItensForm(forms.ModelForm):
 
         return cleaned_data
 
+    def save(self, commit=True):
+        """Garante que o produto seja definido a partir da variação antes de salvar."""
+        instance = super().save(commit=False)
+
+        # Se tem variação, define o produto
+        if instance.variacao and not instance.produto_id:
+            instance.produto = instance.variacao.produto
+
+        if commit:
+            instance.save()
+
+        return instance
+
 
 class EstoqueItensInline(TabularInline):
     model = EstoqueItens
     form = EstoqueItensForm
     extra = 1
-    # Removido 'produto' - será inferido da variação
-    fields = ("variacao", "quantidade", "saldo_atual", "saldo_preview", "inventario")
-    readonly_fields = ("saldo_atual", "saldo_preview", "inventario")
     autocomplete_fields = ("variacao",)
 
     class Media:
         css = {
-            "all": ("css/estoque-itens-widget.css",)
+            "all": ("css/estoque-itens-widget.css",),
         }
         js = ("js/estoque-itens-widget.js",)
+
+    def get_fields(self, request, obj=None):
+        """
+        Campos diferentes para criação vs edição:
+        - Criação: variacao, quantidade, saldo_atual (API), saldo_preview (calculado JS)
+        - Edição: variacao, quantidade, saldo_anterior, saldo (fotografia histórica)
+        """
+        if obj and obj.pk:
+            # Modo edição - mostra fotografia histórica
+            return ("variacao", "quantidade", "saldo_anterior", "saldo")
+        # Modo criação - mostra preview dinâmico
+        return ("variacao", "quantidade", "saldo_atual", "saldo_preview")
 
     def get_readonly_fields(self, request, obj=None):
         """Se estoque já existe (edição), todos os campos são readonly."""
         if obj and obj.pk:
-            return ("variacao", "quantidade", "saldo_atual", "saldo_preview", "inventario")
-        return ("saldo_atual", "saldo_preview", "inventario")
+            return ("variacao", "quantidade", "saldo_anterior", "saldo")
+        return ("saldo_atual", "saldo_preview")
 
     def has_add_permission(self, request, obj=None):
         """Não permite adicionar itens em estoque já criado."""
@@ -67,25 +87,21 @@ class EstoqueItensInline(TabularInline):
 
     @admin.display(description="Saldo Atual")
     def saldo_atual(self, obj):
-        """Mostra o saldo atual da variação no inventário."""
-        if obj and obj.pk and obj.variacao:
-            return obj.variacao.estoque
-        elif obj and obj.variacao:
-            return obj.variacao.estoque
+        """Mostra o saldo atual da variação (preenchido via JS/API)."""
+        # Este campo será atualizado via JavaScript
         return "-"
 
     @admin.display(description="Saldo Após")
     def saldo_preview(self, obj):
-        """Mostra o saldo após a operação (só exibe após salvar)."""
-        if obj and obj.pk and obj.saldo is not None:
-            return obj.saldo
+        """Mostra o preview do saldo após a operação (calculado via JS)."""
+        # Este campo será atualizado via JavaScript
         return "-"
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         tenant = getattr(request, "tenant", None)
         if db_field.name == "variacao":
             qs = VariacaoProduto.objects.select_related(
-                "produto", "produto__categoria"
+                "produto", "produto__categoria",
             ).prefetch_related("valores", "valores__atributo")
             if tenant:
                 qs = qs.filter(produto__empresa=tenant)
@@ -104,19 +120,21 @@ class TransferenciaEstoqueItensInline(TabularInline):
 
     class Media:
         css = {
-            "all": ("css/estoque-itens-widget.css",)
+            "all": ("css/estoque-itens-widget.css",),
         }
         js = ("js/estoque-itens-widget.js",)
 
     def get_fields(self, request, obj=None):
-        if obj and obj.pk:  # a transfer object exists
-            return ("variacao", "quantidade", "saldo_origem", "saldo_destino")
-        return ("variacao", "quantidade", "saldo_atual")
+        if obj and obj.pk:
+            # Modo edição - mostra fotografia histórica
+            return ("variacao", "quantidade", "saldo_anterior", "saldo")
+        # Modo criação - mostra preview dinâmico
+        return ("variacao", "quantidade", "saldo_atual", "saldo_preview")
 
     def get_readonly_fields(self, request, obj=None):
         if obj and obj.pk:
-            return ("variacao", "quantidade", "saldo_origem", "saldo_destino")
-        return ("saldo_atual",)
+            return ("variacao", "quantidade", "saldo_anterior", "saldo")
+        return ("saldo_atual", "saldo_preview")
 
     def has_add_permission(self, request, obj=None):
         return not obj or not obj.pk
@@ -126,51 +144,24 @@ class TransferenciaEstoqueItensInline(TabularInline):
 
     @admin.display(description="Saldo Atual")
     def saldo_atual(self, obj):
-        """Mostra o saldo atual da variação."""
-        if obj and obj.variacao:
-            return obj.variacao.estoque
+        """Mostra o saldo atual da variação (preenchido via JS/API)."""
+        return "-"
+
+    @admin.display(description="Saldo Após")
+    def saldo_preview(self, obj):
+        """Mostra o preview do saldo após a operação (calculado via JS)."""
         return "-"
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         tenant = getattr(request, "tenant", None)
         if db_field.name == "variacao":
             qs = VariacaoProduto.objects.select_related(
-                "produto", "produto__categoria"
+                "produto", "produto__categoria",
             ).prefetch_related("valores", "valores__atributo")
             if tenant:
                 qs = qs.filter(produto__empresa=tenant)
             kwargs["queryset"] = qs
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-    def saldo_origem(self, obj):
-        if obj.pk:
-            transferencia = obj.estoque
-            if transferencia.movimento == Movimento.TRANSFERENCIA.value and transferencia.processado:
-                try:
-                    saldo = InventarioSaldo.objects.get(
-                        inventario=transferencia.inventario_origem,
-                        produto=obj.produto
-                    )
-                    return saldo.quantidade
-                except InventarioSaldo.DoesNotExist:
-                    return 0
-        return "-"
-    saldo_origem.short_description = "Saldo Final Origem"
-
-    def saldo_destino(self, obj):
-        if obj.pk:
-            transferencia = obj.estoque
-            if transferencia.movimento == Movimento.TRANSFERENCIA.value and transferencia.processado:
-                try:
-                    saldo = InventarioSaldo.objects.get(
-                        inventario=transferencia.inventario_destino,
-                        produto=obj.produto
-                    )
-                    return saldo.quantidade
-                except InventarioSaldo.DoesNotExist:
-                    return 0
-        return "-"
-    saldo_destino.short_description = "Saldo Final Destino"
 
 
 def get_inventario(estoque):
@@ -213,7 +204,7 @@ class EstoqueEntradaAdmin(TenantAwareAdminMixin, ModelAdmin):
                     "funcionario",
                     "nf",
                 ],
-                "description": "Dados básicos da entrada de estoque."
+                "description": "Dados básicos da entrada de estoque.",
             },
         ),
         (
@@ -290,7 +281,7 @@ class EstoqueEntradaAdmin(TenantAwareAdminMixin, ModelAdmin):
                 from django.contrib import messages
                 messages.error(
                     request,
-                    "Erro: É necessário selecionar um inventário de destino antes de adicionar itens."
+                    "Erro: É necessário selecionar um inventário de destino antes de adicionar itens.",
                 )
                 return
 
@@ -336,7 +327,7 @@ class EstoqueSaidaAdmin(TenantAwareAdminMixin, ModelAdmin):
                         "funcionario",
                         "nf",
                     ],
-                    "description": "Dados básicos da saída de estoque."
+                    "description": "Dados básicos da saída de estoque.",
                 },
             ),
             (
@@ -345,7 +336,7 @@ class EstoqueSaidaAdmin(TenantAwareAdminMixin, ModelAdmin):
                     "fields": [
                         "origem_saida",
                     ],
-                    "description": "Motivo da saída (opcional)."
+                    "description": "Motivo da saída (opcional).",
                 },
             ),
             (
@@ -362,7 +353,7 @@ class EstoqueSaidaAdmin(TenantAwareAdminMixin, ModelAdmin):
                 "Informações do Sistema",
                 {
                     "fields": ["ordem_compra"],
-                    "description": "Campos preenchidos automaticamente pelo sistema."
+                    "description": "Campos preenchidos automaticamente pelo sistema.",
                 },
             ))
 
@@ -433,7 +424,7 @@ class EstoqueSaidaAdmin(TenantAwareAdminMixin, ModelAdmin):
                 from django.contrib import messages
                 messages.error(
                     request,
-                    "Erro: É necessário selecionar um inventário de origem antes de adicionar itens."
+                    "Erro: É necessário selecionar um inventário de origem antes de adicionar itens.",
                 )
                 return
 
@@ -473,7 +464,7 @@ class TransferenciaAdmin(TenantAwareAdminMixin, ModelAdmin):
                     "inventario_destino",
                     "funcionario",
                 ],
-                "description": "Dados da transferência entre inventários."
+                "description": "Dados da transferência entre inventários.",
             },
         ),
         (
@@ -533,7 +524,7 @@ class TransferenciaAdmin(TenantAwareAdminMixin, ModelAdmin):
                 from django.contrib import messages
                 messages.error(
                     request,
-                    "Erro: É necessário selecionar um inventário de origem antes de adicionar itens."
+                    "Erro: É necessário selecionar um inventário de origem antes de adicionar itens.",
                 )
                 return
 

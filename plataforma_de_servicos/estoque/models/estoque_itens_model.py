@@ -32,7 +32,18 @@ class EstoqueItens(models.Model):
         help_text="Selecione a variação do produto (se houver). O estoque será descontado da variação.",
     )
     quantidade = models.PositiveIntegerField()
-    saldo = models.PositiveIntegerField(blank=True, null=True)
+    saldo_anterior = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        verbose_name="Saldo Anterior",
+        help_text="Saldo da variação/produto antes da operação (fotografia histórica)",
+    )
+    saldo = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        verbose_name="Saldo Após",
+        help_text="Saldo da variação/produto após a operação",
+    )
     inventario = models.ForeignKey(
         Inventario,
         on_delete=models.CASCADE,
@@ -82,6 +93,9 @@ class EstoqueItens(models.Model):
 
     def _atualizar_saldo_produto(self, movimento):
         """Atualiza o saldo do produto base."""
+        # Guarda o saldo anterior (fotografia histórica)
+        self.saldo_anterior = self.produto.estoque
+
         if movimento == Movimento.ENTRADA.value:
             saldo = self.produto.estoque + self.quantidade
 
@@ -102,6 +116,9 @@ class EstoqueItens(models.Model):
 
     def _atualizar_saldo_variacao(self, movimento):
         """Atualiza o saldo da variação e do produto base."""
+        # Guarda o saldo anterior da variação (fotografia histórica)
+        self.saldo_anterior = self.variacao.estoque
+
         if movimento == Movimento.ENTRADA.value:
             saldo_variacao = self.variacao.estoque + self.quantidade
             saldo_produto = self.produto.estoque + self.quantidade

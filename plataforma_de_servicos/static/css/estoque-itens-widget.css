@@ -33,6 +33,14 @@
     border-radius: 0.25rem;
 }
 
+/* Preview de saldo zerado */
+.saldo-preview-warning {
+    color: var(--color-warning-600, #d97706);
+    background: var(--color-warning-50, #fffbeb);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
 /* Preview de saldo calculado dinamicamente */
 .saldo-preview-container {
     display: flex;
@@ -61,6 +69,11 @@
 .dark .saldo-preview-negative {
     color: var(--color-error-400, #f87171);
     background: rgba(248, 113, 113, 0.1);
+}
+
+.dark .saldo-preview-warning {
+    color: var(--color-warning-400, #fbbf24);
+    background: rgba(251, 191, 36, 0.1);
 }
 
 /* Estilo para linha de item */
