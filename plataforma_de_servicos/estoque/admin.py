@@ -7,6 +7,7 @@ from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueItens
 from plataforma_de_servicos.estoque.models.proxys.estoque_entrada import EstoqueEntrada
 from plataforma_de_servicos.estoque.models.proxys.estoque_saida import EstoqueSaida
+from plataforma_de_servicos.users.models import User
 
 
 class EstoqueItensInline(admin.TabularInline):
@@ -15,15 +16,47 @@ class EstoqueItensInline(admin.TabularInline):
     readonly_fields = ("saldo",)
 
 
+class FuncionarioFilter(admin.SimpleListFilter):
+    title = "funcionario"
+    parameter_name = "funcionario"
+
+    def lookups(self, request, model_admin):
+        if not request.user.is_superuser:
+            # Filter lookups to current user's company
+            funcionarios = User.objects.filter(funcionario__empresa=request.user.funcionario.empresa)
+            return [(f.id, f.email) for f in funcionarios]
+        # Superuser sees all
+        return [(f.id, f.email) for f in User.objects.all()]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(funcionario__id=self.value())
+        return queryset
+
+
 @admin.register(EstoqueEntrada)
 class EstoqueEntradaAdmin(admin.ModelAdmin):
     inlines = (EstoqueItensInline,)
     list_display = ("__str__", "nf", "funcionario")
     search_fields = ("nf",)
-    list_filter = ("funcionario",)
+    list_filter = (FuncionarioFilter,)
     date_hierarchy = "created"
     verbose_name = "Entrada de estoque"
     verbose_name_plural = "Entradas de estoque"
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(empresa=request.user.funcionario.empresa)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "funcionario":
+            if not request.user.is_superuser:
+                kwargs["queryset"] = User.objects.filter(
+                    funcionario__empresa=request.user.funcionario.empresa,
+                )
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
@@ -69,9 +102,23 @@ class EstoqueSaidaAdmin(admin.ModelAdmin):
     inlines = (EstoqueItensInline,)
     list_display = ("__str__", "nf", "funcionario")
     search_fields = ("nf",)
-    list_filter = ("funcionario",)
+    list_filter = (FuncionarioFilter,)
     date_hierarchy = "created"
     verbose_name = "Saída de estoque"
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        return qs.filter(empresa=request.user.funcionario.empresa)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "funcionario":
+            if not request.user.is_superuser:
+                kwargs["queryset"] = User.objects.filter(
+                    funcionario__empresa=request.user.funcionario.empresa,
+                )
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)

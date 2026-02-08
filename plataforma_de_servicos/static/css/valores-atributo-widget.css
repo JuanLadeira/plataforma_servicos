@@ -96,7 +96,7 @@
 .valor-chip:has(input:checked) {
     border-color: var(--color-primary-500, #3b82f6);
     background: var(--color-primary-500, #3b82f6);
-    color: white;
+    color: #ffffff !important;
     box-shadow: 0 1px 2px rgba(59, 130, 246, 0.3);
 }
 
@@ -104,6 +104,13 @@
 .dark .valor-chip:has(input:checked) {
     border-color: var(--color-primary-400, #60a5fa);
     background: var(--color-primary-600, #2563eb);
+    color: #ffffff !important;
+}
+
+/* Garante que o texto do chip selecionado seja visível */
+.valor-chip.checked .chip-text,
+.valor-chip:has(input:checked) .chip-text {
+    color: #ffffff !important;
 }
 
 /* Hide the actual checkbox input */
