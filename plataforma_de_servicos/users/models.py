@@ -19,6 +19,12 @@ class UserType(TextChoices):
     CLIENTE = "CLIENTE", _("Cliente")
 
 
+class PapelFuncionario(TextChoices):
+    VENDEDOR = "VENDEDOR", _("Vendedor")
+    GERENTE = "GERENTE", _("Gerente")
+    ADMIN = "ADMIN", _("Administrador")
+
+
 class User(AbstractUser):
     user_type = CharField(
         _("User Type"),
@@ -81,6 +87,13 @@ class Funcionario(models.Model):
         null=True,  # Temporary: remove after data migration
         blank=True,
     )
+    papel = models.CharField(
+        "papel",
+        max_length=20,
+        choices=PapelFuncionario.choices,
+        default=PapelFuncionario.VENDEDOR,
+        help_text="Define o nível de acesso do funcionário no sistema",
+    )
     cargo = models.CharField("cargo", max_length=100, blank=True)
     endereco = models.CharField("endereço", max_length=255, blank=True)
     cpf = models.CharField(
@@ -115,6 +128,28 @@ class Funcionario(models.Model):
     def email(self):
         """Retorna o email do usuário."""
         return self.usuario.email
+
+    @property
+    def is_vendedor(self):
+        """Verifica se funcionário é vendedor ou superior."""
+        return self.papel in [
+            PapelFuncionario.VENDEDOR,
+            PapelFuncionario.GERENTE,
+            PapelFuncionario.ADMIN,
+        ]
+
+    @property
+    def is_gerente(self):
+        """Verifica se funcionário é gerente ou superior."""
+        return self.papel in [
+            PapelFuncionario.GERENTE,
+            PapelFuncionario.ADMIN,
+        ]
+
+    @property
+    def is_admin(self):
+        """Verifica se funcionário é administrador."""
+        return self.papel == PapelFuncionario.ADMIN
 
 
 class Cliente(models.Model):

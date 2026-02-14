@@ -32,7 +32,11 @@ from plataforma_de_servicos.produto.models.atributos import VariacaoProduto
 from plataforma_de_servicos.produto.models.categoria_model import Categoria
 from plataforma_de_servicos.produto.models.produto_model import Produto
 from plataforma_de_servicos.vendas.admin import OrdemCompraGerenteAdmin
-from plataforma_de_servicos.vendas.models import OrdemCompra
+from plataforma_de_servicos.vendas.admin.comissao_admin import (
+    ComissaoGerenteAdmin,
+    ConfiguracaoComissaoGerenteAdmin,
+)
+from plataforma_de_servicos.vendas.models import Comissao, ConfiguracaoComissao, OrdemCompra
 
 
 class UserGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
@@ -85,8 +89,8 @@ class UserGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
 class FuncionarioGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     """Admin para Funcionario no site de gerentes."""
 
-    list_display = ["usuario", "cargo", "telefone", "is_corretor", "is_signatario", "ativo"]
-    list_filter = ["is_corretor", "is_signatario", "ativo"]
+    list_display = ["usuario", "papel", "cargo", "telefone", "is_corretor", "is_signatario", "ativo"]
+    list_filter = ["papel", "is_corretor", "is_signatario", "ativo"]
     search_fields = ["usuario__name", "usuario__email", "cargo", "cpf", "telefone"]
     autocomplete_fields = ["usuario"]
     fieldsets = [
@@ -97,9 +101,15 @@ class FuncionarioGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
             },
         ),
         (
+            "Papel e Cargo",
+            {
+                "fields": ["papel", "cargo"],
+            },
+        ),
+        (
             "Dados do Funcionário",
             {
-                "fields": ["cargo", "endereco", "cpf", "telefone"],
+                "fields": ["endereco", "cpf", "telefone"],
             },
         ),
         (
@@ -251,3 +261,5 @@ gerente_site.register(OrdemCompra, OrdemCompraGerenteAdmin)
 gerente_site.register(User, UserGerenteAdmin)
 gerente_site.register(Funcionario, FuncionarioGerenteAdmin)
 gerente_site.register(SiteConfig, SiteConfigGerenteAdmin)
+gerente_site.register(Comissao, ComissaoGerenteAdmin)
+gerente_site.register(ConfiguracaoComissao, ConfiguracaoComissaoGerenteAdmin)

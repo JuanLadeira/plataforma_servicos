@@ -14,21 +14,33 @@ class EmpresaAdmin(ModelAdmin):
         "slug",
         "email",
         "admin_url",
+        "vendedor_url",
         "get_color_preview",
-        "get_admin_full_url",
     ]
-    list_filter = ["admin_url", "sidebar_style"]
+    list_filter = ["sidebar_style"]
     search_fields = ["nome", "slug", "email"]
     prepopulated_fields = {"slug": ("nome",)}
-    readonly_fields = ["get_admin_full_url", "get_color_preview_large"]
+    readonly_fields = [
+        "get_gerente_full_url",
+        "get_vendedor_full_url",
+        "get_color_preview_large",
+    ]
 
     fieldsets = (
         ("Dados da Empresa", {
             "fields": ("nome", "slug", "email", "imo", "foto"),
         }),
-        ("Configurações do Admin", {
-            "fields": ("admin_url", "get_admin_full_url"),
-            "description": "Configure o endpoint do painel administrativo desta empresa.",
+        ("URLs dos Portais Administrativos", {
+            "fields": (
+                "admin_url",
+                "get_gerente_full_url",
+                "vendedor_url",
+                "get_vendedor_full_url",
+            ),
+            "description": (
+                "Configure os endpoints dos portais administrativos. "
+                "Use URLs únicas para maior segurança (ex: 'painel-2024', 'minha-equipe')."
+            ),
         }),
         ("Identidade Visual do Admin", {
             "fields": (
@@ -59,10 +71,24 @@ class EmpresaAdmin(ModelAdmin):
         }),
     )
 
-    @admin.display(description="URL Completa do Admin")
-    def get_admin_full_url(self, obj):
+    @admin.display(description="URL do Portal de Gerentes")
+    def get_gerente_full_url(self, obj):
         if obj.pk:
-            return f"https://{obj.slug}.seudominio.com{obj.get_admin_url()}"
+            return format_html(
+                '<code>https://{}.seudominio.com{}</code>',
+                obj.slug,
+                obj.get_admin_url(),
+            )
+        return "-"
+
+    @admin.display(description="URL do Portal de Vendedores")
+    def get_vendedor_full_url(self, obj):
+        if obj.pk:
+            return format_html(
+                '<code>https://{}.seudominio.com{}</code>',
+                obj.slug,
+                obj.get_vendedor_url(),
+            )
         return "-"
 
     @admin.display(description="Cores")

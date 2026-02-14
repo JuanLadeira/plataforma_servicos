@@ -1,7 +1,8 @@
 """
 Middleware para identificar o tenant (empresa) baseado no subdomínio ou usuário autenticado.
 """
-from django.http import Http404
+from django.http import Http404, HttpResponseForbidden
+from django.template.loader import render_to_string
 
 from plataforma_de_servicos.empresa.models import Empresa
 
@@ -14,6 +15,7 @@ class TenantMiddleware:
     - /admin/: Apenas acessível no domínio principal (sem subdomínio)
     - URLs públicas em subdomínio: tenant vem do subdomínio (empresa-slug.dominio.com)
     - Admin da empresa: Endpoint customizável via campo admin_url (padrão: /gerentes/)
+    - Funcionários só podem acessar o subdomínio da sua empresa
     """
 
     def __init__(self, get_response):
@@ -41,6 +43,12 @@ class TenantMiddleware:
         if not is_main_domain:
             tenant = self._get_tenant_from_subdomain(request)
             request.tenant = tenant
+
+            # Validar acesso cross-tenant para usuários autenticados
+            forbidden_response = self._validate_user_tenant_access(request, tenant)
+            if forbidden_response:
+                return forbidden_response
+
             # Subdomínio determina o tenant - não sobrescrever com empresa do usuário
             return self.get_response(request)
 
@@ -169,3 +177,78 @@ class TenantMiddleware:
         """Verifica se é uma requisição de arquivo estático."""
         static_prefixes = ("/static/", "/media/", "/__debug__/", "/favicon.ico")
         return any(path.startswith(prefix) for prefix in static_prefixes)
+
+    def _validate_user_tenant_access(self, request, tenant):
+        """
+        Valida que usuários autenticados só acessem subdomínios permitidos.
+
+        Regras:
+        - Superusuários podem acessar qualquer subdomínio
+        - Funcionários só podem acessar o subdomínio da sua empresa
+        - Clientes só podem acessar o subdomínio da sua empresa
+        - Usuários anônimos podem acessar qualquer subdomínio (catálogo público)
+
+        Retorna:
+            HttpResponseForbidden se acesso negado, None se permitido
+        """
+        # Sem tenant: permite acesso
+        if not tenant:
+            return None
+
+        # Sem user no request (testes unitários) ou usuário não autenticado: permite acesso
+        if not hasattr(request, "user") or not request.user.is_authenticated:
+            return None
+
+        # Superusuários podem acessar qualquer subdomínio
+        if request.user.is_superuser:
+            return None
+
+        # Obtém a empresa do usuário
+        user_empresa = self._get_user_empresa(request.user)
+
+        # Se usuário não tem empresa associada, nega acesso ao subdomínio
+        if not user_empresa:
+            return self._forbidden_response(
+                request,
+                "Acesso Negado",
+                "Sua conta não está associada a nenhuma empresa.",
+            )
+
+        # Se empresa do usuário não bate com o tenant do subdomínio, nega acesso
+        if user_empresa.pk != tenant.pk:
+            return self._forbidden_response(
+                request,
+                "Acesso Negado",
+                f"Você não tem permissão para acessar {tenant.nome}. "
+                f"Sua conta está vinculada à empresa {user_empresa.nome}.",
+            )
+
+        return None
+
+    def _get_user_empresa(self, user):
+        """Obtém a empresa associada ao usuário (funcionário ou cliente)."""
+        # Funcionário tem prioridade
+        if hasattr(user, "funcionario") and user.funcionario:
+            return getattr(user.funcionario, "empresa", None)
+
+        # Cliente
+        if hasattr(user, "cliente") and user.cliente:
+            return getattr(user.cliente, "empresa", None)
+
+        return None
+
+    def _forbidden_response(self, request, title, message):
+        """Retorna uma resposta 403 Forbidden formatada."""
+        try:
+            content = render_to_string(
+                "403.html",
+                {"title": title, "message": message},
+                request=request,
+            )
+            return HttpResponseForbidden(content, content_type="text/html")
+        except Exception:
+            # Fallback se template não existir
+            return HttpResponseForbidden(
+                f"<h1>{title}</h1><p>{message}</p>",
+                content_type="text/html",
+            )
