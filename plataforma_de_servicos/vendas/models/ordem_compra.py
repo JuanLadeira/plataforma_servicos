@@ -5,10 +5,10 @@ from django.db import models
 from django.utils import timezone
 
 from plataforma_de_servicos.core.models import TimeStampedModel
-from plataforma_de_servicos.corretor.models import Corretor
 from plataforma_de_servicos.corretor.models import InteresseCompra
 from plataforma_de_servicos.produto.models import Produto
 from plataforma_de_servicos.produto.models import VariacaoProduto
+from plataforma_de_servicos.users.models import Funcionario
 from plataforma_de_servicos.users.models import User
 
 
@@ -90,12 +90,13 @@ class OrdemCompra(TimeStampedModel):
 
     # Corretor responsável
     corretor = models.ForeignKey(
-        Corretor,
+        Funcionario,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="ordens",
         verbose_name="corretor responsável",
+        limit_choices_to={"is_corretor": True},
     )
 
     # Observações

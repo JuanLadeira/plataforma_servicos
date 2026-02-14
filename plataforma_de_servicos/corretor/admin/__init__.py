@@ -2,40 +2,8 @@ from django.contrib import admin
 from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
 
-from plataforma_de_servicos.corretor.models import Corretor
 from plataforma_de_servicos.corretor.models import InteresseCompra
 from plataforma_de_servicos.corretor.models import ItemInteresse
-
-
-@admin.register(Corretor)
-class CorretorAdmin(ModelAdmin):
-    list_display = ["nome", "email", "telefone", "ativo", "created"]
-    list_filter = ["ativo", "created"]
-    search_fields = ["nome", "email", "telefone"]
-    autocomplete_fields = ["user"]
-    readonly_fields = ["created", "modified"]
-    fieldsets = [
-        (
-            None,
-            {
-                "fields": ["nome", "email", "telefone", "ativo"],
-            },
-        ),
-        (
-            "Usuário do Sistema",
-            {
-                "fields": ["user"],
-                "classes": ["collapse"],
-            },
-        ),
-        (
-            "Informações do Sistema",
-            {
-                "fields": ["created", "modified"],
-                "classes": ["collapse"],
-            },
-        ),
-    ]
 
 
 class ItemInteresseInline(TabularInline):

@@ -1,44 +1,9 @@
 from decimal import Decimal
 
 from django.db import models
+from django.utils import timezone
 
 from plataforma_de_servicos.core.models import TimeStampedModel
-from plataforma_de_servicos.users.models import User
-
-
-class Corretor(TimeStampedModel):
-    """Modelo para representar um corretor/vendedor no sistema."""
-
-    empresa = models.ForeignKey(
-        "empresa.Empresa",
-        on_delete=models.CASCADE,
-        related_name="corretores",
-        verbose_name="Empresa",
-        null=True,  # Temporary: remove after data migration
-        blank=True,
-    )
-    nome = models.CharField("nome", max_length=255)
-    email = models.EmailField("e-mail")
-    telefone = models.CharField("telefone", max_length=20, blank=True)
-    user = models.OneToOneField(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="corretor",
-        verbose_name="usuário",
-        help_text="Usuário associado ao corretor (opcional)",
-    )
-    ativo = models.BooleanField("ativo", default=True)
-
-    class Meta:
-        verbose_name = "corretor"
-        verbose_name_plural = "corretores"
-        ordering = ["nome"]
-        unique_together = [["empresa", "email"]]
-
-    def __str__(self):
-        return self.nome
 
 
 class StatusInteresse(models.TextChoices):
@@ -56,8 +21,16 @@ class InteresseCompra(TimeStampedModel):
         on_delete=models.CASCADE,
         related_name="interesses_compra",
         verbose_name="Empresa",
-        null=True,  # Temporary: remove after data migration
+        null=True,
         blank=True,
+    )
+
+    # Identificação
+    numero = models.CharField(
+        "número",
+        max_length=20,
+        blank=True,
+        help_text="Número único do interesse por empresa (ex: IC-2026-00001)",
     )
 
     # Dados do cliente/lead
@@ -82,22 +55,77 @@ class InteresseCompra(TimeStampedModel):
         default=StatusInteresse.NOVO,
     )
     corretor = models.ForeignKey(
-        Corretor,
+        "users.Funcionario",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="interesses",
         verbose_name="corretor responsável",
-        help_text="Corretor que está atendendo este lead",
+        help_text="Funcionário/corretor que está atendendo este lead",
+        limit_choices_to={"is_corretor": True},
     )
 
     class Meta:
         verbose_name = "interesse de compra"
         verbose_name_plural = "interesses de compra"
         ordering = ["-created"]
+        unique_together = [["empresa", "numero"]]
 
     def __str__(self):
+        if self.numero:
+            return f"{self.numero} - {self.nome_cliente}"
         return f"Interesse #{self.pk} - {self.nome_cliente}"
+
+    def save(self, *args, **kwargs):
+        # Auto-generate numero if not set and empresa is defined
+        if not self.numero and self.empresa_id:
+            self.numero = self._gerar_numero()
+        super().save(*args, **kwargs)
+
+    def _gerar_numero(self) -> str:
+        """Gera número único por empresa no formato IC-YYYY-NNNNN."""
+        ano = timezone.now().year
+        prefixo = f"IC-{ano}-"
+
+        ultimo = (
+            InteresseCompra.objects.filter(
+                empresa_id=self.empresa_id,
+                numero__startswith=prefixo,
+            )
+            .order_by("-numero")
+            .first()
+        )
+
+        if ultimo and ultimo.numero:
+            try:
+                ultimo_num = int(ultimo.numero.split("-")[-1])
+                novo_num = ultimo_num + 1
+            except (ValueError, IndexError):
+                novo_num = 1
+        else:
+            novo_num = 1
+
+        return f"{prefixo}{novo_num:05d}"
+
+    @property
+    def pode_atender(self) -> bool:
+        """Verifica se pode iniciar atendimento (status NOVO)."""
+        return self.status == StatusInteresse.NOVO
+
+    @property
+    def pode_converter(self) -> bool:
+        """Verifica se pode converter para ordem (status EM_ATENDIMENTO)."""
+        return self.status == StatusInteresse.EM_ATENDIMENTO
+
+    @property
+    def pode_descartar(self) -> bool:
+        """Verifica se pode descartar (status NOVO ou EM_ATENDIMENTO)."""
+        return self.status in [StatusInteresse.NOVO, StatusInteresse.EM_ATENDIMENTO]
+
+    @property
+    def pode_retornar(self) -> bool:
+        """Verifica se pode retornar para NOVO (status EM_ATENDIMENTO)."""
+        return self.status == StatusInteresse.EM_ATENDIMENTO
 
 
 class ItemInteresse(models.Model):

@@ -4,11 +4,11 @@ from unittest.mock import patch
 import pytest
 from django.core import mail
 
-from plataforma_de_servicos.corretor.models import InteresseCompra
 from plataforma_de_servicos.corretor.services import enviar_notificacao_interesse
 from plataforma_de_servicos.corretor.services import get_corretores_ativos_emails
+from plataforma_de_servicos.users.tests.factories import FuncionarioFactory
+from plataforma_de_servicos.users.tests.factories import UserFactory
 
-from .factories import CorretorFactory
 from .factories import InteresseCompraFactory
 from .factories import ItemInteresseFactory
 
@@ -19,10 +19,14 @@ class TestGetCorretoresAtivosEmails:
     """Testes para a função get_corretores_ativos_emails."""
 
     def test_retorna_emails_corretores_ativos(self):
-        """Deve retornar apenas e-mails de corretores ativos."""
-        CorretorFactory(email="ativo1@email.com", ativo=True)
-        CorretorFactory(email="ativo2@email.com", ativo=True)
-        CorretorFactory(email="inativo@email.com", ativo=False)
+        """Deve retornar apenas e-mails de funcionários corretores ativos."""
+        user1 = UserFactory(email="ativo1@email.com")
+        user2 = UserFactory(email="ativo2@email.com")
+        user3 = UserFactory(email="inativo@email.com")
+
+        FuncionarioFactory(usuario=user1, is_corretor=True, ativo=True)
+        FuncionarioFactory(usuario=user2, is_corretor=True, ativo=True)
+        FuncionarioFactory(usuario=user3, is_corretor=True, ativo=False)
 
         emails = get_corretores_ativos_emails()
 
@@ -38,8 +42,8 @@ class TestGetCorretoresAtivosEmails:
 
     def test_retorna_lista_vazia_todos_inativos(self):
         """Deve retornar lista vazia se todos estiverem inativos."""
-        CorretorFactory(ativo=False)
-        CorretorFactory(ativo=False)
+        FuncionarioFactory(is_corretor=True, ativo=False)
+        FuncionarioFactory(is_corretor=True, ativo=False)
 
         emails = get_corretores_ativos_emails()
         assert emails == []
@@ -67,8 +71,10 @@ class TestEnviarNotificacaoInteresse:
 
     def test_envia_email_para_corretores(self):
         """Deve enviar e-mail para todos os corretores ativos."""
-        CorretorFactory(email="corretor1@email.com", ativo=True)
-        CorretorFactory(email="corretor2@email.com", ativo=True)
+        user1 = UserFactory(email="corretor1@email.com")
+        user2 = UserFactory(email="corretor2@email.com")
+        FuncionarioFactory(usuario=user1, is_corretor=True, ativo=True)
+        FuncionarioFactory(usuario=user2, is_corretor=True, ativo=True)
 
         interesse = InteresseCompraFactory(
             nome_cliente="João Silva",
@@ -97,7 +103,8 @@ class TestEnviarNotificacaoInteresse:
 
     def test_email_contem_dados_cliente(self):
         """E-mail deve conter dados do cliente."""
-        CorretorFactory(email="corretor@email.com", ativo=True)
+        user = UserFactory(email="corretor@email.com")
+        FuncionarioFactory(usuario=user, is_corretor=True, ativo=True)
 
         interesse = InteresseCompraFactory(
             nome_cliente="Maria Santos",
@@ -115,7 +122,8 @@ class TestEnviarNotificacaoInteresse:
 
     def test_email_contem_produtos(self):
         """E-mail deve conter lista de produtos."""
-        CorretorFactory(email="corretor@email.com", ativo=True)
+        user = UserFactory(email="corretor@email.com")
+        FuncionarioFactory(usuario=user, is_corretor=True, ativo=True)
 
         interesse = InteresseCompraFactory(valor_total=Decimal("100.00"))
         ItemInteresseFactory(
@@ -141,7 +149,8 @@ class TestEnviarNotificacaoInteresse:
 
     def test_email_contem_valor_total(self):
         """E-mail deve conter valor total."""
-        CorretorFactory(email="corretor@email.com", ativo=True)
+        user = UserFactory(email="corretor@email.com")
+        FuncionarioFactory(usuario=user, is_corretor=True, ativo=True)
 
         interesse = InteresseCompraFactory(valor_total=Decimal("199.90"))
 
@@ -152,7 +161,8 @@ class TestEnviarNotificacaoInteresse:
 
     def test_email_html_e_texto(self):
         """E-mail deve ter versão HTML e texto."""
-        CorretorFactory(email="corretor@email.com", ativo=True)
+        user = UserFactory(email="corretor@email.com")
+        FuncionarioFactory(usuario=user, is_corretor=True, ativo=True)
         interesse = InteresseCompraFactory()
 
         enviar_notificacao_interesse(interesse.pk)
@@ -170,7 +180,8 @@ class TestEnviarNotificacaoInteresse:
         """Deve tratar erro no envio de e-mail."""
         mock_send_mail.side_effect = Exception("SMTP Error")
 
-        CorretorFactory(email="corretor@email.com", ativo=True)
+        user = UserFactory(email="corretor@email.com")
+        FuncionarioFactory(usuario=user, is_corretor=True, ativo=True)
         interesse = InteresseCompraFactory()
 
         resultado = enviar_notificacao_interesse(interesse.pk)

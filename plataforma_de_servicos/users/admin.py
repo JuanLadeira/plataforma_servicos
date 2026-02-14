@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .forms import UserAdminChangeForm
 from .forms import UserAdminCreationForm
+from .models import Funcionario
 from .models import User
 
 if settings.DJANGO_ADMIN_FORCE_ALLAUTH:
@@ -37,7 +38,7 @@ class UserAdmin(auth_admin.UserAdmin):
         (_("Important dates"), {"fields": ("last_login", "date_joined")}),
     )
     list_display = ["email", "name", "is_superuser"]
-    search_fields = ["name"]
+    search_fields = ["name", "email"]
     ordering = ["id"]
     add_fieldsets = (
         (
@@ -48,3 +49,12 @@ class UserAdmin(auth_admin.UserAdmin):
             },
         ),
     )
+
+
+@admin.register(Funcionario)
+class FuncionarioAdmin(admin.ModelAdmin):
+    list_display = ["usuario", "empresa", "cargo", "is_signatario"]
+    list_filter = ["empresa", "is_signatario"]
+    search_fields = ["usuario__name", "usuario__email", "cargo", "cpf"]
+    autocomplete_fields = ["usuario", "empresa"]
+    raw_id_fields = ["usuario"]

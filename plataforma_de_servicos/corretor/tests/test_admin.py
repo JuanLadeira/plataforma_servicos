@@ -1,43 +1,11 @@
 import pytest
 from django.contrib.admin.sites import AdminSite
 
-from plataforma_de_servicos.corretor.admin import CorretorAdmin
 from plataforma_de_servicos.corretor.admin import InteresseCompraAdmin
-from plataforma_de_servicos.corretor.admin.gerente_admin import CorretorGerenteAdmin
 from plataforma_de_servicos.corretor.admin.gerente_admin import InteresseCompraGerenteAdmin
-from plataforma_de_servicos.corretor.models import Corretor
 from plataforma_de_servicos.corretor.models import InteresseCompra
 
 pytestmark = [pytest.mark.django_db]
-
-
-class TestCorretorAdmin:
-    """Testes para o admin de Corretor."""
-
-    def test_list_display(self):
-        """Verifica campos exibidos na listagem."""
-        admin = CorretorAdmin(Corretor, AdminSite())
-        expected = ["nome", "email", "telefone", "ativo", "created"]
-        assert admin.list_display == expected
-
-    def test_search_fields(self):
-        """Verifica campos de busca."""
-        admin = CorretorAdmin(Corretor, AdminSite())
-        assert "nome" in admin.search_fields
-        assert "email" in admin.search_fields
-        assert "telefone" in admin.search_fields
-
-    def test_list_filter(self):
-        """Verifica filtros da listagem."""
-        admin = CorretorAdmin(Corretor, AdminSite())
-        assert "ativo" in admin.list_filter
-        assert "created" in admin.list_filter
-
-    def test_readonly_fields(self):
-        """Verifica campos somente leitura."""
-        admin = CorretorAdmin(Corretor, AdminSite())
-        assert "created" in admin.readonly_fields
-        assert "modified" in admin.readonly_fields
 
 
 class TestInteresseCompraAdmin:
@@ -108,16 +76,6 @@ class TestInteresseCompraAdmin:
         assert "created" in admin.list_filter
 
 
-class TestCorretorGerenteAdmin:
-    """Testes para o admin de Corretor no site de gerentes."""
-
-    def test_search_fields(self):
-        """Verifica campos de busca (necessário para autocomplete)."""
-        admin = CorretorGerenteAdmin(Corretor, AdminSite())
-        assert "nome" in admin.search_fields
-        assert "email" in admin.search_fields
-
-
 class TestInteresseCompraGerenteAdmin:
     """Testes para o admin de InteresseCompra no site de gerentes."""
 
@@ -136,7 +94,7 @@ class TestInteresseCompraGerenteAdmin:
     def test_list_display_links(self):
         """Verifica campos clicáveis na listagem."""
         admin = InteresseCompraGerenteAdmin(InteresseCompra, AdminSite())
-        assert "id" in admin.list_display_links
+        assert "numero" in admin.list_display_links
         assert "nome_cliente" in admin.list_display_links
 
     def test_autocomplete_fields(self):
@@ -145,7 +103,9 @@ class TestInteresseCompraGerenteAdmin:
         assert "corretor" in admin.autocomplete_fields
 
     def test_campos_editaveis(self):
-        """Apenas status e corretor devem ser editáveis."""
+        """Status é readonly (gerenciado por botões), corretor editável apenas em atendimento."""
         admin = InteresseCompraGerenteAdmin(InteresseCompra, AdminSite())
-        assert "status" not in admin.readonly_fields
+        # Status agora é gerenciado pelos actions_detail (botões)
+        assert "status" in admin.readonly_fields
+        # Corretor não está na lista base de readonly (pode ser editável em atendimento)
         assert "corretor" not in admin.readonly_fields

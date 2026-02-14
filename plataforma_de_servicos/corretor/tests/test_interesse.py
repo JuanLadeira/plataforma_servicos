@@ -5,8 +5,8 @@ import pytest
 from plataforma_de_servicos.corretor.models import InteresseCompra
 from plataforma_de_servicos.corretor.models import ItemInteresse
 from plataforma_de_servicos.corretor.models import StatusInteresse
+from plataforma_de_servicos.users.tests.factories import FuncionarioFactory
 
-from .factories import CorretorFactory
 from .factories import InteresseCompraFactory
 from .factories import ItemInteresseFactory
 
@@ -38,12 +38,12 @@ class TestInteresseCompraModel:
         assert f"Interesse #{interesse.pk} - Maria Santos" == str(interesse)
 
     def test_interesse_com_corretor(self):
-        """Deve associar um interesse a um corretor."""
-        corretor = CorretorFactory()
-        interesse = InteresseCompraFactory(corretor=corretor)
+        """Deve associar um interesse a um funcionário corretor."""
+        funcionario = FuncionarioFactory(is_corretor=True)
+        interesse = InteresseCompraFactory(corretor=funcionario)
 
-        assert interesse.corretor == corretor
-        assert interesse in corretor.interesses.all()
+        assert interesse.corretor == funcionario
+        assert interesse in funcionario.interesses.all()
 
     def test_interesse_status_choices(self):
         """Deve aceitar todos os status válidos."""

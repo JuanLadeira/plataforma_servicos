@@ -1,10 +1,12 @@
 from collections.abc import Sequence
 from typing import Any
 
+import factory
 from factory import Faker
 from factory import post_generation
 from factory.django import DjangoModelFactory
 
+from plataforma_de_servicos.users.models import Funcionario
 from plataforma_de_servicos.users.models import User
 
 
@@ -38,3 +40,17 @@ class UserFactory(DjangoModelFactory[User]):
     class Meta:
         model = User
         django_get_or_create = ["email"]
+
+
+class FuncionarioFactory(DjangoModelFactory):
+    """Factory para criar Funcionario com usuário associado."""
+
+    usuario = factory.SubFactory(UserFactory)
+    empresa = factory.LazyAttribute(lambda o: None)  # Será preenchido por EmpresaFactory se necessário
+    cargo = Faker("job", locale="pt_BR")
+    endereco = Faker("address", locale="pt_BR")
+    cpf = factory.Sequence(lambda n: f"{n:03d}.{n:03d}.{n:03d}-{n % 100:02d}")
+    is_signatario = False
+
+    class Meta:
+        model = Funcionario

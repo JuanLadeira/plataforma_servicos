@@ -1,15 +1,18 @@
+from django.contrib import admin
 from django.contrib import messages
+from unfold.admin import ModelAdmin
 from unfold.sites import UnfoldAdminSite
 
+from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
 from plataforma_de_servicos.core.admin.site_config_admin import SiteConfigGerenteAdmin
 from plataforma_de_servicos.core.models import SiteConfig
-from plataforma_de_servicos.corretor.admin.gerente_admin import CorretorGerenteAdmin
 from plataforma_de_servicos.corretor.admin.gerente_admin import (
     InteresseCompraGerenteAdmin,
 )
-from plataforma_de_servicos.corretor.models import Corretor
 from plataforma_de_servicos.corretor.models import InteresseCompra
 from plataforma_de_servicos.empresa.models import Empresa
+from plataforma_de_servicos.users.models import Funcionario
+from plataforma_de_servicos.users.models import User
 from plataforma_de_servicos.estoque.admin.gerente_admin import EstoqueEntradaAdmin
 from plataforma_de_servicos.estoque.admin.gerente_admin import EstoqueSaidaAdmin
 from plataforma_de_servicos.estoque.admin.gerente_admin import TransferenciaAdmin
@@ -30,6 +33,82 @@ from plataforma_de_servicos.produto.models.categoria_model import Categoria
 from plataforma_de_servicos.produto.models.produto_model import Produto
 from plataforma_de_servicos.vendas.admin import OrdemCompraGerenteAdmin
 from plataforma_de_servicos.vendas.models import OrdemCompra
+
+
+class UserGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
+    """Admin para User no site de gerentes."""
+
+    list_display = ["email", "name", "user_type", "is_active", "date_joined"]
+    list_filter = ["is_active", "user_type", "date_joined"]
+    search_fields = ["email", "name"]
+    readonly_fields = ["date_joined", "last_login"]
+    fieldsets = [
+        (
+            "Dados de Acesso",
+            {
+                "fields": ["email", "password"],
+            },
+        ),
+        (
+            "Informações Pessoais",
+            {
+                "fields": ["name"],
+            },
+        ),
+        (
+            "Tipo e Status",
+            {
+                "fields": ["user_type", "is_active"],
+            },
+        ),
+        (
+            "Datas",
+            {
+                "fields": ["date_joined", "last_login"],
+                "classes": ["collapse"],
+            },
+        ),
+    ]
+
+    def save_model(self, request, obj, form, change):
+        """Se senha foi alterada, faz o hash. Auto-preenche empresa."""
+        if "password" in form.changed_data:
+            obj.set_password(form.cleaned_data["password"])
+        # Auto-preenche empresa do tenant
+        if not change and not obj.empresa_id:
+            tenant = getattr(request, "tenant", None)
+            if tenant:
+                obj.empresa = tenant
+        super().save_model(request, obj, form, change)
+
+
+class FuncionarioGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
+    """Admin para Funcionario no site de gerentes."""
+
+    list_display = ["usuario", "cargo", "telefone", "is_corretor", "is_signatario", "ativo"]
+    list_filter = ["is_corretor", "is_signatario", "ativo"]
+    search_fields = ["usuario__name", "usuario__email", "cargo", "cpf", "telefone"]
+    autocomplete_fields = ["usuario"]
+    fieldsets = [
+        (
+            "Usuário",
+            {
+                "fields": ["usuario"],
+            },
+        ),
+        (
+            "Dados do Funcionário",
+            {
+                "fields": ["cargo", "endereco", "cpf", "telefone"],
+            },
+        ),
+        (
+            "Permissões",
+            {
+                "fields": ["is_corretor", "is_signatario", "ativo"],
+            },
+        ),
+    ]
 
 
 class GerenteAdminSite(UnfoldAdminSite):
@@ -167,7 +246,8 @@ gerente_site.register(EstoqueEntrada, EstoqueEntradaAdmin)
 gerente_site.register(EstoqueSaida, EstoqueSaidaAdmin)
 gerente_site.register(Transferencia, TransferenciaAdmin)
 gerente_site.register(Inventario, InventarioGerenteAdmin)
-gerente_site.register(Corretor, CorretorGerenteAdmin)
 gerente_site.register(InteresseCompra, InteresseCompraGerenteAdmin)
 gerente_site.register(OrdemCompra, OrdemCompraGerenteAdmin)
+gerente_site.register(User, UserGerenteAdmin)
+gerente_site.register(Funcionario, FuncionarioGerenteAdmin)
 gerente_site.register(SiteConfig, SiteConfigGerenteAdmin)

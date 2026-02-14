@@ -41,13 +41,7 @@ class TenantMiddleware:
         if not is_main_domain:
             tenant = self._get_tenant_from_subdomain(request)
             request.tenant = tenant
-
-            if tenant:
-                # Verifica se o caminho é o admin customizado da empresa
-                admin_path = f"/{tenant.admin_url}/"
-                if request.path.startswith(admin_path) or request.path.startswith("/gerentes/"):
-                    # Admin da empresa: valida usuário
-                    request.tenant = self._get_tenant_from_user(request) or tenant
+            # Subdomínio determina o tenant - não sobrescrever com empresa do usuário
             return self.get_response(request)
 
         # Domínio principal sem subdomínio (localhost/desenvolvimento)
