@@ -484,15 +484,17 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
             except OrdemCompraServiceError as e:
                 self.message_user(request, str(e), messages.ERROR)
 
+        context = {
+            **self.admin_site.each_context(request),
+            "form": form,
+            "object": ordem,
+            "opts": self.model._meta,
+            "title": f"Rejeitar Ordem {ordem.numero}",
+        }
         return render(
             request,
             "admin/vendas/ordemcompra/action_rejeitar.html",
-            {
-                "form": form,
-                "object": ordem,
-                "opts": self.model._meta,
-                "site_header": self.admin_site.site_header,
-            },
+            context,
         )
 
     @action(
@@ -561,13 +563,15 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
             except OrdemCompraServiceError as e:
                 self.message_user(request, str(e), messages.ERROR)
 
+        context = {
+            **self.admin_site.each_context(request),
+            "form": form,
+            "object": ordem,
+            "opts": self.model._meta,
+            "title": f"Cancelar Ordem {ordem.numero}",
+        }
         return render(
             request,
             "admin/vendas/ordemcompra/action_cancelar.html",
-            {
-                "form": form,
-                "object": ordem,
-                "opts": self.model._meta,
-                "site_header": self.admin_site.site_header,
-            },
+            context,
         )

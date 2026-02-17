@@ -12,14 +12,14 @@
     <div class="px-4 lg:px-8">
         <div class="container mb-6 mx-auto -my-3 lg:mb-12">
             <ul class="flex flex-wrap">
-                {% url 'gerentes:index' as link %}
+                {% url 'vendedores:index' as link %}
                 {% trans 'Home' as name %}
                 {% include 'unfold/helpers/breadcrumb_item.html' with link=link name=name %}
 
-                {% url 'gerentes:corretor_interessecompra_changelist' as link %}
+                {% url 'vendedores:corretor_interessecompra_changelist' as link %}
                 {% include 'unfold/helpers/breadcrumb_item.html' with link=link name="Interesses de compra" %}
 
-                {% url 'gerentes:corretor_interessecompra_change' object.pk as link %}
+                {% url 'vendedores:corretor_interessecompra_change' object.pk as link %}
                 {% include 'unfold/helpers/breadcrumb_item.html' with link=link name=object %}
 
                 {% include 'unfold/helpers/breadcrumb_item.html' with link='' name="Descartar" %}
@@ -97,7 +97,7 @@
             </div>
 
             <div class="flex flex-col gap-3 items-center w-full lg:flex-row">
-                <a href="{% url 'gerentes:corretor_interessecompra_change' object.pk %}"
+                <a href="{% url 'vendedores:corretor_interessecompra_change' object.pk %}"
                    class="border cancel-link flex font-medium items-center justify-center px-3 py-2 rounded w-full hover:bg-base-50 lg:block lg:mb-0 lg:w-auto dark:border-base-700 dark:text-font-default-dark dark:hover:bg-base-900 dark:hover:text-base-200">
                     {% translate "Cancelar" %}
                 </a>

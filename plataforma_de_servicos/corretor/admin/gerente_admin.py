@@ -115,8 +115,12 @@ class InteresseCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
         )
 
     def get_readonly_fields(self, request, obj=None):
-        """Permite editar corretor apenas se interesse estiver em atendimento."""
+        """Permite editar corretor se superusuário ou se interesse estiver em atendimento."""
         readonly = list(self.readonly_fields)
+        # Superusuários podem sempre editar o corretor
+        if request.user.is_superuser:
+            return readonly
+        # Usuários normais só podem editar se status for EM_ATENDIMENTO
         if obj and obj.status != StatusInteresse.EM_ATENDIMENTO:
             readonly.append("corretor")
         return readonly
@@ -234,15 +238,17 @@ class InteresseCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
             except InteresseCompraServiceError as e:
                 self.message_user(request, str(e), messages.ERROR)
 
+        context = {
+            **self.admin_site.each_context(request),
+            "form": form,
+            "object": interesse,
+            "opts": self.model._meta,
+            "title": f"Descartar Interesse {interesse.numero or interesse.pk}",
+        }
         return render(
             request,
             "admin/corretor/interessecompra/action_descartar.html",
-            {
-                "form": form,
-                "object": interesse,
-                "opts": self.model._meta,
-                "site_header": self.admin_site.site_header,
-            },
+            context,
         )
 
     @action(
