@@ -2,6 +2,13 @@ from django.core.validators import RegexValidator
 from django.db import models
 
 
+class TipoIsolamento(models.TextChoices):
+    """Tipos de isolamento de dados para multitenancy."""
+
+    COMPARTILHADO = "COMPARTILHADO", "Banco Compartilhado (Padrão)"
+    DEDICADO = "DEDICADO", "Banco Dedicado (Schema PostgreSQL)"
+
+
 class Empresa(models.Model):
     nome = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
@@ -128,6 +135,46 @@ class Empresa(models.Model):
         help_text="Texto exibido no rodapé do admin. Ex: '© 2024 Sua Empresa'",
     )
 
+    # ========================================
+    # Isolamento de Dados (Banco Dedicado)
+    # ========================================
+    tipo_isolamento = models.CharField(
+        max_length=20,
+        choices=TipoIsolamento.choices,
+        default=TipoIsolamento.COMPARTILHADO,
+        verbose_name="Tipo de Isolamento de Dados",
+        help_text=(
+            "Compartilhado: dados filtrados por empresa na mesma tabela (padrão). "
+            "Dedicado: schema PostgreSQL exclusivo para maior isolamento."
+        ),
+    )
+    schema_name = models.CharField(
+        max_length=63,  # Limite do PostgreSQL para identificadores
+        blank=True,
+        null=True,
+        unique=True,
+        validators=[
+            RegexValidator(
+                regex=r"^[a-z][a-z0-9_]*$",
+                message="Schema deve iniciar com letra minúscula e conter apenas letras, números e underscore.",
+            ),
+        ],
+        verbose_name="Nome do Schema",
+        help_text="Nome do schema PostgreSQL. Auto-gerado a partir do slug se não informado.",
+    )
+    schema_criado = models.BooleanField(
+        default=False,
+        editable=False,
+        verbose_name="Schema Provisionado",
+        help_text="Indica se o schema PostgreSQL foi criado.",
+    )
+    schema_criado_em = models.DateTimeField(
+        null=True,
+        blank=True,
+        editable=False,
+        verbose_name="Data de Criação do Schema",
+    )
+
     class Meta:
         verbose_name = "Empresa"
         verbose_name_plural = "Empresas"
@@ -155,3 +202,25 @@ class Empresa(models.Model):
             "secondary": self.secondary_color,
             "accent": self.accent_color,
         }
+
+    # ========================================
+    # Métodos de Isolamento de Dados
+    # ========================================
+    def gerar_schema_name(self):
+        """Gera nome do schema a partir do slug."""
+        return f"tenant_{self.slug.replace('-', '_').lower()}"
+
+    @property
+    def usa_banco_dedicado(self):
+        """Verifica se empresa usa banco dedicado E schema está provisionado."""
+        return (
+            self.tipo_isolamento == TipoIsolamento.DEDICADO
+            and self.schema_criado
+        )
+
+    @property
+    def database_alias(self):
+        """Retorna o alias do banco a ser usado pelo router."""
+        if self.usa_banco_dedicado:
+            return f"tenant_{self.schema_name}"
+        return "default"

@@ -54,6 +54,14 @@ DATABASES["default"]["ATOMIC_REQUESTS"] = True
 # https://docs.djangoproject.com/en/stable/ref/settings/#std:setting-DEFAULT_AUTO_FIELD
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# DATABASE ROUTERS
+# ------------------------------------------------------------------------------
+# https://docs.djangoproject.com/en/dev/topics/db/multi-db/#database-routers
+# Router for multi-tenancy with dedicated database support (PostgreSQL schemas)
+DATABASE_ROUTERS = [
+    "plataforma_de_servicos.core.db.router.TenantDatabaseRouter",
+]
+
 # URLS
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#root-urlconf

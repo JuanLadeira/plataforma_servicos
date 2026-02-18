@@ -4,6 +4,8 @@ Middleware para identificar o tenant (empresa) baseado no subdomínio ou usuári
 from django.http import Http404, HttpResponseForbidden
 from django.template.loader import render_to_string
 
+from plataforma_de_servicos.core.db.context import clear_current_tenant
+from plataforma_de_servicos.core.db.context import set_current_tenant
 from plataforma_de_servicos.empresa.models import Empresa
 
 
@@ -49,8 +51,15 @@ class TenantMiddleware:
             if forbidden_response:
                 return forbidden_response
 
-            # Subdomínio determina o tenant - não sobrescrever com empresa do usuário
-            return self.get_response(request)
+            # Define contexto do banco de dados para routing
+            if request.tenant:
+                set_current_tenant(request.tenant)
+
+            try:
+                return self.get_response(request)
+            finally:
+                # Sempre limpar contexto após request
+                clear_current_tenant()
 
         # Domínio principal sem subdomínio (localhost/desenvolvimento)
         # Suporta tenant via query param ou sessão para facilitar testes
@@ -64,7 +73,15 @@ class TenantMiddleware:
             # Para outras URLs públicas, também suporta dev tenant
             request.tenant = self._get_dev_tenant(request)
 
-        return self.get_response(request)
+        # Define contexto do banco de dados para routing
+        if request.tenant:
+            set_current_tenant(request.tenant)
+
+        try:
+            return self.get_response(request)
+        finally:
+            # Sempre limpar contexto após request
+            clear_current_tenant()
 
     def _is_main_domain(self, request):
         """Verifica se a requisição é do domínio principal (sem subdomínio)."""
