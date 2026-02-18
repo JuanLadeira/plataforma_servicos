@@ -9,7 +9,7 @@ class Empresa(models.Model):
     imo = models.CharField(max_length=100)
     foto = models.ImageField(upload_to="empresas/", blank=True, null=True)
 
-    # Campo para customizar o endpoint do admin da empresa
+    # Campos para customizar os endpoints dos portais administrativos
     admin_url = models.CharField(
         max_length=50,
         default="gerentes",
@@ -19,9 +19,22 @@ class Empresa(models.Model):
                 message='Use apenas letras minúsculas, números e hífens.',
             ),
         ],
-        help_text="Endpoint do painel administrativo (ex: 'gerentes' → /gerentes/). "
+        help_text="Endpoint do painel de gerentes (ex: 'gerentes' → /gerentes/). "
                   "Use apenas letras minúsculas, números e hífens.",
-        verbose_name="URL do Admin",
+        verbose_name="URL do Portal de Gerentes",
+    )
+    vendedor_url = models.CharField(
+        max_length=50,
+        default="vendedores",
+        validators=[
+            RegexValidator(
+                regex=r'^[a-z0-9-]+$',
+                message='Use apenas letras minúsculas, números e hífens.',
+            ),
+        ],
+        help_text="Endpoint do painel de vendedores (ex: 'vendedores' → /vendedores/). "
+                  "Use apenas letras minúsculas, números e hífens.",
+        verbose_name="URL do Portal de Vendedores",
     )
 
     # ========================================
@@ -124,8 +137,12 @@ class Empresa(models.Model):
         return self.nome
 
     def get_admin_url(self):
-        """Retorna a URL completa do admin da empresa."""
+        """Retorna a URL completa do portal de gerentes."""
         return f"/{self.admin_url}/"
+
+    def get_vendedor_url(self):
+        """Retorna a URL completa do portal de vendedores."""
+        return f"/{self.vendedor_url}/"
 
     def get_admin_title(self):
         """Retorna o título do admin (personalizado ou nome da empresa)."""

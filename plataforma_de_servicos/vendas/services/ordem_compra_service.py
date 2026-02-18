@@ -56,9 +56,12 @@ class OrdemCompraService:
     """Serviço para gerenciar operações de OrdemCompra."""
 
     @staticmethod
-    def gerar_numero() -> str:
+    def gerar_numero(empresa) -> str:
         """
-        Gera número único no formato OC-YYYY-NNNNN.
+        Gera número único por empresa no formato OC-YYYY-NNNNN.
+
+        Args:
+            empresa: Empresa para qual gerar o número
 
         Returns:
             str: Número da ordem (ex: OC-2026-00001)
@@ -67,14 +70,20 @@ class OrdemCompraService:
         prefixo = f"OC-{ano}-"
 
         ultima_ordem = (
-            OrdemCompra.objects.filter(numero__startswith=prefixo)
+            OrdemCompra.objects.filter(
+                empresa=empresa,
+                numero__startswith=prefixo,
+            )
             .order_by("-numero")
             .first()
         )
 
         if ultima_ordem:
-            ultimo_numero = int(ultima_ordem.numero.split("-")[-1])
-            novo_numero = ultimo_numero + 1
+            try:
+                ultimo_numero = int(ultima_ordem.numero.split("-")[-1])
+                novo_numero = ultimo_numero + 1
+            except (ValueError, IndexError):
+                novo_numero = 1
         else:
             novo_numero = 1
 
@@ -108,7 +117,8 @@ class OrdemCompraService:
 
         # Criar a ordem
         ordem = OrdemCompra.objects.create(
-            numero=OrdemCompraService.gerar_numero(),
+            numero=OrdemCompraService.gerar_numero(interesse.empresa),
+            empresa=interesse.empresa,
             interesse=interesse,
             nome_cliente=interesse.nome_cliente,
             email_cliente=interesse.email_cliente,

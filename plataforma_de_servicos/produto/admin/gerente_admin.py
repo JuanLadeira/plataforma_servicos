@@ -89,7 +89,7 @@ class ImageInline(TabularInline):
 class VariacaoProdutoInline(TenantAwareInlineMixin, TabularInline):
     model = VariacaoProduto
     formset = VariacaoProdutoInlineFormSet
-    extra = 1
+    extra = 0
     readonly_fields = ("sku", "preco_final_calculado", "estoque")
     fields = ("valores", "preco", "estoque", "preco_final_calculado", "sku")
     verbose_name = "Variação"
@@ -97,7 +97,7 @@ class VariacaoProdutoInline(TenantAwareInlineMixin, TabularInline):
 
     class Media:
         css = {
-            "all": ("css/valores-atributo-widget.css",)
+            "all": ("css/valores-atributo-widget.css",),
         }
         js = ("js/valores-atributo-widget.js",)
 

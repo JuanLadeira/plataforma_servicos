@@ -4,8 +4,9 @@ from unittest.mock import patch
 import pytest
 
 from plataforma_de_servicos.corretor.tasks import notificar_corretores_novo_interesse
+from plataforma_de_servicos.users.tests.factories import FuncionarioFactory
+from plataforma_de_servicos.users.tests.factories import UserFactory
 
-from .factories import CorretorFactory
 from .factories import InteresseCompraFactory
 
 pytestmark = [pytest.mark.django_db]
@@ -16,7 +17,8 @@ class TestNotificarCorretoresNovoInteresse:
 
     def test_task_chama_servico(self):
         """Task deve chamar o serviço de envio."""
-        CorretorFactory(email="corretor@email.com", ativo=True)
+        user = UserFactory(email="corretor@email.com")
+        FuncionarioFactory(usuario=user, is_corretor=True, ativo=True)
         interesse = InteresseCompraFactory()
 
         with patch(
@@ -60,7 +62,8 @@ class TestNotificarCorretoresNovoInteresse:
 
     def test_task_executa_sincrona(self):
         """Task deve funcionar quando executada de forma síncrona."""
-        CorretorFactory(email="corretor@email.com", ativo=True)
+        user = UserFactory(email="corretor@email.com")
+        FuncionarioFactory(usuario=user, is_corretor=True, ativo=True)
         interesse = InteresseCompraFactory(valor_total=Decimal("100.00"))
 
         # Executar a task diretamente (síncrona)

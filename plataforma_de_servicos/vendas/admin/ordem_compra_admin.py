@@ -12,7 +12,6 @@ from unfold.admin import TabularInline
 from unfold.decorators import action
 
 from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
-from plataforma_de_servicos.core.admin.mixins import TenantAwareInlineMixin
 from plataforma_de_servicos.produto.models import VariacaoProduto
 from plataforma_de_servicos.vendas.admin.forms import CancelamentoOrdemForm
 from plataforma_de_servicos.vendas.admin.forms import RejeicaoOrdemForm
@@ -162,7 +161,7 @@ class OrdemCompraAdmin(ModelAdmin):
                 OrdemCompraService.aprovar(ordem, request.user)
                 aprovadas += 1
             except OrdemCompraServiceError as e:
-                erros.append(f"{ordem.numero}: {str(e)}")
+                erros.append(f"{ordem.numero}: {e!s}")
 
         if aprovadas:
             self.message_user(
@@ -186,7 +185,7 @@ class OrdemCompraAdmin(ModelAdmin):
                 OrdemCompraService.faturar(ordem)
                 faturadas += 1
             except OrdemCompraServiceError as e:
-                erros.append(f"{ordem.numero}: {str(e)}")
+                erros.append(f"{ordem.numero}: {e!s}")
 
         if faturadas:
             self.message_user(
@@ -209,7 +208,7 @@ class OrdemCompraAdmin(ModelAdmin):
 
 class ItemOrdemCompraGerenteInline(TabularInline):
     model = ItemOrdemCompra
-    extra = 1
+    extra = 0
     autocomplete_fields = ["produto", "variacao"]
 
     @admin.display(description="Subtotal")
@@ -246,7 +245,7 @@ class ItemOrdemCompraGerenteInline(TabularInline):
         tenant = getattr(request, "tenant", None)
         if db_field.name == "variacao":
             qs = VariacaoProduto.objects.select_related(
-                "produto"
+                "produto",
             ).prefetch_related("valores", "valores__atributo")
             if tenant:
                 qs = qs.filter(produto__empresa=tenant)
@@ -366,7 +365,7 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
                 OrdemCompraService.aprovar(ordem, request.user)
                 aprovadas += 1
             except OrdemCompraServiceError as e:
-                erros.append(f"{ordem.numero}: {str(e)}")
+                erros.append(f"{ordem.numero}: {e!s}")
 
         if aprovadas:
             self.message_user(
@@ -390,7 +389,7 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
                 OrdemCompraService.faturar(ordem)
                 faturadas += 1
             except OrdemCompraServiceError as e:
-                erros.append(f"{ordem.numero}: {str(e)}")
+                erros.append(f"{ordem.numero}: {e!s}")
 
         if faturadas:
             self.message_user(
@@ -456,7 +455,7 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
         except OrdemCompraServiceError as e:
             self.message_user(request, str(e), messages.ERROR)
         return redirect(
-            reverse("gerentes:vendas_ordemcompra_change", args=[object_id])
+            reverse("gerentes:vendas_ordemcompra_change", args=[object_id]),
         )
 
     @action(
@@ -472,7 +471,7 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
         if request.method == "POST" and form.is_valid():
             try:
                 OrdemCompraService.rejeitar(
-                    ordem, request.user, form.cleaned_data["motivo"]
+                    ordem, request.user, form.cleaned_data["motivo"],
                 )
                 self.message_user(
                     request,
@@ -480,20 +479,22 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
                     messages.WARNING,
                 )
                 return redirect(
-                    reverse("gerentes:vendas_ordemcompra_change", args=[object_id])
+                    reverse("gerentes:vendas_ordemcompra_change", args=[object_id]),
                 )
             except OrdemCompraServiceError as e:
                 self.message_user(request, str(e), messages.ERROR)
 
+        context = {
+            **self.admin_site.each_context(request),
+            "form": form,
+            "object": ordem,
+            "opts": self.model._meta,
+            "title": f"Rejeitar Ordem {ordem.numero}",
+        }
         return render(
             request,
             "admin/vendas/ordemcompra/action_rejeitar.html",
-            {
-                "form": form,
-                "object": ordem,
-                "opts": self.model._meta,
-                "site_header": self.admin_site.site_header,
-            },
+            context,
         )
 
     @action(
@@ -514,7 +515,7 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
         except OrdemCompraServiceError as e:
             self.message_user(request, str(e), messages.ERROR)
         return redirect(
-            reverse("gerentes:vendas_ordemcompra_change", args=[object_id])
+            reverse("gerentes:vendas_ordemcompra_change", args=[object_id]),
         )
 
     @action(
@@ -535,7 +536,7 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
         except OrdemCompraServiceError as e:
             self.message_user(request, str(e), messages.ERROR)
         return redirect(
-            reverse("gerentes:vendas_ordemcompra_change", args=[object_id])
+            reverse("gerentes:vendas_ordemcompra_change", args=[object_id]),
         )
 
     @action(
@@ -557,18 +558,20 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
                     messages.WARNING,
                 )
                 return redirect(
-                    reverse("gerentes:vendas_ordemcompra_change", args=[object_id])
+                    reverse("gerentes:vendas_ordemcompra_change", args=[object_id]),
                 )
             except OrdemCompraServiceError as e:
                 self.message_user(request, str(e), messages.ERROR)
 
+        context = {
+            **self.admin_site.each_context(request),
+            "form": form,
+            "object": ordem,
+            "opts": self.model._meta,
+            "title": f"Cancelar Ordem {ordem.numero}",
+        }
         return render(
             request,
             "admin/vendas/ordemcompra/action_cancelar.html",
-            {
-                "form": form,
-                "object": ordem,
-                "opts": self.model._meta,
-                "site_header": self.admin_site.site_header,
-            },
+            context,
         )

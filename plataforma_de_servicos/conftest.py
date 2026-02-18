@@ -4,7 +4,6 @@ import pytest
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
 
-from plataforma_de_servicos.corretor.tests.factories import CorretorFactory
 from plataforma_de_servicos.corretor.tests.factories import InteresseCompraFactory
 from plataforma_de_servicos.corretor.tests.factories import ItemInteresseFactory
 from plataforma_de_servicos.estoque.tests.factories.estoque_entrada_factory import (
@@ -48,6 +47,5 @@ register(UserFactory)
 register(EstoqueEntradaFactory)
 register(EstoqueItensFactory)
 register(InventarioFactory)
-register(CorretorFactory)
 register(InteresseCompraFactory)
 register(ItemInteresseFactory)

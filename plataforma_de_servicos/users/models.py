@@ -19,6 +19,12 @@ class UserType(TextChoices):
     CLIENTE = "CLIENTE", _("Cliente")
 
 
+class PapelFuncionario(TextChoices):
+    VENDEDOR = "VENDEDOR", _("Vendedor")
+    GERENTE = "GERENTE", _("Gerente")
+    ADMIN = "ADMIN", _("Administrador")
+
+
 class User(AbstractUser):
     user_type = CharField(
         _("User Type"),
@@ -38,6 +44,15 @@ class User(AbstractUser):
     last_name = None  # type: ignore[assignment]
     email = EmailField(_("email address"), unique=True)
     username = None  # type: ignore[assignment]
+    empresa = models.ForeignKey(
+        Empresa,
+        on_delete=models.CASCADE,
+        related_name="users",
+        verbose_name=_("Empresa"),
+        null=True,
+        blank=True,
+        help_text=_("Empresa à qual o usuário pertence"),
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
@@ -72,16 +87,69 @@ class Funcionario(models.Model):
         null=True,  # Temporary: remove after data migration
         blank=True,
     )
-    cargo = models.CharField(max_length=100)
-    endereco = models.CharField(max_length=255)
+    papel = models.CharField(
+        "papel",
+        max_length=20,
+        choices=PapelFuncionario.choices,
+        default=PapelFuncionario.VENDEDOR,
+        help_text="Define o nível de acesso do funcionário no sistema",
+    )
+    cargo = models.CharField("cargo", max_length=100, blank=True)
+    endereco = models.CharField("endereço", max_length=255, blank=True)
     cpf = models.CharField(
+        "CPF",
         max_length=14,
-        unique=True,
-        help_text="CPF único no formato 'XXX.XXX.XXX-XX'")
-    is_signatario = models.BooleanField(default=False)
+        blank=True,
+        help_text="CPF no formato 'XXX.XXX.XXX-XX'",
+    )
+    telefone = models.CharField("telefone", max_length=20, blank=True)
+    is_corretor = models.BooleanField(
+        "é corretor",
+        default=False,
+        help_text="Indica se o funcionário atua como corretor/vendedor",
+    )
+    is_signatario = models.BooleanField("é signatário", default=False)
+    ativo = models.BooleanField("ativo", default=True)
+
+    class Meta:
+        verbose_name = "funcionário"
+        verbose_name_plural = "funcionários"
+        ordering = ["usuario__name"]
 
     def __str__(self):
-        return super().__str__()
+        return self.usuario.name or self.usuario.email
+
+    @property
+    def nome(self):
+        """Retorna o nome do usuário."""
+        return self.usuario.name or self.usuario.email
+
+    @property
+    def email(self):
+        """Retorna o email do usuário."""
+        return self.usuario.email
+
+    @property
+    def is_vendedor(self):
+        """Verifica se funcionário é vendedor ou superior."""
+        return self.papel in [
+            PapelFuncionario.VENDEDOR,
+            PapelFuncionario.GERENTE,
+            PapelFuncionario.ADMIN,
+        ]
+
+    @property
+    def is_gerente(self):
+        """Verifica se funcionário é gerente ou superior."""
+        return self.papel in [
+            PapelFuncionario.GERENTE,
+            PapelFuncionario.ADMIN,
+        ]
+
+    @property
+    def is_admin(self):
+        """Verifica se funcionário é administrador."""
+        return self.papel == PapelFuncionario.ADMIN
 
 
 class Cliente(models.Model):

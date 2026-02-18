@@ -4,6 +4,7 @@ from django.utils.translation import gettext as _
 from django_extensions.db.fields import AutoSlugField
 
 from plataforma_de_servicos.core.models import TimeStampedModel
+from plataforma_de_servicos.produto.models.atributos import VariacaoProduto
 from plataforma_de_servicos.produto.models.produto_model import Produto
 
 
@@ -47,11 +48,12 @@ class Inventario(TimeStampedModel):
     def __str__(self):
         return _("Inventário: {nome}").format(nome=self.nome)
 
-    def atualizar_estoque(self, produto, quantidade):
+    def atualizar_estoque(self, produto, quantidade, variacao=None):
         with transaction.atomic():
-            saldo, _ = InventarioSaldo.objects.select_for_update().get_or_create(
+            saldo, _created = InventarioSaldo.objects.select_for_update().get_or_create(
                 inventario=self,
                 produto=produto,
+                variacao=variacao,
                 defaults={"quantidade": 0},
             )
             saldo.quantidade += quantidade
@@ -63,14 +65,24 @@ class Inventario(TimeStampedModel):
 class InventarioSaldo(models.Model):
     inventario = models.ForeignKey(Inventario, on_delete=models.CASCADE)
     produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
+    variacao = models.ForeignKey(
+        VariacaoProduto,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Variação",
+    )
     quantidade = models.IntegerField(default=0)
     atualizado_em = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ("inventario", "produto")
+        unique_together = ("inventario", "produto", "variacao")
         verbose_name = _("Saldo de Inventário")
         verbose_name_plural = _("Saldos de Inventário")
-        ordering = ("produto",)
+        ordering = ("produto", "variacao")
 
     def __str__(self):
-        return f"{self.produto.categoria}"
+        if self.variacao:
+            valores = ", ".join(v.valor for v in self.variacao.valores.all())
+            return f"{self.produto.produto} - {valores}" if valores else self.produto.produto
+        return self.produto.produto

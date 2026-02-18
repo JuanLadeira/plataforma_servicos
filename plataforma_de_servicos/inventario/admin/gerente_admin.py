@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
 
@@ -9,16 +10,29 @@ from plataforma_de_servicos.inventario.models import InventarioSaldo
 
 
 class InventarioSaldoInline(TabularInline):
+    """Inline para saldo por variação."""
     model = InventarioSaldo
     extra = 0
     max_num = 0
     min_num = 0
     can_delete = False
-    readonly_fields = ["produto", "quantidade"]
+    readonly_fields = ["variacao_display", "quantidade"]
+    fields = readonly_fields
+    verbose_name = "Saldo por Variação"
+    verbose_name_plural = "Saldos por Variação"
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
-        return queryset.filter(quantidade__gt=0)
+        return queryset.filter(quantidade__gt=0).select_related(
+            "produto", "variacao"
+        ).prefetch_related("variacao__valores")
+
+    @admin.display(description="Variação")
+    def variacao_display(self, obj):
+        if obj.variacao:
+            valores = ", ".join(v.valor for v in obj.variacao.valores.all())
+            return f"{obj.produto.produto} - {valores}" if valores else obj.produto.produto
+        return obj.produto.produto
 
 
 class EstoqueItensEntradaInline(TabularInline):
@@ -33,7 +47,7 @@ class EstoqueItensEntradaInline(TabularInline):
     verbose_name_plural = "Itens de Entrada"
 
     readonly_fields = [
-        "produto",
+        "variacao_display",
         "quantidade",
         "saldo",
         "data_movimento",
@@ -46,13 +60,22 @@ class EstoqueItensEntradaInline(TabularInline):
         queryset = super().get_queryset(request)
         return queryset.filter(
             estoque__movimento=Movimento.ENTRADA.value
-        ).select_related("estoque", "estoque__funcionario", "produto")
+        ).select_related(
+            "estoque", "estoque__funcionario", "produto", "variacao"
+        ).prefetch_related("variacao__valores")
 
     def has_add_permission(self, request, obj=None):
         return False
 
     def has_change_permission(self, request, obj=None):
         return False
+
+    @admin.display(description="Variação")
+    def variacao_display(self, obj):
+        if obj.variacao:
+            valores = ", ".join(v.valor for v in obj.variacao.valores.all())
+            return f"{obj.produto.produto} - {valores}" if valores else obj.produto.produto
+        return obj.produto.produto
 
     @admin.display(description="Data")
     def data_movimento(self, obj):
@@ -79,7 +102,7 @@ class EstoqueItensSaidaInline(TabularInline):
     verbose_name_plural = "Itens de Saída"
 
     readonly_fields = [
-        "produto",
+        "variacao_display",
         "quantidade",
         "saldo",
         "data_movimento",
@@ -93,13 +116,22 @@ class EstoqueItensSaidaInline(TabularInline):
         queryset = super().get_queryset(request)
         return queryset.filter(
             estoque__movimento=Movimento.SAIDA.value
-        ).select_related("estoque", "estoque__funcionario", "produto")
+        ).select_related(
+            "estoque", "estoque__funcionario", "produto", "variacao"
+        ).prefetch_related("variacao__valores")
 
     def has_add_permission(self, request, obj=None):
         return False
 
     def has_change_permission(self, request, obj=None):
         return False
+
+    @admin.display(description="Variação")
+    def variacao_display(self, obj):
+        if obj.variacao:
+            valores = ", ".join(v.valor for v in obj.variacao.valores.all())
+            return f"{obj.produto.produto} - {valores}" if valores else obj.produto.produto
+        return obj.produto.produto
 
     @admin.display(description="Data")
     def data_movimento(self, obj):

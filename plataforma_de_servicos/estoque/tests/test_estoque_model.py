@@ -8,7 +8,12 @@ from plataforma_de_servicos.estoque.models import Estoque, EstoqueItens
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.choices.origem_saida import OrigemSaida
 from plataforma_de_servicos.produto.models import Produto, Categoria
-from plataforma_de_servicos.inventario.models import Inventario
+from plataforma_de_servicos.produto.tests.factories.atributos_factory import (
+    AtributoFactory,
+    ValorAtributoFactory,
+    VariacaoProdutoFactory,
+)
+from plataforma_de_servicos.inventario.models import Inventario, InventarioSaldo
 from plataforma_de_servicos.vendas.tests.factories.ordem_compra_factory import OrdemCompraFactory
 
 pytestmark = pytest.mark.estoque
@@ -236,3 +241,221 @@ class EstoqueModelTest(TestCase):
         origem_field = Estoque._meta.get_field('origem_saida')
         expected_choices = OrigemSaida.choices
         self.assertEqual(origem_field.choices, expected_choices)
+
+
+class EstoqueInventarioSaldoVariacaoTest(TestCase):
+    """Testes para verificar que processamento de estoque atualiza InventarioSaldo com variação."""
+
+    def setUp(self):
+        """Configurar dados de teste"""
+        self.user = User.objects.create_user(
+            email='test_variacao@example.com',
+            password='testpass123'
+        )
+
+        self.inventario = Inventario.objects.create(
+            nome="Estoque com Variação",
+        )
+
+        self.categoria = Categoria.objects.create(categoria="Roupas")
+
+        self.produto = Produto.objects.create(
+            produto="Camiseta",
+            preco=Decimal("50.00"),
+            estoque=0,
+            categoria=self.categoria
+        )
+
+    def test_entrada_com_variacao_cria_saldo_por_variacao(self):
+        """Testar que entrada com variação cria saldo separado por variação."""
+        variacao = VariacaoProdutoFactory(produto=self.produto, estoque=0)
+
+        estoque = Estoque.objects.create(
+            funcionario=self.user,
+            movimento=Movimento.ENTRADA.value,
+            inventario_destino=self.inventario,
+        )
+
+        EstoqueItens.objects.create(
+            estoque=estoque,
+            produto=self.produto,
+            variacao=variacao,
+            quantidade=10,
+            inventario=self.inventario
+        )
+
+        estoque.processar()
+
+        # Verificar que saldo foi criado com variação
+        saldo = InventarioSaldo.objects.get(
+            inventario=self.inventario,
+            produto=self.produto,
+            variacao=variacao,
+        )
+        self.assertEqual(saldo.quantidade, 10)
+
+    def test_entrada_sem_variacao_cria_saldo_sem_variacao(self):
+        """Testar que entrada sem variação cria saldo com variacao=None."""
+        estoque = Estoque.objects.create(
+            funcionario=self.user,
+            movimento=Movimento.ENTRADA.value,
+            inventario_destino=self.inventario,
+        )
+
+        EstoqueItens.objects.create(
+            estoque=estoque,
+            produto=self.produto,
+            quantidade=15,
+            inventario=self.inventario
+        )
+
+        estoque.processar()
+
+        # Verificar que saldo foi criado sem variação
+        saldo = InventarioSaldo.objects.get(
+            inventario=self.inventario,
+            produto=self.produto,
+            variacao=None,
+        )
+        self.assertEqual(saldo.quantidade, 15)
+
+    def test_saida_com_variacao_decrementa_saldo_correto(self):
+        """Testar que saída com variação decrementa o saldo da variação correta."""
+        variacao = VariacaoProdutoFactory(produto=self.produto, estoque=20)
+        self.produto.estoque = 20
+        self.produto.save()
+
+        # Criar saldo inicial
+        InventarioSaldo.objects.create(
+            inventario=self.inventario,
+            produto=self.produto,
+            variacao=variacao,
+            quantidade=20,
+        )
+
+        estoque = Estoque.objects.create(
+            funcionario=self.user,
+            movimento=Movimento.SAIDA.value,
+            inventario_origem=self.inventario,
+        )
+
+        EstoqueItens.objects.create(
+            estoque=estoque,
+            produto=self.produto,
+            variacao=variacao,
+            quantidade=5,
+            inventario=self.inventario
+        )
+
+        estoque.processar()
+
+        # Verificar que saldo foi decrementado
+        saldo = InventarioSaldo.objects.get(
+            inventario=self.inventario,
+            produto=self.produto,
+            variacao=variacao,
+        )
+        self.assertEqual(saldo.quantidade, 15)
+
+    def test_variacoes_diferentes_tem_saldos_independentes(self):
+        """Testar que variações diferentes mantêm saldos independentes."""
+        # Criar atributos e valores diferentes para cada variação
+        atributo = AtributoFactory(categoria=self.categoria, nome="Tamanho")
+        valor1 = ValorAtributoFactory(atributo=atributo, valor="P")
+        valor2 = ValorAtributoFactory(atributo=atributo, valor="G")
+
+        variacao1 = VariacaoProdutoFactory(produto=self.produto, estoque=0, valores=[valor1])
+        variacao2 = VariacaoProdutoFactory(produto=self.produto, estoque=0, valores=[valor2])
+
+        # Entrada para variação 1
+        estoque1 = Estoque.objects.create(
+            funcionario=self.user,
+            movimento=Movimento.ENTRADA.value,
+            inventario_destino=self.inventario,
+        )
+        EstoqueItens.objects.create(
+            estoque=estoque1,
+            produto=self.produto,
+            variacao=variacao1,
+            quantidade=10,
+            inventario=self.inventario
+        )
+        estoque1.processar()
+
+        # Entrada para variação 2
+        estoque2 = Estoque.objects.create(
+            funcionario=self.user,
+            movimento=Movimento.ENTRADA.value,
+            inventario_destino=self.inventario,
+        )
+        EstoqueItens.objects.create(
+            estoque=estoque2,
+            produto=self.produto,
+            variacao=variacao2,
+            quantidade=25,
+            inventario=self.inventario
+        )
+        estoque2.processar()
+
+        # Verificar saldos independentes
+        saldo1 = InventarioSaldo.objects.get(
+            inventario=self.inventario,
+            produto=self.produto,
+            variacao=variacao1,
+        )
+        saldo2 = InventarioSaldo.objects.get(
+            inventario=self.inventario,
+            produto=self.produto,
+            variacao=variacao2,
+        )
+
+        self.assertEqual(saldo1.quantidade, 10)
+        self.assertEqual(saldo2.quantidade, 25)
+
+    def test_transferencia_com_variacao(self):
+        """Testar transferência entre inventários mantém variação."""
+        inventario_destino = Inventario.objects.create(nome="Destino")
+        variacao = VariacaoProdutoFactory(produto=self.produto, estoque=30)
+        self.produto.estoque = 30
+        self.produto.save()
+
+        # Criar saldo inicial na origem
+        InventarioSaldo.objects.create(
+            inventario=self.inventario,
+            produto=self.produto,
+            variacao=variacao,
+            quantidade=30,
+        )
+
+        estoque = Estoque.objects.create(
+            funcionario=self.user,
+            movimento=Movimento.TRANSFERENCIA.value,
+            inventario_origem=self.inventario,
+            inventario_destino=inventario_destino,
+        )
+
+        EstoqueItens.objects.create(
+            estoque=estoque,
+            produto=self.produto,
+            variacao=variacao,
+            quantidade=10,
+            inventario=self.inventario
+        )
+
+        estoque.processar()
+
+        # Verificar saldo na origem foi decrementado
+        saldo_origem = InventarioSaldo.objects.get(
+            inventario=self.inventario,
+            produto=self.produto,
+            variacao=variacao,
+        )
+        self.assertEqual(saldo_origem.quantidade, 20)
+
+        # Verificar saldo no destino foi incrementado
+        saldo_destino = InventarioSaldo.objects.get(
+            inventario=inventario_destino,
+            produto=self.produto,
+            variacao=variacao,
+        )
+        self.assertEqual(saldo_destino.quantidade, 10)

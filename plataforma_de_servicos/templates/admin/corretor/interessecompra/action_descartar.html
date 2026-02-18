@@ -1,0 +1,112 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {{ form.media }}
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} action-descartar{% endblock %}
+
+{% block breadcrumbs %}
+    <div class="px-4 lg:px-8">
+        <div class="container mb-6 mx-auto -my-3 lg:mb-12">
+            <ul class="flex flex-wrap">
+                {% url 'gerentes:index' as link %}
+                {% trans 'Home' as name %}
+                {% include 'unfold/helpers/breadcrumb_item.html' with link=link name=name %}
+
+                {% url 'gerentes:corretor_interessecompra_changelist' as link %}
+                {% include 'unfold/helpers/breadcrumb_item.html' with link=link name="Interesses de compra" %}
+
+                {% url 'gerentes:corretor_interessecompra_change' object.pk as link %}
+                {% include 'unfold/helpers/breadcrumb_item.html' with link=link name=object %}
+
+                {% include 'unfold/helpers/breadcrumb_item.html' with link='' name="Descartar" %}
+            </ul>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="border border-base-200 rounded-md shadow-sm dark:border-base-800">
+        <div class="border-b border-base-200 p-4 dark:border-base-800">
+            <h1 class="font-semibold text-lg text-font-important-light dark:text-font-important-dark">
+                {% blocktranslate with numero=object.numero %}Descartar Interesse {{ numero }}{% endblocktranslate %}
+            </h1>
+        </div>
+
+        <div class="border-b border-base-200 p-4 dark:border-base-800">
+            <div class="bg-white border border-base-200 p-4 rounded-md dark:bg-base-900 dark:border-base-700">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-600 dark:text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="font-medium text-sm text-red-700 dark:text-red-400">
+                            {% translate "Atenção" %}
+                        </h3>
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-300">
+                            {% translate "O interesse será marcado como descartado. Esta ação indica que o lead não será mais atendido." %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="border-b border-base-200 p-4 dark:border-base-800">
+            <h2 class="font-semibold mb-3 text-font-important-light dark:text-font-important-dark">
+                {% translate "Dados do Interesse" %}
+            </h2>
+            <dl class="gap-4 grid grid-cols-2 text-sm">
+                <div>
+                    <dt class="text-font-subtle-light dark:text-font-subtle-dark">{% translate "Cliente" %}</dt>
+                    <dd class="font-medium text-font-important-light dark:text-font-important-dark">{{ object.nome_cliente }}</dd>
+                </div>
+                <div>
+                    <dt class="text-font-subtle-light dark:text-font-subtle-dark">{% translate "Valor Total" %}</dt>
+                    <dd class="font-medium text-font-important-light dark:text-font-important-dark">R$ {{ object.valor_total }}</dd>
+                </div>
+                <div>
+                    <dt class="text-font-subtle-light dark:text-font-subtle-dark">{% translate "Email" %}</dt>
+                    <dd class="font-medium text-font-important-light dark:text-font-important-dark">{{ object.email_cliente }}</dd>
+                </div>
+                <div>
+                    <dt class="text-font-subtle-light dark:text-font-subtle-dark">{% translate "Telefone" %}</dt>
+                    <dd class="font-medium text-font-important-light dark:text-font-important-dark">{{ object.telefone_cliente }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <form method="post" class="p-4">
+            {% csrf_token %}
+
+            <div class="mb-6">
+                <label for="id_motivo" class="block font-medium mb-2 text-sm text-font-important-light dark:text-font-important-dark">
+                    {{ form.motivo.label }}
+                </label>
+                {{ form.motivo }}
+                {% if form.motivo.help_text %}
+                    <p class="mt-1 text-sm text-font-subtle-light dark:text-font-subtle-dark">{{ form.motivo.help_text }}</p>
+                {% endif %}
+                {% if form.motivo.errors %}
+                    <p class="mt-1 text-red-600 text-sm dark:text-red-400">{{ form.motivo.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="flex flex-col gap-3 items-center w-full lg:flex-row">
+                <a href="{% url 'gerentes:corretor_interessecompra_change' object.pk %}"
+                   class="border cancel-link flex font-medium items-center justify-center px-3 py-2 rounded w-full hover:bg-base-50 lg:block lg:mb-0 lg:w-auto dark:border-base-700 dark:text-font-default-dark dark:hover:bg-base-900 dark:hover:text-base-200">
+                    {% translate "Cancelar" %}
+                </a>
+
+                <button type="submit"
+                        class="bg-base-600 cursor-pointer flex font-medium h-9.5 items-center justify-center ml-0 px-3 py-2 rounded text-white w-full lg:ml-auto lg:w-auto dark:bg-base-500/20 dark:text-base-400">
+                    {% translate "Confirmar Descarte" %}
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

@@ -8,6 +8,7 @@ from django.urls import path
 from django.views import defaults as default_views
 from django.views.generic import TemplateView
 from plataforma_de_servicos.core.admin.sites.gerente_admin_site import gerente_site
+from plataforma_de_servicos.core.admin.sites.vendedor_admin_site import vendedor_site
 from plataforma_de_servicos.produto.views import views
 
 urlpatterns = [
@@ -18,6 +19,7 @@ urlpatterns = [
     path("produto/calcular-preco/", views.calcular_preco_variacao, name="calcular-preco-variacao"),
     path("cart/", include("plataforma_de_servicos.cart.urls",  namespace="cart")),
     path("corretor/", include("plataforma_de_servicos.corretor.urls", namespace="corretor")),
+    path("estoque/", include("plataforma_de_servicos.estoque.urls", namespace="estoque")),
     path(
         "about/",
         TemplateView.as_view(template_name="pages/about.html"),
@@ -26,6 +28,7 @@ urlpatterns = [
     # Django Admin, use {% url 'admin:index' %}
     path(settings.ADMIN_URL, admin.site.urls),
     path("gerentes/", gerente_site.urls),
+    path("vendedores/", vendedor_site.urls),
     # User management
     path("users/", include("plataforma_de_servicos.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),

@@ -4,8 +4,9 @@ import factory
 from factory import Faker
 from factory.django import DjangoModelFactory
 
-from plataforma_de_servicos.corretor.tests.factories import CorretorFactory
 from plataforma_de_servicos.corretor.tests.factories import InteresseCompraFactory
+from plataforma_de_servicos.empresa.tests.factories import EmpresaFactory
+from plataforma_de_servicos.users.tests.factories import FuncionarioFactory
 from plataforma_de_servicos.vendas.models import ItemOrdemCompra
 from plataforma_de_servicos.vendas.models import OrdemCompra
 from plataforma_de_servicos.vendas.models import StatusOrdemCompra
@@ -16,7 +17,10 @@ class OrdemCompraFactory(DjangoModelFactory):
     class Meta:
         model = OrdemCompra
 
-    numero = factory.LazyFunction(OrdemCompraService.gerar_numero)
+    empresa = factory.SubFactory(EmpresaFactory)
+    numero = factory.LazyAttribute(
+        lambda o: OrdemCompraService.gerar_numero(o.empresa)
+    )
     interesse = factory.SubFactory(InteresseCompraFactory)
     nome_cliente = Faker("name", locale="pt_BR")
     email_cliente = Faker("email")
@@ -26,7 +30,7 @@ class OrdemCompraFactory(DjangoModelFactory):
 
     class Params:
         com_corretor = factory.Trait(
-            corretor=factory.SubFactory(CorretorFactory),
+            corretor=factory.SubFactory(FuncionarioFactory, is_corretor=True),
         )
         aprovada = factory.Trait(
             status=StatusOrdemCompra.APROVADA,

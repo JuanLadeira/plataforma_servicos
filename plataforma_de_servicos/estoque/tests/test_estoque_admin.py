@@ -201,12 +201,12 @@ class TestEstoqueItensInlineReadOnly:
     """Testes para verificar que itens ficam readonly após criação do estoque."""
 
     def test_get_readonly_fields_sem_obj_retorna_minimo(self, admin_site, request_factory, admin_user):
-        """Na criação, apenas saldo e inventario são readonly."""
+        """Na criação, apenas campos de saldo são readonly."""
         inline = EstoqueItensInline(EstoqueEntrada, admin_site)
         request = request_factory.get("/")
         request.user = admin_user
         readonly = inline.get_readonly_fields(request, obj=None)
-        assert readonly == ("saldo", "inventario")
+        assert readonly == ("saldo_atual", "saldo_preview")
 
     def test_get_readonly_fields_com_obj_retorna_todos(self, admin_site, request_factory, admin_user, inventario):
         """Na edição, todos os campos são readonly."""
@@ -221,11 +221,8 @@ class TestEstoqueItensInlineReadOnly:
         )
 
         readonly = inline.get_readonly_fields(request, obj=entrada)
-        assert "produto" in readonly
-        assert "variacao" in readonly
-        assert "quantidade" in readonly
-        assert "saldo" in readonly
-        assert "inventario" in readonly
+        expected_readonly = ("variacao", "quantidade", "saldo_anterior", "saldo")
+        assert all(field in readonly for field in expected_readonly)
 
     def test_has_add_permission_sem_obj_retorna_true(self, admin_site, request_factory, admin_user):
         """Na criação, permite adicionar itens."""

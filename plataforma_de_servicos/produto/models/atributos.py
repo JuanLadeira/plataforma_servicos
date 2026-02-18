@@ -129,8 +129,11 @@ class VariacaoProduto(models.Model):
     def __str__(self):
         # Acessa os valores após estarem disponíveis
         if self.pk:
-            valores_str = " | ".join(str(valor) for valor in self.valores.all())
-            return f"{self.produto.produto} ({valores_str})"
+            # Formato compacto: "Produto - Valor1, Valor2 [estoque: X]"
+            valores_str = ", ".join(v.valor for v in self.valores.all())
+            if valores_str:
+                return f"{self.produto.produto} - {valores_str} [est: {self.estoque}]"
+            return f"{self.produto.produto} [est: {self.estoque}]"
         return f"{self.produto.produto}"
 
     def save(self, *args, **kwargs):

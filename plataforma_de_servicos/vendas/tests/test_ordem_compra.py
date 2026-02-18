@@ -4,13 +4,14 @@ import pytest
 from django.utils import timezone
 
 from plataforma_de_servicos.corretor.models import StatusInteresse
-from plataforma_de_servicos.corretor.tests.factories import CorretorFactory
 from plataforma_de_servicos.corretor.tests.factories import InteresseCompraFactory
 from plataforma_de_servicos.corretor.tests.factories import ItemInteresseFactory
+from plataforma_de_servicos.empresa.tests.factories import EmpresaFactory
 from plataforma_de_servicos.produto.tests.factories import AtributoFactory
 from plataforma_de_servicos.produto.tests.factories import ProdutoFactory
 from plataforma_de_servicos.produto.tests.factories import ValorAtributoFactory
 from plataforma_de_servicos.produto.tests.factories import VariacaoProdutoFactory
+from plataforma_de_servicos.users.tests.factories import FuncionarioFactory
 from plataforma_de_servicos.users.tests.factories import UserFactory
 from plataforma_de_servicos.vendas.models import OrdemCompra
 from plataforma_de_servicos.vendas.models import StatusOrdemCompra
@@ -45,32 +46,55 @@ class TestOrdemCompraModel:
 @pytest.mark.django_db
 class TestOrdemCompraServiceGerarNumero:
     def test_gerar_numero_formato(self):
-        numero = OrdemCompraService.gerar_numero()
+        empresa = EmpresaFactory()
+        numero = OrdemCompraService.gerar_numero(empresa)
         ano = timezone.now().year
         assert numero.startswith(f"OC-{ano}-")
         assert len(numero) == 13  # OC-YYYY-NNNNN
 
     def test_gerar_numero_incrementa(self):
-        OrdemCompraFactory(numero="OC-2026-00001")
-        numero = OrdemCompraService.gerar_numero()
+        empresa = EmpresaFactory()
+        OrdemCompraFactory(numero="OC-2026-00001", empresa=empresa)
+        numero = OrdemCompraService.gerar_numero(empresa)
         assert numero == "OC-2026-00002"
 
     def test_gerar_numero_primeiro_do_ano(self):
-        # Sem ordens existentes
-        numero = OrdemCompraService.gerar_numero()
+        empresa = EmpresaFactory()
+        # Sem ordens existentes para esta empresa
+        numero = OrdemCompraService.gerar_numero(empresa)
         ano = timezone.now().year
         assert numero == f"OC-{ano}-00001"
+
+    def test_gerar_numero_isolado_por_empresa(self):
+        """Cada empresa tem sua própria sequência de números."""
+        empresa1 = EmpresaFactory()
+        empresa2 = EmpresaFactory()
+
+        # Criar ordens para empresa1
+        OrdemCompraFactory(numero="OC-2026-00001", empresa=empresa1)
+        OrdemCompraFactory(numero="OC-2026-00002", empresa=empresa1)
+
+        # Empresa2 deve começar do 00001
+        numero = OrdemCompraService.gerar_numero(empresa2)
+        ano = timezone.now().year
+        assert numero == f"OC-{ano}-00001"
+
+        # Empresa1 deve continuar do 00003
+        numero = OrdemCompraService.gerar_numero(empresa1)
+        assert numero == "OC-2026-00003"
 
 
 @pytest.mark.django_db
 class TestOrdemCompraServiceCriarOrdem:
     def test_criar_ordem_de_interesse_sucesso(self):
         """Testa criação via signal quando interesse é convertido."""
-        corretor = CorretorFactory()
+        funcionario = FuncionarioFactory(is_corretor=True)
+        empresa = EmpresaFactory()
         # Criar interesse como NOVO primeiro
         interesse = InteresseCompraFactory(
             status=StatusInteresse.NOVO,
-            corretor=corretor,
+            corretor=funcionario,
+            empresa=empresa,
             valor_total=Decimal("150.00"),
         )
         ItemInteresseFactory(
@@ -92,7 +116,7 @@ class TestOrdemCompraServiceCriarOrdem:
         assert ordem.email_cliente == interesse.email_cliente
         assert ordem.telefone_cliente == interesse.telefone_cliente
         assert ordem.valor_total == interesse.valor_total
-        assert ordem.corretor == corretor
+        assert ordem.corretor == funcionario
         assert ordem.status == StatusOrdemCompra.PENDENTE_APROVACAO
         assert ordem.itens.count() == 1
 

@@ -169,6 +169,7 @@ class Estoque(TimeStampedModel):
             obj = InventarioSaldo.objects.select_for_update().get(
                 inventario=inventario,
                 produto=item.produto,
+                variacao=item.variacao,
             )
             obj.quantidade += quantidade
             obj.save()
@@ -176,5 +177,6 @@ class Estoque(TimeStampedModel):
             InventarioSaldo.objects.create(
                 inventario=inventario,
                 produto=item.produto,
+                variacao=item.variacao,
                 quantidade=max(quantidade, 0),  # Evita valores negativos para novos registros
             )

@@ -10,7 +10,8 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from plataforma_de_servicos.corretor.models import Corretor, InteresseCompra
+from plataforma_de_servicos.corretor.models import InteresseCompra
+from plataforma_de_servicos.users.models import Funcionario
 from plataforma_de_servicos.empresa.models import Empresa
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.models import Estoque, EstoqueItens
@@ -81,7 +82,7 @@ class Command(BaseCommand):
         Atributo.objects.all().delete()
         Inventario.objects.all().delete()
         Empresa.objects.all().delete()
-        Corretor.objects.filter(user__is_superuser=False).delete()
+        Funcionario.objects.all().delete()
         User.objects.filter(is_superuser=False).delete()
 
     def _criar_usuarios(self):
@@ -113,11 +114,21 @@ class Command(BaseCommand):
             vendedor.save()
             self.stdout.write("    Vendedor criado: vendedor@example.com / vendedor123")
 
-        Corretor.objects.get_or_create(
-            user=vendedor,
+        # Criar empresa para o vendedor
+        empresa_vendedor, _ = Empresa.objects.get_or_create(
+            nome="AutoPrime Veículos e Imóveis",
             defaults={
-                "nome": vendedor.name,
-                "email": vendedor.email,
+                "email": "contato@autoprime.com.br",
+            },
+        )
+
+        # Criar funcionário como corretor
+        Funcionario.objects.get_or_create(
+            usuario=vendedor,
+            defaults={
+                "empresa": empresa_vendedor,
+                "cargo": "Corretor",
+                "is_corretor": True,
             },
         )
 
