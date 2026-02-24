@@ -1,14 +1,12 @@
-<div id="productList">
-    <div class="row row-cols-1 p-1 row-cols-sm-2 row-cols-md-4 g-3 justify-content-center align-items-center">
-        {% if my_variations|length == 0 %}
-            <div class="col-12">
-                <p class="text-center">Nenhum produto encontrado.</p>
-            </div>
-        {% endif %}
-        
-        {% for variacao in my_variations %}
-            {% include "pages/partials/product_item.html" with variacao=variacao %} 
-        {% endfor %}
-    </div>
+<div class="row row-cols-1 p-1 row-cols-sm-2 row-cols-md-4 g-3 justify-content-center align-items-center">
+    {% if my_variations|length == 0 %}
+        <div class="col-12">
+            <p class="text-center">Nenhum produto encontrado.</p>
+        </div>
+    {% endif %}
+
+    {% for variacao in my_variations %}
+        {% include "pages/partials/product_item.html" with variacao=variacao %}
+    {% endfor %}
 </div>
 

@@ -1,45 +1,47 @@
-{% load static i18n compress%}<!DOCTYPE html>
-{% get_current_language as LANGUAGE_CODE %}   
+{% load static i18n compress%}
 
-   <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
-    <div class="container-fluid">
-      <!-- Botão de Toggle para dispositivos móveis -->
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+<nav class="navbar navbar-expand-md shadow-sm">
+  <div class="container-fluid">
+    <!-- Botão de Toggle para dispositivos móveis -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Logo -->
+    <a class="navbar-brand fw-bold" href="{% url 'home' %}">
+      {% if site_config.logo %}
+        <img src="{{ site_config.logo.url }}" alt="{{ site_config.site_name }}" height="40" class="me-2">
+      {% endif %}
+      <span>{{ site_config.site_name }}</span>
+    </a>
   
-      <!-- Logo -->
-      <a class="navbar-brand fw-bold text-primary" href="{% url 'home' %}">
-        {{ site_config.site_name }}
-      </a>
-  
-      <!-- Links do Navbar -->
-      <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav me-auto">
-          {% if request.resolver_match.url_name == 'home' %}
-            {% include "pages/components/category_filter.html" %}
+    <!-- Links do Navbar -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto">
+        {% if request.resolver_match.url_name == 'home' %}
+          {% include "pages/components/category_filter.html" %}
+        {% endif %}
+        <li class="nav-item my-3">
+          <a class="nav-link" href="{% url 'about' %}">Sobre</a>
+        </li>
+        {% if request.user.is_authenticated %}
+          <li class="nav-item my-3">
+            <a class="nav-link" href="{% url 'users:detail' request.user.pk %}">{% translate "Meu Perfil" %}</a>
+          </li>
+          <li class="nav-item my-3">
+            <a class="nav-link" href="{% url 'account_logout' %}">{% translate "Sair" %}</a>
+          </li>
+        {% else %}
+          {% if ACCOUNT_ALLOW_REGISTRATION %}
+            <li class="nav-item my-3">
+              <a id="sign-up-link" class="nav-link" href="{% url 'account_signup' %}">{% translate "Registrar" %}</a>
+            </li>
           {% endif %}
           <li class="nav-item my-3">
-            <a class="nav-link text-dark" href="{% url 'about' %}">Sobre</a>
+            <a id="log-in-link" class="nav-link" href="{% url 'account_login' %}">{% translate "Entrar" %}</a>
           </li>
-          {% if request.user.is_authenticated %}
-            <li class="nav-item my-3">
-              <a class="nav-link text-dark" href="{% url 'users:detail' request.user.pk %}">{% translate "Meu Perfil" %}</a>
-            </li>
-            <li class="nav-item my-3">
-              <a class="nav-link text-danger" href="{% url 'account_logout' %}">{% translate "Sair" %}</a>
-            </li>
-          {% else %}
-            {% if ACCOUNT_ALLOW_REGISTRATION %}
-              <li class="nav-item my-3">
-                <a id="sign-up-link" class="nav-link text-dark" href="{% url 'account_signup' %}">{% translate "Registrar" %}</a>
-              </li>
-            {% endif %}
-            <li class="nav-item my-3">
-              <a id="log-in-link" class="nav-link text-dark" href="{% url 'account_login' %}">{% translate "Entrar" %}</a>
-            </li>
-          {% endif %}
-        </ul>
+        {% endif %}
+      </ul>
   
         <!-- Carrinho -->
         <ul class="navbar-nav ms-auto">
@@ -90,22 +92,6 @@
           </ul>
         </div>
 
-        <!-- Settings Dropdown -->
-        <div class="dropdown ms-3">
-          <button class="btn btn-outline-secondary" type="button" id="settingsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="fa fa-cog"></i>
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="settingsDropdown">
-            <li>
-              <div class="dropdown-item">
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" role="switch" id="theme-switch">
-                  <label class="form-check-label" for="theme-switch">Modo Escuro</label>
-                </div>
-              </div>
-            </li>
-          </ul>
-        </div>
       </div>
     </div>
   </nav> 

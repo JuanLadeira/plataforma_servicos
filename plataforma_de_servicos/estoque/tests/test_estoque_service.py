@@ -85,6 +85,7 @@ class EstoqueServiceTest(TestCase):
 
         # Verificar criação do registro de saída
         self.assertIsInstance(saida, Estoque)
+        self.assertEqual(saida.empresa, self.ordem_compra.empresa)
         self.assertEqual(saida.movimento, Movimento.SAIDA.value)
         self.assertEqual(saida.origem_saida, OrigemSaida.PEDIDO.value)
         self.assertEqual(saida.ordem_compra, self.ordem_compra)

@@ -224,3 +224,130 @@ class TestProdutoGerenteAdminEstoqueDisplay:
         produto = ProdutoFactory(estoque=0)
         result = admin_instance.estoque_disponivel_display(produto)
         assert "Sem limite" in result
+
+
+class TestVariacaoAtributoSelecaoUnica:
+    """Testes para validação de seleção única em atributos."""
+
+    @pytest.fixture
+    def produto(self, db):
+        """Cria um produto."""
+        return ProdutoFactory()
+
+    @pytest.fixture
+    def atributo_cor_selecao_unica(self, produto):
+        """Cria atributo Cor que permite apenas uma seleção."""
+        atributo = AtributoFactory(
+            nome="Cor",
+            categoria=produto.categoria,
+            multipla_selecao=False,
+        )
+        ValorAtributoFactory(atributo=atributo, valor="Vermelho")
+        ValorAtributoFactory(atributo=atributo, valor="Azul")
+        ValorAtributoFactory(atributo=atributo, valor="Verde")
+        return atributo
+
+    @pytest.fixture
+    def atributo_extras_multipla_selecao(self, produto):
+        """Cria atributo Extras que permite múltipla seleção."""
+        atributo = AtributoFactory(
+            nome="Extras",
+            categoria=produto.categoria,
+            multipla_selecao=True,
+        )
+        ValorAtributoFactory(atributo=atributo, valor="Embalagem")
+        ValorAtributoFactory(atributo=atributo, valor="Cartão")
+        return atributo
+
+    def test_variacao_com_um_valor_selecao_unica_valido(
+        self, produto, atributo_cor_selecao_unica,
+    ):
+        """Variação com apenas um valor de atributo de seleção única é válido."""
+        valor_vermelho = atributo_cor_selecao_unica.valores.get(valor="Vermelho")
+
+        variacao = VariacaoProduto.objects.create(produto=produto, estoque=5)
+        variacao.valores.add(valor_vermelho)
+
+        # Verificar que só tem um valor do atributo
+        valores_cor = [v for v in variacao.valores.all() if v.atributo == atributo_cor_selecao_unica]
+        assert len(valores_cor) == 1
+
+    def test_variacao_com_multiplos_valores_multipla_selecao_valido(
+        self, produto, atributo_extras_multipla_selecao,
+    ):
+        """Variação com múltiplos valores de atributo de múltipla seleção é válido."""
+        valor_embalagem = atributo_extras_multipla_selecao.valores.get(valor="Embalagem")
+        valor_cartao = atributo_extras_multipla_selecao.valores.get(valor="Cartão")
+
+        variacao = VariacaoProduto.objects.create(produto=produto, estoque=5)
+        variacao.valores.add(valor_embalagem, valor_cartao)
+
+        # Verificar que tem dois valores
+        valores_extras = [v for v in variacao.valores.all() if v.atributo == atributo_extras_multipla_selecao]
+        assert len(valores_extras) == 2
+
+    def test_validacao_formset_selecao_unica_rejeita_multiplos_valores(
+        self, produto, atributo_cor_selecao_unica,
+    ):
+        """Formset deve rejeitar múltiplos valores de atributo de seleção única."""
+        from django import forms
+        from django.forms.models import inlineformset_factory
+        from plataforma_de_servicos.produto.admin.gerente_admin import VariacaoProdutoInlineFormSet
+
+        valor_vermelho = atributo_cor_selecao_unica.valores.get(valor="Vermelho")
+        valor_azul = atributo_cor_selecao_unica.valores.get(valor="Azul")
+
+        # Criar formset usando factory
+        FormSet = inlineformset_factory(
+            Produto,
+            VariacaoProduto,
+            formset=VariacaoProdutoInlineFormSet,
+            fields=["valores", "estoque"],
+            extra=0,
+        )
+        formset = FormSet(instance=produto)
+
+        # Testar a validação diretamente
+        erros = []
+        try:
+            formset._validar_selecao_atributos([valor_vermelho, valor_azul], None)
+        except forms.ValidationError as e:
+            erros = e.messages
+
+        assert len(erros) > 0
+        assert "Cor" in erros[0]
+        assert "apenas uma seleção" in erros[0]
+
+    def test_validacao_formset_aceita_valores_de_atributos_diferentes(
+        self, produto, atributo_cor_selecao_unica, atributo_extras_multipla_selecao,
+    ):
+        """Formset deve aceitar valores de atributos diferentes."""
+        from django import forms
+        from django.forms.models import inlineformset_factory
+        from plataforma_de_servicos.produto.admin.gerente_admin import VariacaoProdutoInlineFormSet
+
+        valor_vermelho = atributo_cor_selecao_unica.valores.get(valor="Vermelho")
+        valor_embalagem = atributo_extras_multipla_selecao.valores.get(valor="Embalagem")
+        valor_cartao = atributo_extras_multipla_selecao.valores.get(valor="Cartão")
+
+        # Criar formset usando factory
+        FormSet = inlineformset_factory(
+            Produto,
+            VariacaoProduto,
+            formset=VariacaoProdutoInlineFormSet,
+            fields=["valores", "estoque"],
+            extra=0,
+        )
+        formset = FormSet(instance=produto)
+
+        # Deve aceitar: 1 valor de Cor + 2 valores de Extras
+        erros = []
+        try:
+            formset._validar_selecao_atributos(
+                [valor_vermelho, valor_embalagem, valor_cartao],
+                None,
+            )
+        except forms.ValidationError as e:
+            erros = e.messages
+
+        assert len(erros) == 0

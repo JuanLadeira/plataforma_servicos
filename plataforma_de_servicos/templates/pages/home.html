@@ -12,8 +12,8 @@
     /* Sidebar styles */
     .category-sidebar {
         width: 260px;
-        background: #fff;
-        border-right: 1px solid #e5e7eb;
+        background: var(--color-bg-secondary);
+        border-right: 1px solid rgba(0, 0, 0, 0.05);
         flex-shrink: 0;
         position: sticky;
         top: 0;
@@ -21,16 +21,24 @@
         overflow-y: auto;
     }
 
+    .dark-theme .category-sidebar {
+        border-right-color: rgba(255, 255, 255, 0.08);
+    }
+
     .sidebar-header {
         padding: 20px;
-        border-bottom: 1px solid #e5e7eb;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .dark-theme .sidebar-header {
+        border-bottom-color: rgba(255, 255, 255, 0.08);
     }
 
     .sidebar-title {
         margin: 0;
         font-size: 16px;
         font-weight: 600;
-        color: #1f2937;
+        color: var(--color-text);
     }
 
     .sidebar-nav {
@@ -51,21 +59,22 @@
         display: flex;
         align-items: center;
         padding: 12px 20px;
-        color: #4b5563;
+        color: var(--color-text-muted);
         text-decoration: none;
-        transition: all 0.15s ease;
+        transition: all 0.2s ease;
         border-left: 3px solid transparent;
     }
 
     .category-link:hover {
-        background: #f3f4f6;
-        color: #1f2937;
+        background: var(--color-bg);
+        color: var(--color-text);
+        border-left-color: var(--color-primary);
     }
 
     .category-link.active {
-        background: #eff6ff;
-        color: #2563eb;
-        border-left-color: #2563eb;
+        background: var(--color-primary);
+        color: #ffffff;
+        border-left-color: var(--color-primary);
         font-weight: 500;
     }
 
@@ -80,16 +89,15 @@
     }
 
     .category-count {
-        background: #e5e7eb;
-        color: #6b7280;
+        background: rgba(0, 0, 0, 0.1);
+        color: inherit;
         font-size: 11px;
         padding: 2px 8px;
         border-radius: 10px;
     }
 
     .category-link.active .category-count {
-        background: #dbeafe;
-        color: #2563eb;
+        background: rgba(255, 255, 255, 0.2);
     }
 
     /* Content area */
@@ -98,10 +106,69 @@
         min-width: 0;
     }
 
+    /* Hero Enhanced */
+    .hero {
+        min-height: 450px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .hero::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+            135deg,
+            rgba(0, 0, 0, 0.6) 0%,
+            rgba(0, 0, 0, 0.4) 50%,
+            rgba(0, 0, 0, 0.6) 100%
+        );
+        z-index: -1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+        max-width: 800px;
+        padding: 40px 20px;
+    }
+
+    .hero h1 {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: #fff;
+        text-shadow: 2px 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .hero p {
+        font-size: 1.25rem;
+        margin-bottom: 2rem;
+        color: rgba(255, 255, 255, 0.9);
+        text-shadow: 1px 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .hero .btn-primary {
+        padding: 14px 40px;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 30px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
     /* Mobile toggle */
     .sidebar-toggle {
         position: fixed;
-        bottom: 24px;
+        bottom: 90px;
         left: 24px;
         z-index: 1040;
         width: 50px;
@@ -119,6 +186,18 @@
         .main-content {
             width: 100%;
         }
+
+        .hero {
+            min-height: 350px;
+        }
+
+        .hero h1 {
+            font-size: 2rem;
+        }
+
+        .hero p {
+            font-size: 1rem;
+        }
     }
 
     @media (min-width: 992px) {
@@ -126,64 +205,106 @@
             display: none !important;
         }
     }
-
-    /* Dark mode */
-    .dark-mode .category-sidebar {
-        background: #1f2937;
-        border-right-color: #374151;
-    }
-
-    .dark-mode .sidebar-header {
-        border-bottom-color: #374151;
-    }
-
-    .dark-mode .sidebar-title {
-        color: #f3f4f6;
-    }
-
-    .dark-mode .category-link {
-        color: #9ca3af;
-    }
-
-    .dark-mode .category-link:hover {
-        background: #374151;
-        color: #f3f4f6;
-    }
-
-    .dark-mode .category-link.active {
-        background: #1e3a5f;
-        color: #60a5fa;
-        border-left-color: #60a5fa;
-    }
-
-    .dark-mode .category-count {
-        background: #374151;
-        color: #9ca3af;
-    }
-
-    .dark-mode .category-link.active .category-count {
-        background: #1e3a5f;
-        color: #60a5fa;
-    }
 </style>
 {% endblock css %}
 
 {% block content %}
-<section class="hero" style="background-image: url('{{ site_config.get_hero_image_url }}');">
+<!-- Hero Section -->
+<section class="hero {% if site_config.theme_style == 'dark' %}mystical-hero{% endif %}" style="background-image: url('{{ site_config.get_hero_image_url }}'); background-size: cover; background-position: center;">
     <div class="hero-content">
-        <h1>{{ site_config.hero_title }}</h1>
+        {% if site_config.theme_style == 'dark' %}
+        <div class="mystical-divider" style="margin-bottom: 1.5rem;"></div>
+        {% endif %}
+        <h1 class="{% if site_config.theme_style == 'dark' %}mystical-text{% endif %}">{{ site_config.hero_title }}</h1>
         <p>{{ site_config.hero_description }}</p>
-        <a href="#productList" class="btn btn-primary">{{ site_config.hero_button_text }}</a>
+        <a href="#productSection" class="btn btn-primary {% if site_config.theme_style == 'dark' %}mystical-glow{% endif %}">
+            <i class="fa fa-shopping-bag me-2"></i>
+            {{ site_config.hero_button_text }}
+        </a>
+        {% if site_config.theme_style == 'dark' %}
+        <div class="mystical-divider" style="margin-top: 1.5rem;"></div>
+        {% endif %}
     </div>
 </section>
 
-<div class="main-layout">
+<!-- Welcome Section -->
+<section class="welcome-section {% if site_config.theme_style == 'dark' %}mystical{% endif %}">
+    <div class="container">
+        <h2 class="{% if site_config.theme_style == 'dark' %}mystical-text{% endif %}">Bem-vindo ao {{ site_config.site_name }}</h2>
+        <p>Encontre os melhores produtos com qualidade e os melhores precos. Navegue por nossas categorias e descubra ofertas exclusivas.</p>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-3 col-6">
+                <div class="feature-card {% if site_config.theme_style == 'dark' %}mystical-card{% endif %}">
+                    <div class="feature-icon {% if site_config.theme_style == 'dark' %}mystical{% endif %}">
+                        <i class="fa fa-truck"></i>
+                    </div>
+                    <h5>Entrega Rapida</h5>
+                    <p>Entregamos em todo o Brasil com agilidade</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="feature-card {% if site_config.theme_style == 'dark' %}mystical-card{% endif %}">
+                    <div class="feature-icon {% if site_config.theme_style == 'dark' %}mystical{% endif %}">
+                        <i class="fa fa-shield-halved"></i>
+                    </div>
+                    <h5>Compra Segura</h5>
+                    <p>Seus dados protegidos em todas as transacoes</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="feature-card {% if site_config.theme_style == 'dark' %}mystical-card{% endif %}">
+                    <div class="feature-icon {% if site_config.theme_style == 'dark' %}mystical{% endif %}">
+                        <i class="fa fa-credit-card"></i>
+                    </div>
+                    <h5>Pagamento Facil</h5>
+                    <p>Parcelamos em ate 12x sem juros</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="feature-card {% if site_config.theme_style == 'dark' %}mystical-card{% endif %}">
+                    <div class="feature-icon {% if site_config.theme_style == 'dark' %}mystical{% endif %}">
+                        <i class="fa fa-headset"></i>
+                    </div>
+                    <h5>Suporte 24h</h5>
+                    <p>Atendimento dedicado para voce</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Main Layout with Sidebar -->
+<div class="main-layout" id="productSection">
     {% include 'pages/components/category_sidebar.html' %}
 
     <div class="main-content">
         {% include 'pages/includes/product_list.html' %}
     </div>
 </div>
+
+<!-- Mobile Sidebar Toggle -->
+<button class="btn btn-primary sidebar-toggle d-lg-none"
+        type="button"
+        data-bs-toggle="offcanvas"
+        data-bs-target="#categorySidebar"
+        aria-controls="categorySidebar">
+    <i class="fa fa-bars"></i>
+</button>
+
+<!-- Mobile Category Sidebar (Offcanvas) -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="categorySidebar" aria-labelledby="categorySidebarLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="categorySidebarLabel">Categorias</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+        {% include 'pages/components/category_sidebar.html' with mobile=True %}
+    </div>
+</div>
 {% endblock content %}
-
-

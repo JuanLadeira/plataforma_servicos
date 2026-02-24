@@ -26,6 +26,39 @@
                     handleInputChange(this, container);
                 });
             });
+
+            // Validar estado inicial - garantir seleção única onde necessário
+            enforceInitialSingleSelection(container);
+        });
+    }
+
+    function enforceInitialSingleSelection(container) {
+        // Agrupa inputs por atributo
+        const inputsByAtributo = {};
+        const inputs = container.querySelectorAll('.valor-checkbox');
+
+        inputs.forEach(input => {
+            const atributo = input.dataset.atributo;
+            const isSingleSelection = input.dataset.multipla === 'false';
+
+            if (isSingleSelection && atributo) {
+                if (!inputsByAtributo[atributo]) {
+                    inputsByAtributo[atributo] = [];
+                }
+                inputsByAtributo[atributo].push(input);
+            }
+        });
+
+        // Para cada atributo de seleção única, manter apenas o primeiro marcado
+        Object.values(inputsByAtributo).forEach(atributoInputs => {
+            const checkedInputs = atributoInputs.filter(i => i.checked);
+            if (checkedInputs.length > 1) {
+                // Manter apenas o primeiro, desmarcar os outros
+                checkedInputs.slice(1).forEach(input => {
+                    input.checked = false;
+                    updateChipState(input);
+                });
+            }
         });
     }
 

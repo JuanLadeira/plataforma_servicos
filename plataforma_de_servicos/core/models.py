@@ -1,5 +1,9 @@
 from django.db import models
 
+from plataforma_de_servicos.core.themes import THEME_CHOICES
+from plataforma_de_servicos.core.themes import get_theme
+from plataforma_de_servicos.core.themes import get_theme_css_vars
+
 
 class TimeStampedModel(models.Model):
     created = models.DateTimeField(
@@ -66,6 +70,24 @@ class SiteConfig(TimeStampedModel):
         help_text="URL externa para imagem do banner (usada se não houver upload)",
     )
 
+    # Tema do site
+    theme = models.CharField(
+        "Tema",
+        max_length=20,
+        choices=THEME_CHOICES,
+        default="default",
+        help_text="Tema de cores do site",
+    )
+
+    # Logo do site
+    logo = models.ImageField(
+        "Logo do Site",
+        upload_to="site/logos/",
+        blank=True,
+        null=True,
+        help_text="Logo exibido no navbar (recomendado: altura de 40-50px)",
+    )
+
     class Meta:
         verbose_name = "Configuração do Site"
         verbose_name_plural = "Configurações do Site"
@@ -95,3 +117,17 @@ class SiteConfig(TimeStampedModel):
         if self.hero_image:
             return self.hero_image.url
         return self.hero_image_url
+
+    def get_theme(self):
+        """Retorna o objeto Theme selecionado."""
+        return get_theme(self.theme)
+
+    def get_theme_css_vars(self):
+        """Retorna as variáveis CSS do tema."""
+        return get_theme_css_vars(self.theme)
+
+    def get_logo_url(self):
+        """Retorna a URL do logo, se existir."""
+        if self.logo:
+            return self.logo.url
+        return None

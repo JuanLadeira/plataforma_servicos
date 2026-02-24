@@ -32,7 +32,7 @@ class InventarioSaldoInline(TabularInline):
 
 
 class VariacaoProdutoInlineFormSet(BaseInlineFormSet):
-    """Formset customizado que valida a soma do estoque das variações."""
+    """Formset customizado que valida a soma do estoque das variações e a seleção de atributos."""
 
     def clean(self):
         super().clean()
@@ -40,21 +40,50 @@ class VariacaoProdutoInlineFormSet(BaseInlineFormSet):
         if not self.instance or not self.instance.pk:
             return
 
+        # Validação de estoque
         produto_estoque = self.instance.estoque or 0
-        if produto_estoque == 0:
-            return
+        if produto_estoque > 0:
+            total_variacao_estoque = 0
+            for form in self.forms:
+                if form.cleaned_data and not form.cleaned_data.get("DELETE", False):
+                    estoque = form.cleaned_data.get("estoque", 0) or 0
+                    total_variacao_estoque += estoque
 
-        total_variacao_estoque = 0
+            if total_variacao_estoque > produto_estoque:
+                raise forms.ValidationError(
+                    f"O estoque total das variações ({total_variacao_estoque}) "
+                    f"não pode exceder o estoque do produto ({produto_estoque}).",
+                )
+
+        # Validação de múltipla seleção por atributo
         for form in self.forms:
             if form.cleaned_data and not form.cleaned_data.get("DELETE", False):
-                estoque = form.cleaned_data.get("estoque", 0) or 0
-                total_variacao_estoque += estoque
+                valores = form.cleaned_data.get("valores", [])
+                if valores:
+                    self._validar_selecao_atributos(valores, form)
 
-        if total_variacao_estoque > produto_estoque:
-            raise forms.ValidationError(
-                f"O estoque total das variações ({total_variacao_estoque}) "
-                f"não pode exceder o estoque do produto ({produto_estoque}).",
-            )
+    def _validar_selecao_atributos(self, valores, form):
+        """Valida que atributos com multipla_selecao=False tenham apenas um valor."""
+        from collections import defaultdict
+
+        # Agrupar valores por atributo
+        valores_por_atributo = defaultdict(list)
+        for valor in valores:
+            atributo = valor.atributo
+            valores_por_atributo[atributo].append(valor)
+
+        # Verificar cada atributo
+        erros = []
+        for atributo, vals in valores_por_atributo.items():
+            if not atributo.multipla_selecao and len(vals) > 1:
+                valores_str = ", ".join(v.valor for v in vals)
+                erros.append(
+                    f'O atributo "{atributo.nome}" permite apenas uma seleção, '
+                    f'mas foram selecionados: {valores_str}'
+                )
+
+        if erros:
+            raise forms.ValidationError(erros)
 
 
 class ValorAtributoGerenteForm(forms.ModelForm):

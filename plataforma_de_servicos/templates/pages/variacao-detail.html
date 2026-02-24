@@ -7,86 +7,220 @@
     .product-detail-card {
         border: none;
         box-shadow: 0 8px 30px rgba(0,0,0,0.07);
+        border-radius: 20px;
+        overflow: hidden;
     }
 
-    .carousel-cover-flow {
+    /* ========================================
+       GALERIA DE IMAGENS - ESTILO PROFISSIONAL
+       ======================================== */
+    .product-gallery {
         position: relative;
-        height: 400px; /* Adjust as needed */
-        display: flex;
-        align-items: center;
     }
 
-    .carousel-cover-flow .carousel-inner {
-        overflow: visible;
+    .main-image-container {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        background: var(--color-bg);
+        border-radius: 16px;
+        overflow: hidden;
+        cursor: zoom-in;
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .main-image-container:hover {
+        border-color: var(--color-primary);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .dark-theme .main-image-container {
+        background: linear-gradient(145deg, rgba(30, 30, 30, 0.8) 0%, rgba(20, 20, 20, 0.9) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .dark-theme .main-image-container:hover {
+        border-color: var(--color-primary);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .main-image-container img {
         width: 100%;
         height: 100%;
+        object-fit: contain;
+        transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+        padding: 20px;
     }
 
-    .carousel-cover-flow .carousel-item {
+    .main-image-container:hover img {
+        transform: scale(1.08);
+    }
+
+    /* Badge de destaque */
+    .product-badge {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        z-index: 10;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-new {
+        background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+        color: #fff;
+    }
+
+    .badge-sale {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: #fff;
+    }
+
+    /* Botoes de navegacao */
+    .gallery-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.95);
+        border: none;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
         display: flex;
         align-items: center;
         justify-content: center;
-        position: absolute;
-        top: 0;
-        left: 0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        z-index: 10;
+        color: var(--color-text);
+    }
+
+    .gallery-nav:hover {
+        background: var(--color-primary);
+        color: #fff;
+        transform: translateY(-50%) scale(1.1);
+    }
+
+    .dark-theme .gallery-nav {
+        background: rgba(30, 30, 30, 0.95);
+        color: var(--color-primary);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .dark-theme .gallery-nav:hover {
+        background: var(--color-primary);
+        color: #fff;
+    }
+
+    .gallery-nav-prev {
+        left: 12px;
+    }
+
+    .gallery-nav-next {
+        right: 12px;
+    }
+
+    /* Thumbnails */
+    .thumbnails-container {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .thumbnail-item {
+        width: 70px;
+        height: 70px;
+        border-radius: 10px;
+        overflow: hidden;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+        background: var(--color-bg-secondary);
+        padding: 4px;
+    }
+
+    .thumbnail-item:hover {
+        border-color: var(--color-text-muted);
+        transform: translateY(-2px);
+    }
+
+    .thumbnail-item.active {
+        border-color: var(--color-primary);
+        box-shadow: 0 4px 12px rgba(var(--color-primary-rgb, 201, 162, 39), 0.3);
+    }
+
+    .dark-theme .thumbnail-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .dark-theme .thumbnail-item:hover {
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .dark-theme .thumbnail-item.active {
+        border-color: var(--color-primary);
+    }
+
+    .thumbnail-item img {
         width: 100%;
         height: 100%;
+        object-fit: cover;
+        border-radius: 6px;
+    }
+
+    /* Contador de imagens */
+    .image-counter {
+        position: absolute;
+        bottom: 16px;
+        right: 16px;
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        z-index: 10;
+    }
+
+    /* Zoom indicator */
+    .zoom-hint {
+        position: absolute;
+        bottom: 16px;
+        left: 16px;
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        z-index: 10;
         opacity: 0;
-        transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
-        z-index: 1;
+        transition: opacity 0.3s ease;
     }
 
-    .carousel-cover-flow .carousel-item img {
-        width: auto;
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-        border-radius: 0.5rem;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-
-    .carousel-cover-flow .carousel-item.active {
-        transform: scale(1);
+    .main-image-container:hover .zoom-hint {
         opacity: 1;
-        z-index: 3;
-    }
-    
-    .carousel-cover-flow .carousel-item.active img {
-        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
     }
 
-    .carousel-cover-flow .carousel-item-prev,
-    .carousel-cover-flow .carousel-item-next {
-        opacity: 0.4;
-        z-index: 2;
-    }
-
-    .carousel-cover-flow .carousel-item-prev {
-        transform: translateX(-45%) scale(0.75);
-    }
-
-    .carousel-cover-flow .carousel-item-next {
-        transform: translateX(45%) scale(0.75);
-    }
-
-    .carousel-cover-flow .carousel-control-prev,
-    .carousel-cover-flow .carousel-control-next {
-        width: 15%;
-        z-index: 4;
-        background: none;
-        border: none;
-    }
-    .carousel-control-prev-icon, .carousel-control-next-icon {
-        filter: invert(1) drop-shadow(0 0 2px rgba(0,0,0,0.5));
-    }
-
+    /* ========================================
+       ATRIBUTOS E PILLS
+       ======================================== */
     .attribute-pills {
         display: flex;
         flex-wrap: wrap;
         gap: 0.75rem;
     }
+
     .attribute-pills .attribute-item {
-        background-color: #f1f5f9;
+        background-color: var(--color-bg-secondary);
         border-radius: 9999px;
         padding: 0.5rem 1rem;
         font-size: 0.875rem;
@@ -94,65 +228,263 @@
         align-items: center;
         gap: 0.5rem;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border: 1px solid rgba(0, 0, 0, 0.05);
     }
+
     .attribute-pills .attribute-name {
         font-weight: 500;
-        color: #475569;
+        color: var(--color-text-muted);
     }
+
     .attribute-pills .attribute-value {
-        color: #1e293b;
+        color: var(--color-text);
         font-weight: 600;
+    }
+
+    /* Dark theme adjustments */
+    .dark-theme .product-detail-card {
+        background: linear-gradient(145deg, var(--color-bg-secondary) 0%, rgba(30, 30, 30, 0.95) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .dark-theme .attribute-pills .attribute-item {
+        background-color: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .dark-theme .attribute-pills .attribute-name {
+        color: var(--color-text-muted);
+    }
+
+    .dark-theme .attribute-pills .attribute-value {
+        color: var(--color-primary);
+    }
+
+    .dark-theme .action-box {
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .dark-theme #preco-total {
+        background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb-wrapper {
+        padding: 1rem 0;
+        margin-bottom: 1rem;
+    }
+
+    .breadcrumb {
+        background: transparent;
+        margin-bottom: 0;
+    }
+
+    .breadcrumb-item a {
+        color: var(--color-text-muted);
+        text-decoration: none;
+    }
+
+    .breadcrumb-item a:hover {
+        color: var(--color-primary);
+    }
+
+    .breadcrumb-item.active {
+        color: var(--color-text);
+    }
+
+    .dark-theme .breadcrumb-item + .breadcrumb-item::before {
+        color: var(--color-text-muted);
+    }
+
+    /* Action box enhanced */
+    .action-box {
+        border-radius: 16px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    /* Product title */
+    .product-title {
+        font-size: 1.75rem;
+        line-height: 1.3;
+    }
+
+    .dark-theme .product-title {
+        color: var(--color-text);
+    }
+
+    /* Features list */
+    .features-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .dark-theme .features-list {
+        border-top-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+        color: var(--color-text-muted);
+    }
+
+    .feature-item i {
+        color: var(--color-primary);
+        font-size: 1rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 991px) {
+        .main-image-container {
+            aspect-ratio: 4 / 3;
+        }
+
+        .thumbnail-item {
+            width: 60px;
+            height: 60px;
+        }
+    }
+
+    /* Modal de zoom */
+    .zoom-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 9999;
+        cursor: zoom-out;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .zoom-modal.active {
+        display: flex;
+    }
+
+    .zoom-modal img {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+    }
+
+    .zoom-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: #fff;
+        font-size: 24px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .zoom-close:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.1);
     }
 </style>
 {% endblock css %}
 
 {% block content %}
 <div class="container my-5">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb-wrapper" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}"><i class="fa fa-home me-1"></i>Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'home' %}?categoria={{ produto.categoria.slug }}">{{ produto.categoria }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ variacao.get_nome_completo|truncatechars:30 }}</li>
+        </ol>
+    </nav>
+
     <main>
         <div class="card product-detail-card">
-            <div class="card-body p-lg-5">
-                <div class="row g-5">
+            <div class="card-body p-4 p-lg-5">
+                <div class="row g-4 g-lg-5">
                     <!-- Galeria de imagens -->
                     <div class="col-lg-6">
-                        {% if imagens %}
-                            <div id="imageCarousel" class="carousel carousel-cover-flow slide" data-bs-ride="carousel">
-                                <div class="carousel-inner">
-                                    {% for imagem in imagens %}
-                                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                            <img src="{{ imagem }}" alt="Imagem {{ forloop.counter }} de {{ produto.produto }}">
-                                        </div>
-                                    {% endfor %}
+                        <div class="product-gallery">
+                            {% if imagens %}
+                                <!-- Imagem principal -->
+                                <div class="main-image-container" id="mainImageContainer" onclick="openZoom()">
+                                    <span class="product-badge badge-new">
+                                        <i class="fa fa-star me-1"></i>Destaque
+                                    </span>
+                                    <img id="mainImage" src="{{ imagens.0 }}" alt="{{ produto.produto }}">
+                                    <span class="zoom-hint">
+                                        <i class="fa fa-search-plus me-1"></i>Clique para ampliar
+                                    </span>
+                                    {% if imagens|length > 1 %}
+                                    <span class="image-counter">
+                                        <span id="currentIndex">1</span> / {{ imagens|length }}
+                                    </span>
+                                    {% endif %}
                                 </div>
+
+                                <!-- Botoes de navegacao -->
                                 {% if imagens|length > 1 %}
-                                <button class="carousel-control-prev" type="button" data-bs-target="#imageCarousel" data-bs-slide="prev">
-                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">Previous</span>
+                                <button class="gallery-nav gallery-nav-prev" onclick="prevImage()" aria-label="Imagem anterior">
+                                    <i class="fa fa-chevron-left"></i>
                                 </button>
-                                <button class="carousel-control-next" type="button" data-bs-target="#imageCarousel" data-bs-slide="next">
-                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">Next</span>
+                                <button class="gallery-nav gallery-nav-next" onclick="nextImage()" aria-label="Proxima imagem">
+                                    <i class="fa fa-chevron-right"></i>
                                 </button>
                                 {% endif %}
-                            </div>
-                        {% else %}
-                            <div class="d-flex align-items-center justify-content-center bg-light rounded h-100">
-                                <img alt="Foto não disponível" src="{% static 'images/no-image.png' %}" style="width: 150px; opacity: 0.7;" />
-                            </div>
-                        {% endif %}
+
+                                <!-- Thumbnails -->
+                                {% if imagens|length > 1 %}
+                                <div class="thumbnails-container">
+                                    {% for imagem in imagens %}
+                                    <div class="thumbnail-item {% if forloop.first %}active{% endif %}"
+                                         onclick="selectImage({{ forloop.counter0 }}, '{{ imagem }}')"
+                                         data-index="{{ forloop.counter0 }}">
+                                        <img src="{{ imagem }}" alt="Miniatura {{ forloop.counter }}">
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="main-image-container d-flex align-items-center justify-content-center">
+                                    <div class="text-center">
+                                        <i class="fa fa-image fa-4x text-muted mb-3" style="opacity: 0.3;"></i>
+                                        <p class="text-muted">Imagem nao disponivel</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
 
                     <!-- Detalhes do produto -->
                     <div class="col-lg-6">
-                        <span class="badge bg-primary mb-2">{{ produto.categoria }}</span>
-                        <h1 class="h2 fw-bold">{{ variacao.get_nome_completo }}</h1>
+                        <span class="badge bg-primary mb-3 px-3 py-2">{{ produto.categoria }}</span>
+                        <h1 class="product-title fw-bold mb-3">{{ variacao.get_nome_completo }}</h1>
 
                         {% if produto.descricao %}
-                            <p class="product-description text-muted mt-3">{{ produto.descricao }}</p>
+                            <p class="product-description text-muted mb-4">{{ produto.descricao }}</p>
                         {% endif %}
 
-                        <!-- Atributos Estáticos -->
-                        <div class="my-4">
-                            <h5 class="mb-3">Características</h5>
+                        <!-- Atributos -->
+                        {% if atributos %}
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-3">
+                                <i class="fa fa-tags me-2"></i>Caracteristicas
+                            </h6>
                             <div class="attribute-pills">
                                 {% for valor_atributo in atributos %}
                                     <div class="attribute-item">
@@ -162,22 +494,26 @@
                                 {% endfor %}
                             </div>
                         </div>
+                        {% endif %}
 
-                        <div class="action-box my-4 p-4 rounded bg-light">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <span class="h5 text-muted mb-0">Preço</span>
+                        <!-- Caixa de acao -->
+                        <div class="action-box my-4 p-4 bg-light">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <span class="text-muted">Preco</span>
                                 <span id="preco-total" class="h2 fw-bold text-primary mb-0">{{ variacao.get_preco_display }}</span>
                             </div>
 
-                            <div class="row g-2 align-items-center">
-                                <div class="col-md-5">
-                                    <select class="form-select quantity-select" id="select-{{ variacao.id }}" {% if variacao.estoque == 0 %}disabled{% endif %}>
+                            <div class="row g-3 align-items-center">
+                                <div class="col-5 col-md-4">
+                                    <label class="form-label small text-muted mb-1">Quantidade</label>
+                                    <select class="form-select" id="select-{{ variacao.id }}" {% if variacao.estoque == 0 %}disabled{% endif %}>
                                         {% for i in variacao.get_stock_range %}
                                             <option value="{{ i }}">{{ i }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="col-md-7">
+                                <div class="col-7 col-md-8">
+                                    <label class="form-label small text-muted mb-1">&nbsp;</label>
                                     <button
                                         type="button"
                                         id="add-button"
@@ -191,22 +527,40 @@
                                         hx-indicator="#add-button"
                                         {% if variacao.estoque == 0 %}disabled{% endif %}>
                                         <span class="htmx-indicator spinner-border spinner-border-sm me-1" role="status"></span>
-                                        <i class="fa fa-plus htmx-hide-on-request"></i>
-                                        <span class="htmx-hide-on-request">Adicionar</span>
+                                        <i class="fa fa-cart-plus htmx-hide-on-request me-1"></i>
+                                        <span class="htmx-hide-on-request">{% if variacao.estoque > 0 %}Adicionar ao Carrinho{% else %}Produto Esgotado{% endif %}</span>
+                                        <span class="htmx-show-on-request">Adicionando...</span>
                                     </button>
                                 </div>
                             </div>
+
+                            <div id="stock-info" class="mt-3 pt-3 border-top d-flex align-items-center">
+                                <span id="estoque-display" class="{% if variacao.estoque > 10 %}text-success{% elif variacao.estoque > 0 %}text-warning{% else %}text-danger{% endif %}">
+                                    {% if variacao.estoque > 10 %}
+                                        <i class="fa fa-check-circle me-2"></i><strong>{{ variacao.estoque }}</strong> unidades em estoque
+                                    {% elif variacao.estoque > 0 %}
+                                        <i class="fa fa-exclamation-circle me-2"></i>Ultimas <strong>{{ variacao.estoque }}</strong> unidades!
+                                    {% else %}
+                                        <i class="fa fa-times-circle me-2"></i>Produto indisponivel
+                                    {% endif %}
+                                </span>
+                            </div>
                         </div>
 
-                        <div id="stock-info" class="d-flex align-items-center text-muted">
-                            <i class="fa fa-archive me-2"></i>
-                            <span id="estoque-display" class="{% if variacao.estoque > 10 %}text-success{% elif variacao.estoque > 0 %}text-warning{% else %}text-danger{% endif %}">
-                                {% if variacao.estoque > 0 %}
-                                    <strong>{{ variacao.estoque }}</strong> unidades em estoque
-                                {% else %}
-                                    Produto indisponível
-                                {% endif %}
-                            </span>
+                        <!-- Features -->
+                        <div class="features-list">
+                            <div class="feature-item">
+                                <i class="fa fa-truck"></i>
+                                <span>Entrega rapida</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fa fa-shield-halved"></i>
+                                <span>Compra segura</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fa fa-rotate-left"></i>
+                                <span>Troca garantida</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -214,4 +568,72 @@
         </div>
     </main>
 </div>
+
+<!-- Modal de Zoom -->
+<div class="zoom-modal" id="zoomModal" onclick="closeZoom()">
+    <button class="zoom-close" aria-label="Fechar">
+        <i class="fa fa-times"></i>
+    </button>
+    <img id="zoomImage" src="" alt="Imagem ampliada">
+</div>
+
 {% endblock content %}
+
+{% block inline_javascript %}
+{{ block.super }}
+<script>
+    // Galeria de imagens
+    const images = [{% for img in imagens %}'{{ img }}'{% if not forloop.last %},{% endif %}{% endfor %}];
+    let currentImageIndex = 0;
+
+    function selectImage(index, src) {
+        currentImageIndex = index;
+        document.getElementById('mainImage').src = src;
+
+        // Atualizar contador
+        const counter = document.getElementById('currentIndex');
+        if (counter) counter.textContent = index + 1;
+
+        // Atualizar thumbnails ativos
+        document.querySelectorAll('.thumbnail-item').forEach((thumb, i) => {
+            thumb.classList.toggle('active', i === index);
+        });
+    }
+
+    function nextImage() {
+        if (images.length > 0) {
+            currentImageIndex = (currentImageIndex + 1) % images.length;
+            selectImage(currentImageIndex, images[currentImageIndex]);
+        }
+    }
+
+    function prevImage() {
+        if (images.length > 0) {
+            currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
+            selectImage(currentImageIndex, images[currentImageIndex]);
+        }
+    }
+
+    function openZoom() {
+        const modal = document.getElementById('zoomModal');
+        const zoomImg = document.getElementById('zoomImage');
+        zoomImg.src = images[currentImageIndex] || '';
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeZoom() {
+        document.getElementById('zoomModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Navegacao por teclado
+    document.addEventListener('keydown', (e) => {
+        if (document.getElementById('zoomModal').classList.contains('active')) {
+            if (e.key === 'Escape') closeZoom();
+            if (e.key === 'ArrowRight') nextImage();
+            if (e.key === 'ArrowLeft') prevImage();
+        }
+    });
+</script>
+{% endblock inline_javascript %}

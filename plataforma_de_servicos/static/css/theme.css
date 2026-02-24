@@ -1,0 +1,1577 @@
+/**
+ * CSS de Tema Dinâmico
+ *
+ * Este arquivo usa variáveis CSS definidas inline no body para aplicar
+ * o tema selecionado pela empresa.
+ *
+ * Variáveis disponíveis:
+ * --color-primary: Cor principal (botões, links)
+ * --color-secondary: Cor secundária
+ * --color-accent: Cor de destaque
+ * --color-bg: Fundo principal
+ * --color-bg-secondary: Fundo secundário (cards)
+ * --color-text: Texto principal
+ * --color-text-muted: Texto secundário
+ * --color-navbar-bg: Fundo do navbar
+ * --color-navbar-text: Texto do navbar
+ * --color-footer-bg: Fundo do footer
+ * --color-footer-text: Texto do footer
+ */
+
+/* ==========================================================================
+   BASE STYLES
+   ========================================================================== */
+
+body {
+  background-color: var(--color-bg, #ffffff);
+  color: var(--color-text, #1e293b);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ==========================================================================
+   NAVBAR
+   ========================================================================== */
+
+.navbar {
+  background-color: var(--color-navbar-bg, #ffffff) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: background-color 0.3s ease;
+  position: relative;
+  z-index: 1030;
+}
+
+.navbar .dropdown-menu {
+  z-index: 1040;
+}
+
+.dark-theme .navbar {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.navbar .navbar-brand {
+  color: var(--color-navbar-text, #1e293b) !important;
+  font-weight: 700;
+}
+
+.navbar .nav-link {
+  color: var(--color-navbar-text, #1e293b) !important;
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+.navbar .nav-link:hover {
+  opacity: 1;
+  color: var(--color-primary, #0ea5e9) !important;
+}
+
+.navbar .navbar-toggler {
+  border-color: var(--color-navbar-text, #1e293b);
+}
+
+.navbar .navbar-toggler-icon {
+  filter: var(--navbar-toggler-filter, none);
+}
+
+.dark-theme .navbar .navbar-toggler-icon {
+  filter: invert(1);
+}
+
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+
+.btn-primary {
+  background-color: var(--color-primary, #0ea5e9);
+  border-color: var(--color-primary, #0ea5e9);
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary, #0ea5e9);
+  filter: brightness(1.1);
+  border-color: var(--color-primary, #0ea5e9);
+}
+
+.btn-outline-primary {
+  color: var(--color-primary, #0ea5e9);
+  border-color: var(--color-primary, #0ea5e9);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--color-primary, #0ea5e9);
+  border-color: var(--color-primary, #0ea5e9);
+  color: #ffffff;
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary, #64748b);
+  border-color: var(--color-secondary, #64748b);
+}
+
+.btn-outline-secondary {
+  color: var(--color-navbar-text, #64748b);
+  border-color: var(--color-navbar-text, #64748b);
+  opacity: 0.7;
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--color-secondary, #64748b);
+  border-color: var(--color-secondary, #64748b);
+  color: #ffffff;
+  opacity: 1;
+}
+
+/* ==========================================================================
+   CARDS
+   ========================================================================== */
+
+.card {
+  background-color: var(--color-bg-secondary, #f8fafc);
+  border-color: rgba(0, 0, 0, 0.05);
+  color: var(--color-text, #1e293b);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.dark-theme .card {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.card-title {
+  color: var(--color-text, #1e293b);
+}
+
+.card-text {
+  color: var(--color-text-muted, #64748b);
+}
+
+/* ==========================================================================
+   LINKS
+   ========================================================================== */
+
+a {
+  color: var(--color-primary, #0ea5e9);
+}
+
+a:hover {
+  color: var(--color-primary, #0ea5e9);
+  filter: brightness(1.2);
+}
+
+.text-primary {
+  color: var(--color-primary, #0ea5e9) !important;
+}
+
+/* ==========================================================================
+   TEXT UTILITIES
+   ========================================================================== */
+
+.text-dark {
+  color: var(--color-text, #1e293b) !important;
+}
+
+.dark-theme .text-dark {
+  color: var(--color-text, #f8fafc) !important;
+}
+
+.text-muted {
+  color: var(--color-text-muted, #64748b) !important;
+}
+
+/* ==========================================================================
+   BACKGROUNDS
+   ========================================================================== */
+
+.bg-white {
+  background-color: var(--color-bg, #ffffff) !important;
+}
+
+.bg-light {
+  background-color: var(--color-bg-secondary, #f8fafc) !important;
+}
+
+.dark-theme .bg-white,
+.dark-theme .bg-light {
+  color: var(--color-text, #f8fafc);
+}
+
+/* ==========================================================================
+   HERO SECTION
+   ========================================================================== */
+
+.hero-section {
+  background-color: var(--color-bg-secondary, #f8fafc);
+}
+
+.hero-section h1,
+.hero-section .hero-title {
+  color: var(--color-text, #1e293b);
+}
+
+.hero-section p,
+.hero-section .hero-description {
+  color: var(--color-text-muted, #64748b);
+}
+
+/* ==========================================================================
+   FORMS
+   ========================================================================== */
+
+.form-control {
+  background-color: var(--color-bg, #ffffff);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: var(--color-text, #1e293b);
+}
+
+.dark-theme .form-control {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.form-control:focus {
+  border-color: var(--color-primary, #0ea5e9);
+  box-shadow: 0 0 0 0.2rem rgba(var(--color-primary-rgb, 14, 165, 233), 0.25);
+}
+
+.form-control::placeholder {
+  color: var(--color-text-muted, #64748b);
+  opacity: 0.7;
+}
+
+.form-select {
+  background-color: var(--color-bg, #ffffff);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: var(--color-text, #1e293b);
+}
+
+.dark-theme .form-select {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ==========================================================================
+   BADGES
+   ========================================================================== */
+
+.badge.bg-primary {
+  background-color: var(--color-primary, #0ea5e9) !important;
+}
+
+.badge.bg-secondary {
+  background-color: var(--color-secondary, #64748b) !important;
+}
+
+/* ==========================================================================
+   DROPDOWN
+   ========================================================================== */
+
+.dropdown-menu {
+  background-color: var(--color-bg, #ffffff);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark-theme .dropdown-menu {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.dropdown-item {
+  color: var(--color-text, #1e293b);
+}
+
+.dropdown-item:hover {
+  background-color: var(--color-bg-secondary, #f8fafc);
+  color: var(--color-text, #1e293b);
+}
+
+/* ==========================================================================
+   OFFCANVAS (CARRINHO)
+   ========================================================================== */
+
+.offcanvas {
+  background-color: var(--color-bg, #ffffff);
+  color: var(--color-text, #1e293b);
+}
+
+.offcanvas-header {
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark-theme .offcanvas-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.offcanvas-title {
+  color: var(--color-text, #1e293b);
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+
+footer, .footer {
+  background-color: var(--color-footer-bg, #1e293b);
+  color: var(--color-footer-text, #f8fafc);
+}
+
+footer a, .footer a {
+  color: var(--color-footer-text, #f8fafc);
+  opacity: 0.8;
+}
+
+footer a:hover, .footer a:hover {
+  color: var(--color-footer-text, #f8fafc);
+  opacity: 1;
+}
+
+/* ==========================================================================
+   PRODUCT CARDS
+   ========================================================================== */
+
+.product-card {
+  background-color: var(--color-bg-secondary, #f8fafc);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+.dark-theme .product-card:hover {
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+.product-card .product-title {
+  color: var(--color-text, #1e293b);
+}
+
+.product-card .product-price {
+  color: var(--color-primary, #0ea5e9);
+  font-weight: 700;
+}
+
+.product-card .product-category {
+  color: var(--color-text-muted, #64748b);
+}
+
+/* ==========================================================================
+   PAGINATION
+   ========================================================================== */
+
+.page-link {
+  background-color: var(--color-bg, #ffffff);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: var(--color-text, #1e293b);
+}
+
+.dark-theme .page-link {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.page-link:hover {
+  background-color: var(--color-bg-secondary, #f8fafc);
+  color: var(--color-primary, #0ea5e9);
+}
+
+.page-item.active .page-link {
+  background-color: var(--color-primary, #0ea5e9);
+  border-color: var(--color-primary, #0ea5e9);
+}
+
+/* ==========================================================================
+   TABLES
+   ========================================================================== */
+
+.table {
+  color: var(--color-text, #1e293b);
+}
+
+.table thead th {
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+  color: var(--color-text-muted, #64748b);
+}
+
+.dark-theme .table thead th {
+  border-bottom-color: rgba(255, 255, 255, 0.15);
+}
+
+.table td, .table th {
+  border-bottom-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark-theme .table td,
+.dark-theme .table th {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ==========================================================================
+   CONTAINER ADJUSTMENTS
+   ========================================================================== */
+
+.container {
+  background-color: transparent;
+}
+
+/* ==========================================================================
+   TOASTS (NOTIFICATIONS)
+   ========================================================================== */
+
+.dark-theme .toast-minimal {
+  background: var(--color-bg-secondary, #1f2937);
+}
+
+.dark-theme .toast-minimal .toast-title {
+  color: var(--color-text, #f3f4f6);
+}
+
+.dark-theme .toast-minimal .toast-message {
+  color: var(--color-text-muted, #9ca3af);
+}
+
+/* ==========================================================================
+   SHADOW ADJUSTMENTS FOR DARK THEME
+   ========================================================================== */
+
+.dark-theme .shadow,
+.dark-theme .shadow-sm,
+.dark-theme .shadow-lg {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ==========================================================================
+   SCROLLBAR (WEBKIT)
+   ========================================================================== */
+
+.dark-theme::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark-theme::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary, #1f2937);
+}
+
+.dark-theme::-webkit-scrollbar-thumb {
+  background: var(--color-text-muted, #6b7280);
+  border-radius: 4px;
+}
+
+.dark-theme::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text, #9ca3af);
+}
+
+/* ==========================================================================
+   CATEGORY FILTER SIDEBAR
+   ========================================================================== */
+
+.category-filter {
+  background-color: var(--color-bg-secondary, #f8fafc);
+  border-radius: 8px;
+}
+
+.category-filter .category-item {
+  color: var(--color-text, #1e293b);
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.category-filter .category-item:hover,
+.category-filter .category-item.active {
+  background-color: var(--color-primary, #0ea5e9);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   PRICE & CURRENCY
+   ========================================================================== */
+
+.price, .product-price {
+  color: var(--color-primary, #0ea5e9);
+}
+
+.old-price {
+  color: var(--color-text-muted, #64748b);
+  text-decoration: line-through;
+}
+
+/* ==========================================================================
+   ALERTS
+   ========================================================================== */
+
+.alert {
+  border-radius: 8px;
+}
+
+.dark-theme .alert-info {
+  background-color: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+}
+
+.dark-theme .alert-success {
+  background-color: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #86efac;
+}
+
+.dark-theme .alert-warning {
+  background-color: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fcd34d;
+}
+
+.dark-theme .alert-danger {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+/* ==========================================================================
+   CATEGORY SIDEBAR
+   ========================================================================== */
+
+.category-sidebar {
+  background-color: var(--color-bg-secondary, #f8fafc);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.dark-theme .category-sidebar {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header {
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark-theme .sidebar-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-title {
+  color: var(--color-text, #1e293b);
+  font-weight: 600;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.category-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.category-item {
+  margin-bottom: 4px;
+}
+
+.category-link {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--color-text, #1e293b);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.category-link:hover {
+  background-color: var(--color-primary, #0ea5e9);
+  color: #ffffff !important;
+}
+
+.category-link.active {
+  background-color: var(--color-primary, #0ea5e9);
+  color: #ffffff !important;
+  font-weight: 500;
+}
+
+.category-link i {
+  opacity: 0.7;
+}
+
+.category-link:hover i,
+.category-link.active i {
+  opacity: 1;
+}
+
+.category-count {
+  margin-left: auto;
+  background-color: var(--color-primary, #0ea5e9);
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.category-link.active .category-count {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Mobile sidebar toggle */
+.sidebar-toggle {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1040;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-primary, #0ea5e9) !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Mobile offcanvas */
+.offcanvas {
+  background-color: var(--color-bg, #ffffff);
+  color: var(--color-text, #1e293b);
+}
+
+.offcanvas-header {
+  background-color: var(--color-bg-secondary, #f8fafc);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark-theme .offcanvas-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.offcanvas-title {
+  color: var(--color-text, #1e293b);
+}
+
+.dark-theme .offcanvas .btn-close {
+  filter: invert(1);
+}
+
+/* ==========================================================================
+   PRODUCT CARDS - IMPROVED VISIBILITY
+   ========================================================================== */
+
+.card {
+  background-color: var(--color-bg-secondary, #f8fafc) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dark-theme .card {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.card-body {
+  color: var(--color-text, #1e293b);
+}
+
+.card-title,
+.card-body h5,
+.card-body h6 {
+  color: var(--color-text, #1e293b) !important;
+}
+
+.card-text,
+.card-body p {
+  color: var(--color-text-muted, #64748b);
+}
+
+.card-text a,
+.card-body a {
+  color: var(--color-text, #1e293b) !important;
+  font-weight: 500;
+}
+
+.card-text a:hover,
+.card-body a:hover {
+  color: var(--color-primary, #0ea5e9) !important;
+}
+
+/* Product name in cards */
+.product-item .card-text a,
+.product-item h6,
+.product-item h5 {
+  color: var(--color-text, #1e293b) !important;
+}
+
+/* Product price */
+.product-item .fw-bold,
+.card-price,
+.price {
+  color: var(--color-primary, #0ea5e9) !important;
+  font-weight: 700;
+}
+
+/* Card badges */
+.card .badge {
+  background-color: var(--color-primary, #0ea5e9) !important;
+}
+
+/* ==========================================================================
+   ALBUM / PRODUCT LIST CONTAINER
+   ========================================================================== */
+
+.album {
+  background-color: var(--color-bg-secondary, #ffffff) !important;
+  border-radius: 15px;
+}
+
+.dark-theme .album {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Category title in product list */
+#productList .col-12 h5 {
+  background-color: var(--color-primary, #0ea5e9) !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   DROPDOWN MENUS (CATEGORY FILTER IN NAVBAR)
+   ========================================================================== */
+
+.dropdown-toggle {
+  color: var(--color-navbar-text, #1e293b) !important;
+}
+
+.dropdown-menu {
+  background-color: var(--color-bg, #ffffff);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark-theme .dropdown-menu {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.dropdown-item {
+  color: var(--color-text, #1e293b);
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: var(--color-primary, #0ea5e9);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   SEARCH BAR
+   ========================================================================== */
+
+.search-bar {
+  background-color: var(--color-bg, #ffffff);
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.dark-theme .search-bar {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.search-bar input {
+  background-color: transparent;
+  color: var(--color-text, #1e293b);
+  border: none;
+}
+
+.search-bar input::placeholder {
+  color: var(--color-text-muted, #64748b);
+}
+
+/* ==========================================================================
+   HERO SECTION
+   ========================================================================== */
+
+.hero {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-content h1,
+.hero h1 {
+  color: #ffffff !important;
+}
+
+.hero-content p,
+.hero p {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* ==========================================================================
+   CONTAINER BACKGROUNDS
+   ========================================================================== */
+
+.container {
+  background-color: transparent;
+}
+
+/* Main content area */
+main,
+.main-content {
+  background-color: var(--color-bg, #ffffff);
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+
+footer {
+  background-color: var(--color-footer-bg, #1e293b) !important;
+  color: var(--color-footer-text, #f8fafc) !important;
+}
+
+footer a {
+  color: var(--color-footer-text, #f8fafc) !important;
+}
+
+/* ==========================================================================
+   CART OFFCANVAS
+   ========================================================================== */
+
+#cartOffcanvas {
+  background-color: var(--color-bg, #ffffff);
+}
+
+#cartOffcanvas .offcanvas-header {
+  background-color: var(--color-bg-secondary, #f8fafc);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark-theme #cartOffcanvas .offcanvas-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+#cartOffcanvas .offcanvas-title {
+  color: var(--color-text, #1e293b);
+}
+
+.dark-theme #cartOffcanvas .btn-close {
+  filter: invert(1);
+}
+
+/* Cart items */
+.cart-item {
+  background-color: var(--color-bg-secondary, #f8fafc);
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.dark-theme .cart-item {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.cart-item .card-price {
+  color: var(--color-primary, #0ea5e9) !important;
+}
+
+/* ==========================================================================
+   ACTION BOX (PRODUCT DETAIL)
+   ========================================================================== */
+
+.action-box {
+  background-color: var(--color-bg-secondary, #f8fafc) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.dark-theme .action-box {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ==========================================================================
+   IMAGE GALLERY
+   ========================================================================== */
+
+.image-gallery .main-image {
+  background-color: var(--color-bg-secondary, #f8fafc);
+}
+
+.image-gallery .thumbnails img {
+  border-color: transparent;
+}
+
+.image-gallery .thumbnails img:hover,
+.image-gallery .thumbnails img.active {
+  border-color: var(--color-primary, #0ea5e9);
+}
+
+/* ==========================================================================
+   ENHANCED DARK THEME - PREMIUM E-COMMERCE STYLES
+   ========================================================================== */
+
+/* Premium gold accent for dark themes */
+.dark-theme .btn-primary {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  border: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.dark-theme .btn-primary:hover {
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Enhanced cards for dark theme */
+.dark-theme .card {
+  background: linear-gradient(145deg, var(--color-bg-secondary) 0%, rgba(30, 30, 30, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark-theme .card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  border-color: var(--color-primary);
+}
+
+.dark-theme .card img {
+  transition: transform 0.4s ease;
+}
+
+.dark-theme .card:hover img {
+  transform: scale(1.05);
+}
+
+/* Premium navbar for dark theme */
+.dark-theme .navbar {
+  background: linear-gradient(180deg, var(--color-navbar-bg) 0%, rgba(0, 0, 0, 0.95) 100%) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .navbar-brand {
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.dark-theme .navbar .nav-link {
+  position: relative;
+  padding: 0.5rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.dark-theme .navbar .nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--color-primary);
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.dark-theme .navbar .nav-link:hover::after {
+  width: 80%;
+}
+
+/* Premium hero section */
+.dark-theme .hero {
+  position: relative;
+  z-index: 1;
+}
+
+.dark-theme .hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.5) 50%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+  z-index: -1;
+}
+
+.dark-theme .hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.dark-theme .hero h1 {
+  text-shadow: 2px 4px 20px rgba(0, 0, 0, 0.8);
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.dark-theme .hero p {
+  text-shadow: 1px 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+/* Premium product price styling */
+.dark-theme .product-price,
+.dark-theme .price,
+.dark-theme .card-body h5 {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+/* Enhanced album/product container */
+.dark-theme .album {
+  background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-secondary) 100%) !important;
+  border-radius: 20px;
+  padding: 3rem 2rem;
+}
+
+/* Premium footer */
+.dark-theme footer {
+  background: linear-gradient(180deg, var(--color-footer-bg) 0%, #000 100%) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme footer a:hover {
+  color: var(--color-primary) !important;
+}
+
+/* Premium form inputs */
+.dark-theme .form-control,
+.dark-theme .form-select {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--color-text);
+  transition: all 0.3s ease;
+}
+
+.dark-theme .form-control:focus,
+.dark-theme .form-select:focus {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb, 201, 162, 39), 0.2);
+}
+
+/* Premium badges */
+.dark-theme .badge {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%) !important;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Category sidebar dark theme enhancement */
+.dark-theme .category-sidebar {
+  background: linear-gradient(180deg, var(--color-bg-secondary) 0%, rgba(20, 20, 20, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dark-theme .category-link:hover,
+.dark-theme .category-link.active {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+}
+
+/* ==========================================================================
+   WHATSAPP FLOATING BUTTON
+   ========================================================================== */
+
+.whatsapp-float {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1050;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.whatsapp-float:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 30px rgba(37, 211, 102, 0.6);
+}
+
+.whatsapp-float i {
+  color: #fff;
+  font-size: 28px;
+}
+
+/* ==========================================================================
+   WELCOME SECTION
+   ========================================================================== */
+
+.welcome-section {
+  padding: 60px 0;
+  text-align: center;
+  background: var(--color-bg-secondary);
+}
+
+.welcome-section h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 1rem;
+}
+
+.welcome-section p {
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.dark-theme .welcome-section h2 {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ==========================================================================
+   FEATURES SECTION
+   ========================================================================== */
+
+.features-section {
+  padding: 50px 0;
+  background: var(--color-bg);
+}
+
+.feature-card {
+  text-align: center;
+  padding: 30px 20px;
+  border-radius: 12px;
+  background: var(--color-bg-secondary);
+  transition: all 0.3s ease;
+  height: 100%;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.dark-theme .feature-card:hover {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--color-primary);
+}
+
+.feature-icon {
+  width: 60px;
+  height: 60px;
+  min-width: 60px;
+  min-height: 60px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.feature-icon i {
+  color: #fff;
+  font-size: 24px;
+}
+
+.feature-card h5 {
+  color: var(--color-text);
+  font-weight: 600;
+  margin-bottom: 10px;
+  min-height: 1.5em;
+}
+
+.feature-card p {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+  flex-grow: 1;
+}
+
+/* ==========================================================================
+   ENHANCED PRODUCT CARDS
+   ========================================================================== */
+
+.product-card-enhanced {
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--color-bg-secondary);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dark-theme .product-card-enhanced {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.product-card-enhanced:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.dark-theme .product-card-enhanced:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  border-color: var(--color-primary);
+}
+
+.product-card-enhanced .card-img-wrapper {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.product-card-enhanced .card-img-wrapper img {
+  transition: transform 0.5s ease;
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.product-card-enhanced:hover .card-img-wrapper img {
+  transform: scale(1.08);
+}
+
+.product-card-enhanced .card-body {
+  padding: 1.25rem;
+}
+
+.product-card-enhanced .product-name {
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.product-card-enhanced:hover .product-name {
+  color: var(--color-primary);
+}
+
+.product-card-enhanced .product-price {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* ==========================================================================
+   SMOOTH SCROLLING & TRANSITIONS
+   ========================================================================== */
+
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================================================
+   RESPONSIVE ENHANCEMENTS
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero p {
+    font-size: 1rem;
+  }
+
+  .welcome-section {
+    padding: 40px 20px;
+  }
+
+  .welcome-section h2 {
+    font-size: 1.5rem;
+  }
+
+  .features-section {
+    padding: 30px 0;
+  }
+
+  .whatsapp-float {
+    width: 50px;
+    height: 50px;
+    bottom: 16px;
+    right: 16px;
+  }
+
+  .whatsapp-float i {
+    font-size: 24px;
+  }
+}
+
+/* ==========================================================================
+   LOADING SKELETON
+   ========================================================================== */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-secondary) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    var(--color-bg-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ==========================================================================
+   GATO PRETO THEME - MYSTICAL HERO SECTION
+   ========================================================================== */
+
+/* Mystical hero with SVG background */
+.dark-theme .hero.mystical-hero {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  min-height: 500px;
+}
+
+.dark-theme .hero.mystical-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    rgba(0, 0, 0, 0.3) 50%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+  z-index: -1;
+}
+
+.dark-theme .hero.mystical-hero::after {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.4) 70%,
+    rgba(13, 13, 13, 0.95) 100%
+  );
+}
+
+.dark-theme .hero.mystical-hero .hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.dark-theme .hero.mystical-hero h1 {
+  font-family: 'Georgia', serif;
+  font-weight: 400;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  font-size: 2.5rem;
+  text-shadow:
+    0 0 10px rgba(201, 162, 39, 0.5),
+    0 0 20px rgba(201, 162, 39, 0.3),
+    2px 4px 20px rgba(0, 0, 0, 0.8);
+}
+
+.dark-theme .hero.mystical-hero p {
+  font-style: italic;
+  letter-spacing: 1px;
+  text-shadow: 1px 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+.dark-theme .hero.mystical-hero .btn-primary {
+  background: linear-gradient(135deg, #c9a227 0%, #e8d5a3 50%, #c9a227 100%);
+  border: 1px solid rgba(232, 213, 163, 0.3);
+  color: #0d0d0d;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 16px 45px;
+  box-shadow:
+    0 4px 15px rgba(201, 162, 39, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.dark-theme .hero.mystical-hero .btn-primary:hover {
+  background: linear-gradient(135deg, #e8d5a3 0%, #c9a227 50%, #e8d5a3 100%);
+  transform: translateY(-3px);
+  box-shadow:
+    0 8px 25px rgba(201, 162, 39, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Mystical glow animation */
+@keyframes mystical-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 5px rgba(201, 162, 39, 0.3),
+      0 0 10px rgba(201, 162, 39, 0.2),
+      0 0 15px rgba(201, 162, 39, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 10px rgba(201, 162, 39, 0.5),
+      0 0 20px rgba(201, 162, 39, 0.3),
+      0 0 30px rgba(201, 162, 39, 0.2);
+  }
+}
+
+.dark-theme .mystical-glow {
+  animation: mystical-glow 3s ease-in-out infinite;
+}
+
+/* Golden border accent for dark theme cards */
+.dark-theme .mystical-card {
+  border: 1px solid rgba(201, 162, 39, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.dark-theme .mystical-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #c9a227, transparent);
+  animation: mystical-shine 3s infinite;
+}
+
+@keyframes mystical-shine {
+  0% {
+    left: -100%;
+  }
+  50%, 100% {
+    left: 100%;
+  }
+}
+
+/* Mystical welcome section */
+.dark-theme .welcome-section.mystical {
+  background: linear-gradient(
+    135deg,
+    rgba(13, 13, 13, 1) 0%,
+    rgba(26, 26, 26, 1) 50%,
+    rgba(13, 13, 13, 1) 100%
+  );
+  position: relative;
+}
+
+.dark-theme .welcome-section.mystical::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(201, 162, 39, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 50%, rgba(201, 162, 39, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Mystical divider */
+.mystical-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #c9a227, transparent);
+  margin: 2rem auto;
+  max-width: 300px;
+}
+
+/* Ornamental corners for mystical sections */
+.dark-theme .mystical-corners {
+  position: relative;
+}
+
+.dark-theme .mystical-corners::before,
+.dark-theme .mystical-corners::after {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-color: #c9a227;
+  opacity: 0.5;
+}
+
+.dark-theme .mystical-corners::before {
+  top: 10px;
+  left: 10px;
+  border-top: 2px solid;
+  border-left: 2px solid;
+}
+
+.dark-theme .mystical-corners::after {
+  bottom: 10px;
+  right: 10px;
+  border-bottom: 2px solid;
+  border-right: 2px solid;
+}
+
+/* Candle flame effect for icons */
+@keyframes candle-flicker {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  25% {
+    transform: scale(1.05) translateY(-2px);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(0.98) translateY(1px);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(1.02) translateY(-1px);
+    opacity: 0.95;
+  }
+}
+
+.dark-theme .feature-icon.mystical {
+  animation: candle-flicker 2s ease-in-out infinite;
+  background: linear-gradient(135deg, #c9a227 0%, #8b7355 100%);
+}
+
+/* Mystical text effect */
+.dark-theme .mystical-text {
+  background: linear-gradient(
+    90deg,
+    #c9a227 0%,
+    #e8d5a3 25%,
+    #c9a227 50%,
+    #e8d5a3 75%,
+    #c9a227 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: mystical-text-shine 4s linear infinite;
+}
+
+@keyframes mystical-text-shine {
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
