@@ -1,3 +1,345 @@
 {% extends "base.html" %}
 
+{% block title %}Sobre - {{ site_config.site_name }}{% endblock %}
 
+{% block css %}
+{{ block.super }}
+<style>
+    .about-hero {
+        background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg) 100%);
+        padding: 80px 0;
+        text-align: center;
+    }
+
+    .about-hero h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--color-text);
+        margin-bottom: 1rem;
+    }
+
+    .about-hero p {
+        font-size: 1.1rem;
+        color: var(--color-text-muted);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .dark-theme .about-hero h1 {
+        background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .about-section {
+        padding: 60px 0;
+    }
+
+    .about-card {
+        background: var(--color-bg-secondary);
+        border-radius: 16px;
+        padding: 40px;
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+
+    .dark-theme .about-card {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .about-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .dark-theme .about-card:hover {
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        border-color: var(--color-primary);
+    }
+
+    .about-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: var(--color-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+    }
+
+    .about-icon i {
+        font-size: 32px;
+        color: #fff;
+    }
+
+    .about-card h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--color-text);
+        margin-bottom: 16px;
+    }
+
+    .about-card p {
+        color: var(--color-text-muted);
+        line-height: 1.7;
+    }
+
+    .stats-section {
+        background: var(--color-primary);
+        padding: 60px 0;
+    }
+
+    .dark-theme .stats-section {
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    }
+
+    .stat-item {
+        text-align: center;
+        color: #fff;
+    }
+
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .stat-label {
+        font-size: 1rem;
+        opacity: 0.9;
+    }
+
+    .values-section {
+        padding: 80px 0;
+        background: var(--color-bg);
+    }
+
+    .section-title {
+        text-align: center;
+        margin-bottom: 50px;
+    }
+
+    .section-title h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--color-text);
+        margin-bottom: 1rem;
+    }
+
+    .section-title p {
+        color: var(--color-text-muted);
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .dark-theme .section-title h2 {
+        background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .value-card {
+        text-align: center;
+        padding: 30px;
+    }
+
+    .value-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        background: rgba(var(--color-primary-rgb, 201, 162, 39), 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+
+    .dark-theme .value-icon {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .value-icon i {
+        font-size: 24px;
+        color: var(--color-primary);
+    }
+
+    .value-card h5 {
+        font-weight: 600;
+        color: var(--color-text);
+        margin-bottom: 10px;
+    }
+
+    .value-card p {
+        color: var(--color-text-muted);
+        font-size: 0.9rem;
+    }
+
+    .cta-section {
+        padding: 80px 0;
+        background: var(--color-bg-secondary);
+        text-align: center;
+    }
+
+    .cta-section h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--color-text);
+        margin-bottom: 1rem;
+    }
+
+    .cta-section p {
+        color: var(--color-text-muted);
+        margin-bottom: 2rem;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .cta-section .btn-primary {
+        padding: 14px 40px;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 30px;
+    }
+</style>
+{% endblock css %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="about-hero">
+    <div class="container">
+        <h1>Sobre o {{ site_config.site_name }}</h1>
+        <p>Conheca nossa historia e nosso compromisso em oferecer os melhores produtos para voce.</p>
+    </div>
+</section>
+
+<!-- About Section -->
+<section class="about-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="about-card">
+                    <div class="about-icon">
+                        <i class="fa fa-building"></i>
+                    </div>
+                    <h3>Nossa Historia</h3>
+                    <p>Nascemos com o proposito de levar produtos de qualidade ate voce, com precos justos e atendimento excepcional. Ao longo dos anos, construimos uma base solida de clientes satisfeitos.</p>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="about-card">
+                    <div class="about-icon">
+                        <i class="fa fa-bullseye"></i>
+                    </div>
+                    <h3>Nossa Missao</h3>
+                    <p>Oferecer uma experiencia de compra online segura, pratica e satisfatoria, disponibilizando produtos selecionados com a melhor relacao custo-beneficio do mercado.</p>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="about-card">
+                    <div class="about-icon">
+                        <i class="fa fa-eye"></i>
+                    </div>
+                    <h3>Nossa Visao</h3>
+                    <p>Ser referencia em comercio eletronico, reconhecidos pela qualidade dos produtos, excelencia no atendimento e compromisso com a satisfacao dos nossos clientes.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="stats-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <div class="stat-number">1000+</div>
+                    <div class="stat-label">Clientes Satisfeitos</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <div class="stat-number">500+</div>
+                    <div class="stat-label">Produtos</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <div class="stat-number">5</div>
+                    <div class="stat-label">Anos de Mercado</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <div class="stat-number">98%</div>
+                    <div class="stat-label">Avaliacao Positiva</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Values Section -->
+<section class="values-section">
+    <div class="container">
+        <div class="section-title">
+            <h2>Nossos Valores</h2>
+            <p>Os principios que guiam todas as nossas acoes e decisoes.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-3 col-6">
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="fa fa-handshake"></i>
+                    </div>
+                    <h5>Confianca</h5>
+                    <p>Transparencia em todas as relacoes</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="fa fa-star"></i>
+                    </div>
+                    <h5>Qualidade</h5>
+                    <p>Produtos selecionados criteriosamente</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="fa fa-heart"></i>
+                    </div>
+                    <h5>Dedicacao</h5>
+                    <p>Compromisso com sua satisfacao</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="fa fa-rocket"></i>
+                    </div>
+                    <h5>Inovacao</h5>
+                    <p>Sempre buscando melhorias</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <h2>Pronto para explorar?</h2>
+        <p>Confira nossa selecao de produtos e encontre exatamente o que voce precisa.</p>
+        <a href="{% url 'home' %}" class="btn btn-primary">
+            <i class="fa fa-shopping-bag me-2"></i>
+            Ver Produtos
+        </a>
+    </div>
+</section>
+{% endblock content %}

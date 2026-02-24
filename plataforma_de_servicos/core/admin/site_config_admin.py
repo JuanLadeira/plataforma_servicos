@@ -9,7 +9,7 @@ from plataforma_de_servicos.core.models import SiteConfig
 class SiteConfigAdmin(ModelAdmin):
     """Admin para configurações do site (singleton global)."""
 
-    list_display = ("empresa", "site_name", "hero_title", "modified")
+    list_display = ("empresa", "site_name", "theme", "hero_title", "modified")
     readonly_fields = ("created", "modified")
 
     fieldsets = [
@@ -23,8 +23,15 @@ class SiteConfigAdmin(ModelAdmin):
         (
             "Identidade do Site",
             {
-                "fields": ["site_name"],
-                "description": "Nome exibido no navbar do site.",
+                "fields": ["site_name", "logo"],
+                "description": "Nome e logo exibidos no navbar do site.",
+            },
+        ),
+        (
+            "Tema e Cores",
+            {
+                "fields": ["theme"],
+                "description": "Escolha um tema de cores para o site. O tema define cores do navbar, fundo, textos e botões.",
             },
         ),
         (
@@ -62,15 +69,22 @@ class SiteConfigAdmin(ModelAdmin):
 class SiteConfigGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     """Admin para configurações do site no painel de gerentes (filtrado por tenant)."""
 
-    list_display = ("site_name", "hero_title", "modified")
+    list_display = ("site_name", "theme", "hero_title", "modified")
     readonly_fields = ("created", "modified")
 
     fieldsets = [
         (
             "Identidade do Site",
             {
-                "fields": ["site_name"],
-                "description": "Nome exibido no navbar do site.",
+                "fields": ["site_name", "logo"],
+                "description": "Nome e logo exibidos no navbar do site.",
+            },
+        ),
+        (
+            "Tema e Cores",
+            {
+                "fields": ["theme"],
+                "description": "Escolha um tema de cores para personalizar seu site. Cada tema possui uma paleta de cores harmoniosa.",
             },
         ),
         (

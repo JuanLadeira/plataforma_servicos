@@ -13,7 +13,7 @@
                 <a href="#"
                    class="category-link {% if not selected_category or selected_category == 'all' %}active{% endif %}"
                    hx-get="{% url 'home' %}"
-                   hx-target="#productList"
+                   hx-target="#productListContent"
                    hx-push-url="true"
                    hx-on::after-request="updateActiveCategory(this)">
                     <i class="fa fa-grid-2 me-2"></i>
@@ -25,7 +25,7 @@
                 <a href="#"
                    class="category-link {% if selected_category == category.id %}active{% endif %}"
                    hx-get="{% url 'home' %}?category={{ category.id }}"
-                   hx-target="#productList"
+                   hx-target="#productListContent"
                    hx-push-url="true"
                    hx-on::after-request="updateActiveCategory(this)">
                     <i class="fa fa-tag me-2"></i>
@@ -70,7 +70,7 @@
                     <a href="#"
                        class="category-link {% if not selected_category or selected_category == 'all' %}active{% endif %}"
                        hx-get="{% url 'home' %}"
-                       hx-target="#productList"
+                       hx-target="#productListContent"
                        hx-push-url="true"
                        data-bs-dismiss="offcanvas"
                        hx-on::after-request="updateActiveCategory(this)">
@@ -83,7 +83,7 @@
                     <a href="#"
                        class="category-link {% if selected_category == category.id %}active{% endif %}"
                        hx-get="{% url 'home' %}?category={{ category.id }}"
-                       hx-target="#productList"
+                       hx-target="#productListContent"
                        hx-push-url="true"
                        data-bs-dismiss="offcanvas"
                        hx-on::after-request="updateActiveCategory(this)">

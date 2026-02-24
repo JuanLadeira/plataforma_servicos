@@ -1,0 +1,314 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 600" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Gradientes -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#050505"/>
+      <stop offset="30%" style="stop-color:#0d0d0d"/>
+      <stop offset="70%" style="stop-color:#1a1a1a"/>
+      <stop offset="100%" style="stop-color:#0a0a0a"/>
+    </linearGradient>
+
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c9a227"/>
+      <stop offset="50%" style="stop-color:#e8d5a3"/>
+      <stop offset="100%" style="stop-color:#c9a227"/>
+    </linearGradient>
+
+    <linearGradient id="candleGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffcc00;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#c9a227;stop-opacity:0"/>
+    </linearGradient>
+
+    <radialGradient id="mysticalGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#c9a227;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#c9a227;stop-opacity:0"/>
+    </radialGradient>
+
+    <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#e8d5a3;stop-opacity:1"/>
+      <stop offset="50%" style="stop-color:#c9a227;stop-opacity:0.5"/>
+      <stop offset="100%" style="stop-color:#c9a227;stop-opacity:0"/>
+    </radialGradient>
+
+    <!-- Filtros -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="softGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Padrão de estrelas -->
+    <pattern id="starsPattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="20" r="0.5" fill="#e8d5a3" opacity="0.3"/>
+      <circle cx="50" cy="10" r="0.8" fill="#c9a227" opacity="0.4"/>
+      <circle cx="80" cy="40" r="0.4" fill="#e8d5a3" opacity="0.2"/>
+      <circle cx="30" cy="70" r="0.6" fill="#c9a227" opacity="0.3"/>
+      <circle cx="90" cy="80" r="0.5" fill="#e8d5a3" opacity="0.25"/>
+      <circle cx="60" cy="60" r="0.7" fill="#c9a227" opacity="0.35"/>
+    </pattern>
+  </defs>
+
+  <!-- Fundo -->
+  <rect width="100%" height="100%" fill="url(#bgGradient)"/>
+
+  <!-- Estrelas de fundo -->
+  <rect width="100%" height="100%" fill="url(#starsPattern)" opacity="0.8"/>
+
+  <!-- Círculo místico central (aura) -->
+  <circle cx="960" cy="300" r="280" fill="url(#mysticalGlow)" opacity="0.5">
+    <animate attributeName="r" values="270;290;270" dur="4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.4;0.6;0.4" dur="4s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Lua crescente - lado esquerdo -->
+  <g transform="translate(150, 80)" filter="url(#glow)">
+    <path d="M60,0 A60,60 0 1,1 60,120 A45,45 0 1,0 60,0" fill="#e8d5a3" opacity="0.9"/>
+  </g>
+
+  <!-- Estrelas maiores decorativas -->
+  <g filter="url(#softGlow)">
+    <!-- Estrela 1 -->
+    <polygon points="300,150 305,165 320,165 308,175 313,190 300,180 287,190 292,175 280,165 295,165" fill="#c9a227" opacity="0.8">
+      <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite"/>
+    </polygon>
+
+    <!-- Estrela 2 -->
+    <polygon points="1600,100 1605,115 1620,115 1608,125 1613,140 1600,130 1587,140 1592,125 1580,115 1595,115" fill="#e8d5a3" opacity="0.7">
+      <animate attributeName="opacity" values="0.5;0.9;0.5" dur="2.5s" repeatCount="indefinite"/>
+    </polygon>
+
+    <!-- Estrela 3 -->
+    <polygon points="1750,200 1753,210 1763,210 1755,217 1758,227 1750,220 1742,227 1745,217 1737,210 1747,210" fill="#c9a227" opacity="0.6">
+      <animate attributeName="opacity" values="0.4;0.8;0.4" dur="4s" repeatCount="indefinite"/>
+    </polygon>
+
+    <!-- Estrela 4 -->
+    <polygon points="100,350 103,360 113,360 105,367 108,377 100,370 92,377 95,367 87,360 97,360" fill="#e8d5a3" opacity="0.5">
+      <animate attributeName="opacity" values="0.3;0.7;0.3" dur="3.5s" repeatCount="indefinite"/>
+    </polygon>
+  </g>
+
+  <!-- Pentagrama dourado central (símbolo místico) -->
+  <g transform="translate(960, 300)" filter="url(#glow)">
+    <circle cx="0" cy="0" r="120" fill="none" stroke="#c9a227" stroke-width="1" opacity="0.3">
+      <animate attributeName="r" values="115;125;115" dur="5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="0" cy="0" r="100" fill="none" stroke="#c9a227" stroke-width="0.5" opacity="0.2">
+      <animate attributeName="r" values="95;105;95" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    <!-- Pentagrama -->
+    <polygon points="0,-80 -76,-25 -47,65 47,65 76,-25"
+             fill="none" stroke="url(#goldGradient)" stroke-width="1.5" opacity="0.4">
+      <animate attributeName="opacity" values="0.3;0.5;0.3" dur="3s" repeatCount="indefinite"/>
+    </polygon>
+  </g>
+
+  <!-- Gato preto - silhueta centralizada -->
+  <g transform="translate(760, 180)" filter="url(#glow)">
+    <!-- Corpo do gato sentado -->
+    <path d="
+      M200,350
+      C200,350 180,340 170,310
+      C160,280 165,250 180,230
+      C195,210 220,200 240,200
+      C260,200 285,210 300,230
+      C315,250 320,280 310,310
+      C300,340 280,350 280,350
+      C280,350 290,380 285,400
+      C280,420 200,420 195,400
+      C190,380 200,350 200,350
+      Z
+    " fill="#0d0d0d" stroke="#c9a227" stroke-width="1" opacity="0.95"/>
+
+    <!-- Cabeça do gato -->
+    <ellipse cx="240" cy="160" rx="55" ry="50" fill="#0d0d0d" stroke="#c9a227" stroke-width="1"/>
+
+    <!-- Orelhas -->
+    <path d="M195,130 L175,80 L210,115 Z" fill="#0d0d0d" stroke="#c9a227" stroke-width="1"/>
+    <path d="M285,130 L305,80 L270,115 Z" fill="#0d0d0d" stroke="#c9a227" stroke-width="1"/>
+
+    <!-- Interior das orelhas -->
+    <path d="M195,125 L182,95 L205,118 Z" fill="#1a1a1a" opacity="0.8"/>
+    <path d="M285,125 L298,95 L275,118 Z" fill="#1a1a1a" opacity="0.8"/>
+
+    <!-- Olhos brilhantes -->
+    <ellipse cx="220" cy="155" rx="12" ry="15" fill="#c9a227">
+      <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="260" cy="155" rx="12" ry="15" fill="#c9a227">
+      <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite"/>
+    </ellipse>
+
+    <!-- Pupilas -->
+    <ellipse cx="220" cy="155" rx="4" ry="10" fill="#0a0a0a"/>
+    <ellipse cx="260" cy="155" rx="4" ry="10" fill="#0a0a0a"/>
+
+    <!-- Brilho nos olhos -->
+    <circle cx="224" cy="150" r="3" fill="#fff" opacity="0.8"/>
+    <circle cx="264" cy="150" r="3" fill="#fff" opacity="0.8"/>
+
+    <!-- Nariz -->
+    <path d="M237,175 L240,182 L243,175 Z" fill="#8b7355"/>
+
+    <!-- Bigodes -->
+    <g stroke="#c9a227" stroke-width="0.5" opacity="0.6">
+      <line x1="190" y1="175" x2="220" y2="178"/>
+      <line x1="185" y1="180" x2="218" y2="182"/>
+      <line x1="188" y1="185" x2="220" y2="185"/>
+      <line x1="260" y1="178" x2="290" y2="175"/>
+      <line x1="262" y1="182" x2="295" y2="180"/>
+      <line x1="260" y1="185" x2="292" y2="185"/>
+    </g>
+
+    <!-- Cauda -->
+    <path d="M310,350 C340,340 360,300 380,280 C400,260 410,220 400,200"
+          fill="none" stroke="#0d0d0d" stroke-width="25" stroke-linecap="round"/>
+    <path d="M310,350 C340,340 360,300 380,280 C400,260 410,220 400,200"
+          fill="none" stroke="#c9a227" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+  </g>
+
+  <!-- Velas místicas - lado esquerdo -->
+  <g transform="translate(350, 380)">
+    <!-- Vela 1 -->
+    <rect x="0" y="0" width="20" height="80" fill="#e8d5a3" rx="2"/>
+    <rect x="2" y="5" width="4" height="70" fill="#c9a227" opacity="0.3"/>
+    <ellipse cx="10" cy="0" rx="10" ry="3" fill="#c9a227"/>
+    <!-- Chama -->
+    <ellipse cx="10" cy="-20" rx="6" ry="15" fill="url(#candleGlow)">
+      <animate attributeName="ry" values="14;16;14" dur="0.5s" repeatCount="indefinite"/>
+      <animate attributeName="rx" values="5;7;5" dur="0.7s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="10" cy="-18" rx="3" ry="8" fill="#ffcc00" opacity="0.9">
+      <animate attributeName="ry" values="7;9;7" dur="0.4s" repeatCount="indefinite"/>
+    </ellipse>
+
+    <!-- Vela 2 -->
+    <rect x="35" y="20" width="18" height="60" fill="#e8d5a3" rx="2"/>
+    <ellipse cx="44" cy="20" rx="9" ry="3" fill="#c9a227"/>
+    <ellipse cx="44" cy="2" rx="5" ry="12" fill="url(#candleGlow)">
+      <animate attributeName="ry" values="11;13;11" dur="0.6s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="44" cy="4" rx="2.5" ry="6" fill="#ffcc00" opacity="0.9">
+      <animate attributeName="ry" values="5;7;5" dur="0.5s" repeatCount="indefinite"/>
+    </ellipse>
+  </g>
+
+  <!-- Velas místicas - lado direito -->
+  <g transform="translate(1500, 380)">
+    <!-- Vela 1 -->
+    <rect x="0" y="10" width="18" height="70" fill="#e8d5a3" rx="2"/>
+    <ellipse cx="9" cy="10" rx="9" ry="3" fill="#c9a227"/>
+    <ellipse cx="9" cy="-8" rx="5" ry="13" fill="url(#candleGlow)">
+      <animate attributeName="ry" values="12;14;12" dur="0.55s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="9" cy="-6" rx="2.5" ry="7" fill="#ffcc00" opacity="0.9">
+      <animate attributeName="ry" values="6;8;6" dur="0.45s" repeatCount="indefinite"/>
+    </ellipse>
+
+    <!-- Vela 2 -->
+    <rect x="30" y="0" width="20" height="80" fill="#e8d5a3" rx="2"/>
+    <ellipse cx="40" cy="0" rx="10" ry="3" fill="#c9a227"/>
+    <ellipse cx="40" cy="-18" rx="6" ry="14" fill="url(#candleGlow)">
+      <animate attributeName="ry" values="13;15;13" dur="0.5s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="40" cy="-16" rx="3" ry="7" fill="#ffcc00" opacity="0.9">
+      <animate attributeName="ry" values="6;8;6" dur="0.4s" repeatCount="indefinite"/>
+    </ellipse>
+  </g>
+
+  <!-- Símbolos místicos flutuantes -->
+  <g filter="url(#glow)" opacity="0.4">
+    <!-- Ankh (símbolo egípcio) -->
+    <g transform="translate(500, 250)">
+      <ellipse cx="0" cy="-20" rx="15" ry="20" fill="none" stroke="#c9a227" stroke-width="2"/>
+      <line x1="0" y1="0" x2="0" y2="50" stroke="#c9a227" stroke-width="2"/>
+      <line x1="-20" y1="15" x2="20" y2="15" stroke="#c9a227" stroke-width="2"/>
+      <animate attributeName="opacity" values="0.3;0.5;0.3" dur="4s" repeatCount="indefinite"/>
+    </g>
+
+    <!-- Olho de Hórus simplificado -->
+    <g transform="translate(1400, 250)">
+      <ellipse cx="0" cy="0" rx="25" ry="15" fill="none" stroke="#c9a227" stroke-width="1.5"/>
+      <circle cx="0" cy="0" r="8" fill="#c9a227" opacity="0.5"/>
+      <path d="M-25,0 Q-35,15 -30,30" fill="none" stroke="#c9a227" stroke-width="1.5"/>
+      <path d="M25,0 L40,5" fill="none" stroke="#c9a227" stroke-width="1.5"/>
+      <animate attributeName="opacity" values="0.3;0.5;0.3" dur="5s" repeatCount="indefinite"/>
+    </g>
+
+    <!-- Triskele (símbolo celta) -->
+    <g transform="translate(200, 480)">
+      <path d="M0,0 Q-20,-30 0,-20 Q20,-30 0,0" fill="none" stroke="#c9a227" stroke-width="1.5"/>
+      <path d="M0,0 Q30,10 20,0 Q30,-10 0,0" fill="none" stroke="#c9a227" stroke-width="1.5" transform="rotate(120)"/>
+      <path d="M0,0 Q30,10 20,0 Q30,-10 0,0" fill="none" stroke="#c9a227" stroke-width="1.5" transform="rotate(240)"/>
+      <animate attributeName="opacity" values="0.2;0.4;0.2" dur="6s" repeatCount="indefinite"/>
+    </g>
+
+    <!-- Símbolo do infinito -->
+    <g transform="translate(1700, 450)">
+      <path d="M-30,0 C-30,-20 -10,-20 0,0 C10,20 30,20 30,0 C30,-20 10,-20 0,0 C-10,20 -30,20 -30,0"
+            fill="none" stroke="#c9a227" stroke-width="1.5"/>
+      <animate attributeName="opacity" values="0.2;0.4;0.2" dur="5s" repeatCount="indefinite"/>
+    </g>
+  </g>
+
+  <!-- Partículas brilhantes -->
+  <g>
+    <circle cx="450" cy="200" r="2" fill="#e8d5a3">
+      <animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="cy" values="200;180;200" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1450" cy="180" r="1.5" fill="#c9a227">
+      <animate attributeName="opacity" values="0;1;0" dur="4s" repeatCount="indefinite"/>
+      <animate attributeName="cy" values="180;160;180" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="800" cy="400" r="2" fill="#e8d5a3">
+      <animate attributeName="opacity" values="0;1;0" dur="2.5s" repeatCount="indefinite"/>
+      <animate attributeName="cy" values="400;380;400" dur="2.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1120" cy="420" r="1.8" fill="#c9a227">
+      <animate attributeName="opacity" values="0;1;0" dur="3.5s" repeatCount="indefinite"/>
+      <animate attributeName="cy" values="420;400;420" dur="3.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="600" cy="100" r="1.5" fill="#e8d5a3">
+      <animate attributeName="opacity" values="0;1;0" dur="4.5s" repeatCount="indefinite"/>
+      <animate attributeName="cy" values="100;80;100" dur="4.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1300" cy="350" r="2" fill="#c9a227">
+      <animate attributeName="opacity" values="0;1;0" dur="3s" repeatCount="indefinite" begin="1s"/>
+      <animate attributeName="cy" values="350;330;350" dur="3s" repeatCount="indefinite" begin="1s"/>
+    </circle>
+  </g>
+
+  <!-- Bordas decorativas douradas -->
+  <line x1="0" y1="2" x2="1920" y2="2" stroke="url(#goldGradient)" stroke-width="2" opacity="0.5"/>
+  <line x1="0" y1="598" x2="1920" y2="598" stroke="url(#goldGradient)" stroke-width="2" opacity="0.5"/>
+
+  <!-- Ornamentos nos cantos -->
+  <g opacity="0.4" stroke="#c9a227" stroke-width="1" fill="none">
+    <!-- Canto superior esquerdo -->
+    <path d="M0,50 L0,0 L50,0" stroke-width="2"/>
+    <path d="M10,40 L10,10 L40,10"/>
+
+    <!-- Canto superior direito -->
+    <path d="M1920,50 L1920,0 L1870,0" stroke-width="2"/>
+    <path d="M1910,40 L1910,10 L1880,10"/>
+
+    <!-- Canto inferior esquerdo -->
+    <path d="M0,550 L0,600 L50,600" stroke-width="2"/>
+    <path d="M10,560 L10,590 L40,590"/>
+
+    <!-- Canto inferior direito -->
+    <path d="M1920,550 L1920,600 L1870,600" stroke-width="2"/>
+    <path d="M1910,560 L1910,590 L1880,590"/>
+  </g>
+</svg>

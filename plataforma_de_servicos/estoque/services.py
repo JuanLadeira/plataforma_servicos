@@ -41,6 +41,7 @@ class EstoqueService:
         with transaction.atomic():
             # Criar registro de saída
             saida = Estoque.objects.create(
+                empresa=ordem_compra.empresa,
                 funcionario=funcionario,
                 movimento=Movimento.SAIDA.value,
                 origem_saida=OrigemSaida.PEDIDO.value,

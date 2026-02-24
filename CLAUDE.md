@@ -2,32 +2,20 @@
 
 ## Project Overview
 
-This is a Django 5.1.7-based e-commerce and service platform named `plataforma_de_servicos`. The project features sophisticated inventory management, product catalog with variations and attributes, shopping cart functionality, user authentication, and payment processing. It uses Django REST Framework for APIs, django-unfold for a modern admin interface, and htmx for dynamic frontend interactions.
+This is a Django 5.1.7-based **multi-tenant e-commerce platform** named `plataforma_de_servicos`. The project features sophisticated inventory management, product catalog with variations and attributes, shopping cart functionality, user authentication, and a dynamic theming system for per-company customization.
 
-**Key Differentiator:** Multi-location inventory system with atomic stock tracking and comprehensive product variation management (SKU-based).
-
-## Recent Issues Resolved
-
-**✅ FIXED - Error:** `admin.E039` - An admin for model "ValorAtributo" has to be registered to be referenced by VariacaoProdutoInline.autocomplete_fields.
-
-**Location:** `plataforma_de_servicos/produto/admin/gerente_admin.py` - VariacaoProdutoInline class
-
-**Root Cause:** The `VariacaoProdutoInline` uses `autocomplete_fields = ['valores']` which references the `ValorAtributo` model, but this model was not registered in the gerente admin site.
-
-**Solution Applied:**
-1. Created `AtributoGerenteAdmin` and `ValorAtributoGerenteAdmin` classes in [gerente_admin.py](plataforma_de_servicos/produto/admin/gerente_admin.py)
-2. Registered both `Atributo` and `ValorAtributo` models in [gerente_admin_site.py](plataforma_de_servicos/core/admin/sites/gerente_admin_site.py)
-3. Added search capabilities with `search_fields = ["valor", "atributo__nome"]` for autocomplete functionality
-4. System check now passes with no issues
-
-**Status:** ✅ Resolved - Django system check passes successfully
+**Key Differentiators:**
+- **Multi-tenancy:** Subdomain-based tenant isolation with per-company theming
+- **Multi-location inventory:** Atomic stock tracking across multiple warehouses
+- **Product variations:** Comprehensive SKU-based variation management with attributes
+- **Dynamic theming:** 12 pre-defined themes with CSS variables for instant customization
 
 ## Core Technologies
 
 - **Backend:** Django 5.1.7, Django REST Framework 3.15.2
 - **Database:** PostgreSQL (via psycopg[c] 3.2.4)
-- **Frontend:** Django Templates, htmx, Bootstrap, jQuery
-- **Admin:** django-unfold 0.52.0 with custom "Gerente" admin site
+- **Frontend:** Django Templates, htmx, Bootstrap 5.2.3, Poppins font
+- **Admin:** django-unfold 0.52.0 with custom admin sites (Gerente, Vendedor)
 - **Task Queue:** Celery 5.4.0 + Redis + django-celery-beat 2.7.0
 - **Authentication:** django-allauth 65.3.1 (email-based, MFA support)
 - **AI/LLM:** langchain 0.3.23+, langchain-deepseek 0.1.3, OpenAI 1.72.0+
@@ -38,54 +26,126 @@ This is a Django 5.1.7-based e-commerce and service platform named `plataforma_d
 
 ### Django Apps
 
-1. **users** - Custom User model (email-based) with roles (FUNCIONARIO/CLIENTE)
-   - `User`: AbstractUser with email as USERNAME_FIELD
-   - `Funcionario`: Employee profile (cargo, cpf, is_signatario)
-   - `Cliente`: Customer profile (linked to Empresa)
+| App | Purpose | Key Models |
+|-----|---------|------------|
+| **core** | Shared utilities, theming, middleware | `SiteConfig`, `TimeStampedModel` |
+| **users** | Custom User model (email-based) | `User`, `Funcionario`, `Cliente` |
+| **empresa** | Company/tenant management | `Empresa` |
+| **produto** | Product catalog | `Produto`, `Categoria`, `Atributo`, `VariacaoProduto` |
+| **estoque** | Stock movements | `Estoque`, `EstoqueItens`, `EstoqueEntrada`, `EstoqueSaida` |
+| **inventario** | Multi-location inventory | `Inventario`, `InventarioSaldo` |
+| **cart** | Session-based shopping cart | (session storage) |
+| **corretor** | Broker/sales agent management | `InteresseCompra`, `ItemInteresse` |
+| **vendas** | Orders and commissions | `OrdemCompra`, `Comissao`, `ConfiguracaoComissao` |
 
-2. **empresa** - Company/Organization management
-   - `Empresa`: nome, slug, email, imo, foto
+## Multi-Tenancy Architecture
 
-3. **produto** - Product catalog system
-   - `Categoria`: categoria, slug
-   - `Produto`: produto, slug, preco, estoque, categoria, images
-   - `Image`: image, order (ordered by product)
-   - `Atributo`: nome, slug (e.g., "Cor", "Tamanho")
-   - `ValorAtributo`: valor, atributo (e.g., "Vermelho", "GG")
-   - `VariacaoProduto`: sku (auto-generated), preco, estoque, valores (M2M to ValorAtributo)
+### Tenant Detection (TenantMiddleware)
 
-4. **estoque** - Stock movement tracking
-   - `Estoque`: movimento (E/S/T), nf, processado, inventario_origem/destino
-   - `EstoqueItens`: produto, quantidade, saldo, inventario
-   - Proxy models: `EstoqueEntrada`, `EstoqueSaida`
+**Location:** `core/middleware/tenant.py`
 
-5. **inventario** - Multi-location inventory
-   - `Inventario`: nome, slug, is_ativo
-   - `InventarioSaldo`: quantidade, atualizado_em, inventario, produto
+**Detection Priority:**
+1. **Subdomain:** `empresa-slug.localhost` or `empresa-slug.domain.com`
+2. **User Association:** From authenticated user's funcionário/cliente profile
+3. **Query Parameter:** `?tenant=slug` (development mode)
+4. **Session Storage:** Cached tenant selection
 
-6. **cart** - Session-based shopping cart
-   - Session storage with variation IDs, quantities, and prices
-   - No database models, uses Django sessions
+**Access Control:**
+- `/admin/` - Main domain only, no tenant filtering
+- `/gerentes/` - Tenant from user or query param, filtered data
+- `/vendedores/` - Tenant from user, filtered data
+- Public URLs - Tenant from subdomain
 
-7. **servico** - Service/Order lifecycle
-   - `Carrinho`: identificador, status (carrinho→pendente_pagamento→pago→concluido)
-   - `Item`: FK to Carrinho (minimal structure)
+### Tenant-Aware Admin
 
-8. **payment** - Payment processing
-   - `Order`: full_name, email, shipping_address, amount_paid
-   - `OrderItem`: product, quantity, price
-   - **Note:** References legacy `store.Product` model (potential issue)
+**Mixin:** `TenantAwareAdminMixin` in `core/admin/mixins.py`
 
-9. **store** - Legacy product/category system
-   - `Product`, `Category` models
-   - Appears to be replaced by `produto` app
+- Auto-filters querysets by `request.tenant`
+- Auto-populates `empresa` field on create
+- Filters ForeignKey/M2M relationships by tenant
 
-10. **core** - Shared utilities
-    - `TimeStampedModel`: Abstract base with created/modified timestamps
+## Theme System
 
-11. **account** - Reserved for future account features (currently empty)
+### Theme Definition
 
-## Key Data Models & Relationships
+**Location:** `core/themes.py`
+
+**Available Themes (12):**
+| Name | Display Name | Style | Description |
+|------|--------------|-------|-------------|
+| default | Padrão | light | Classic blue, clean and professional |
+| dark | Escuro | dark | Elegant dark, ideal for tech |
+| nature | Natureza | light | Green tones, organic products |
+| luxury | Luxo | dark | Gold and black, premium products |
+| energy | Energia | light | Vibrant orange, dynamic |
+| axe | Axé | light | Purple and gold, African religions |
+| ocean | Oceano | light | Turquoise, freshness |
+| rose | Rosa | light | Elegant pink, feminine |
+| earth | Terra | light | Earthy tones, rustic |
+| minimal | Minimalista | light | Black and white, clean |
+| **gatopreto** | Gato Preto | dark | Gold and black, religious items |
+| mystic | Místico | dark | Deep purple with gold, spiritual |
+
+### Theme Data Flow
+
+```
+Request → TenantMiddleware → Context Processor (site_config)
+    ↓
+SiteConfig.get_config(empresa=request.tenant)
+    ↓
+Theme object with colors → CSS variables string
+    ↓
+base.html: <body style="{{ theme_css_vars }}">
+    ↓
+theme.css: Components use var(--color-primary), etc.
+```
+
+### CSS Variables
+
+Defined in `static/css/theme.css`:
+```css
+--color-primary      /* Buttons, links, accents */
+--color-secondary    /* Secondary elements */
+--color-accent       /* Badges, highlights */
+--color-bg           /* Main background */
+--color-bg-secondary /* Card backgrounds */
+--color-text         /* Primary text */
+--color-text-muted   /* Secondary text */
+--color-navbar-bg    /* Navbar background */
+--color-navbar-text  /* Navbar text */
+--color-footer-bg    /* Footer background */
+--color-footer-text  /* Footer text */
+```
+
+### SiteConfig Model
+
+**Location:** `core/models.py`
+
+**Fields:**
+- `empresa` - FK to Empresa (singleton per tenant)
+- `site_name` - Title in navbar
+- `logo` - Site logo image
+- `theme` - CharField with THEME_CHOICES
+- `hero_title`, `hero_description`, `hero_button_text` - Banner content
+- `hero_image` / `hero_image_url` - Banner background
+
+## Admin System Architecture
+
+### Admin Sites
+
+| Site | URL | Purpose | Access |
+|------|-----|---------|--------|
+| Main Admin | `/admin/` | Full system access | Superusers |
+| Gerente | `/gerentes/` | Manager portal | Managers, tenant-filtered |
+| Vendedor | `/vendedores/` | Sales portal | Sales agents, tenant-filtered |
+
+### Key Admin Features
+
+- **TenantAwareAdminMixin:** Auto-filters by tenant
+- **Actions de Detalhe:** Custom buttons in change form (unfold `@action` decorator)
+- **Autocomplete Fields:** Fast search for related models
+
+## Key Data Models
 
 ### Product Hierarchy
 ```
@@ -100,276 +160,151 @@ Categoria (1) ──→ (N) Produto
 Inventario (1) ──→ (N) InventarioSaldo ←── (N) Produto
                        └── quantidade, atualizado_em
 
-Estoque (stock movement record)
+Estoque (stock movement)
 ├── movimento: E (entrada), S (saida), T (transferencia)
-├── inventario_origem (nullable)
-├── inventario_destino (nullable)
+├── inventario_origem / inventario_destino
 └──→ (N) EstoqueItens
-         ├── produto
-         ├── quantidade
-         ├── saldo
-         └── inventario
 ```
 
-### User System
+### Sales Flow
 ```
-User
-├── user_type: FUNCIONARIO | CLIENTE
-├── email (USERNAME_FIELD)
-└── name
-
-    ├─→ (1:1) Funcionario
-    │            ├── cargo
-    │            ├── cpf (unique)
-    │            └── is_signatario
-    │
-    └─→ (1:1) Cliente
-                 └──→ Empresa
+InteresseCompra (lead)
+├── status: NOVO → EM_ATENDIMENTO → CONVERTIDO/DESCARTADO
+├── corretor (Funcionario)
+└──→ (N) ItemInteresse
+         ↓ (conversão)
+OrdemCompra
+├── status: PENDENTE → CONFIRMADA → EM_PREPARACAO → etc.
+└──→ Comissao (vendedor commission)
 ```
 
-## Admin System Architecture
+## Frontend Architecture
 
-### Standard Admin Site (`/admin/`)
-- Default Django admin with django-unfold theme
-- Full access to all models
+### Template Structure
+```
+templates/
+├── base.html                    # Main layout, theme injection
+├── navbar.html                  # Navigation with site config
+├── pages/
+│   ├── home.html               # Homepage with hero section
+│   ├── produto-detail.html     # Product detail
+│   ├── includes/               # Reusable containers
+│   ├── partials/               # HTMX-loaded fragments
+│   └── components/             # UI components
+```
 
-### Gerente Admin Site (`/gerentes/`)
-- Custom `GerenteAdminSite` in `core/admin.py`
-- Role-based access (only "gerente" group members)
-- Focused interface for managers
-- Currently registered models:
-  - Produto, Categoria, Atributo
-  - Inventario, Estoque
-  - **Missing:** ValorAtributo (causes autocomplete_fields error)
+### HTMX Integration
 
-## Known Issues & Technical Debt
+- Views check `HX-Request` header
+- Return partial templates for AJAX requests
+- Events: `showToast`, `openCartOffcanvas`, `cartUpdated`
 
-1. **CRITICAL - Current Error:**
-   - `ValorAtributo` not registered in gerente admin site
-   - Causes admin.E039 error when using autocomplete_fields
-   - Location: `produto/admin/gerente_admin.py`
-
-2. **Dual Product Systems:**
-   - `produto.Produto` (modern, actively used)
-   - `store.Product` (legacy)
-   - Payment module still references `store.Product`
-   - Risk of import errors and data inconsistency
-
-3. **Incomplete Relationships:**
-   - `servico.Item` has no product reference
-   - Carrinho lacks clear linkage to Produto
-   - Cart implementation is session-based (no persistence for logged-in users)
-
-4. **SKU Generation:**
-   - Requires manual `gerar_sku()` call after M2M assignment
-   - SKU depends on attribute value IDs (not stable if IDs change)
-   - Needs second save after creating VariacaoProduto
-
-5. **Stock Management:**
-   - `Produto.estoque` vs `VariacaoProduto.estoque` relationship unclear
-   - Potential race conditions in concurrent stock updates
-   - No automated low-stock alerts
+### Static Assets
+```
+static/
+├── css/
+│   ├── project.css    # Project-specific styles
+│   └── theme.css      # Dynamic theme variables (891 lines)
+├── js/
+│   └── project.js     # Project JavaScript
+└── images/            # Favicons, icons
+```
 
 ## Development Workflow
 
-### Docker Commands (via justfile or taskipy)
+### Docker Commands
 
-**Using just:**
 ```bash
-just build          # Build Docker images
+# Using justfile
+just build          # Build images
 just up             # Start containers
 just down           # Stop containers
 just logs [service] # View logs
-just manage <cmd>   # Run Django management command
-```
+just manage <cmd>   # Django management command
 
-**Using taskipy:**
-```bash
-task up             # Start containers
-task down           # Stop containers
-task test           # Run pytest
-task logs           # Follow Django logs
-task manage <cmd>   # Run management command
+# Using taskipy
+task up / task down / task test / task logs
 ```
 
 ### Service Containers
-- `django` (port 8000): Main application
-- `postgres`: Database
-- `redis`: Cache and Celery broker
-- `mailpit` (port 8025): Email testing
-- `celeryworker`: Background tasks
-- `celerybeat`: Scheduled tasks
-- `flower` (port 5555): Celery monitoring
 
-### Environment Variables
-Located in `.envs/.local/`:
-- `.django`: Django settings (SECRET_KEY, DEBUG, DEEPSEEK_API_KEY, etc.)
-- `.postgres`: Database credentials
+| Service | Port | Purpose |
+|---------|------|---------|
+| django | 8000 | Main application |
+| postgres | 5432 | Database |
+| redis | 6379 | Cache/Celery broker |
+| mailpit | 8025 | Email testing |
+| celeryworker | - | Background tasks |
+| celerybeat | - | Scheduled tasks |
+| flower | 5555 | Celery monitoring |
 
 ### Testing
+
 ```bash
 # Run all tests
 docker compose -f docker-compose.local.yml run --rm django pytest
 
-# Run with coverage
+# With coverage
 docker compose -f docker-compose.local.yml run --rm django pytest --cov
 
-# Run specific test
-docker compose -f docker-compose.local.yml run --rm django pytest plataforma_de_servicos/produto/tests/test_models.py
+# Specific module
+docker compose -f docker-compose.local.yml run --rm django pytest plataforma_de_servicos/corretor/tests/
 ```
 
-### Code Quality Tools
+### Code Quality
+
 ```bash
-# Ruff linting
-ruff check .
-
-# Ruff formatting
-ruff format .
-
-# Type checking
-mypy plataforma_de_servicos
-
-# Template linting
-djlint plataforma_de_servicos/templates
+ruff check .           # Linting
+ruff format .          # Formatting
+mypy plataforma_de_servicos  # Type checking
+djlint templates/      # Template linting
 ```
 
-## Important Patterns & Conventions
+## Important Patterns
 
-1. **TimeStampedModel Usage:**
-   - Inherit from `core.models.TimeStampedModel` for auto timestamps
-   - Provides `created` and `modified` fields
+1. **TimeStampedModel:** Inherit from `core.models.TimeStampedModel` for auto timestamps
 
-2. **AutoSlugField:**
-   - Used in Categoria, Produto, Atributo, Inventario
-   - Auto-generates slugs from name fields
-   - Ensures URL-friendly identifiers
+2. **AutoSlugField:** Used in Categoria, Produto, Atributo, Inventario
 
-3. **Atomic Transactions:**
-   - Stock movements use `@transaction.atomic`
-   - Database has `ATOMIC_REQUESTS = True`
-   - Critical for inventory consistency
+3. **Atomic Transactions:** Stock movements use `@transaction.atomic`
 
-4. **Admin Inlines:**
-   - Use `autocomplete_fields` for foreign keys with many options
-   - Requires model registration with `search_fields` defined
-   - Example: VariacaoProdutoInline needs ValorAtributo registered
+4. **Admin Inlines:** Use `autocomplete_fields` with `search_fields` defined
 
-5. **REST API Endpoints:**
-   - `/api/` prefix for all API routes
-   - ViewSets for produto and categoria
-   - Serializers with nested relationships
+5. **Tenant Isolation:** Always filter by `empresa` in tenant-aware contexts
 
-6. **HTMX Integration:**
-   - Views check for `HX-Request` header
-   - Return partial templates for AJAX requests
-   - Full page render for normal requests
+6. **Service Layer:** Business logic in services (e.g., `InteresseCompraService`)
 
-## File Structure Reference
+## File Reference
 
-```
-plataforma_de_servicos/
-├── users/
-│   ├── models.py          # User, Funcionario, Cliente
-│   ├── admin.py           # User admin customization
-│   └── forms.py           # User forms
-│
-├── produto/
-│   ├── models.py          # Produto, Categoria, Atributo, VariacaoProduto
-│   ├── admin/
-│   │   ├── admin.py       # Standard admin
-│   │   └── gerente_admin.py  # Gerente admin (ERROR HERE)
-│   ├── serializers.py     # DRF serializers
-│   └── views.py           # Product views
-│
-├── estoque/
-│   ├── models.py          # Estoque, EstoqueItens, proxy models
-│   └── admin.py           # Stock admin
-│
-├── inventario/
-│   ├── models.py          # Inventario, InventarioSaldo
-│   └── admin.py           # Inventory admin
-│
-├── cart/
-│   ├── cart.py            # Cart class (session-based)
-│   └── views.py           # Cart AJAX views
-│
-├── core/
-│   ├── models.py          # TimeStampedModel
-│   └── admin.py           # GerenteAdminSite definition
-│
-└── templates/
-    └── pages/             # Public-facing templates
-```
+| Purpose | Path |
+|---------|------|
+| Theme definitions | `core/themes.py` |
+| Site config model | `core/models.py` |
+| Tenant middleware | `core/middleware/tenant.py` |
+| Admin mixins | `core/admin/mixins.py` |
+| Gerente admin site | `core/admin/sites/gerente_admin_site.py` |
+| Theme CSS | `static/css/theme.css` |
+| Base template | `templates/base.html` |
+| Home template | `templates/pages/home.html` |
+| Context processor | `core/context_processors.py` |
 
-## Debugging Strategy
+## Known Technical Debt
 
-1. **Check Django System:**
-   ```bash
-   just manage check
-   ```
-
-2. **View Logs:**
-   ```bash
-   just logs django
-   just logs postgres
-   just logs celeryworker
-   ```
-
-3. **Database Shell:**
-   ```bash
-   just manage dbshell
-   ```
-
-4. **Django Shell:**
-   ```bash
-   just manage shell_plus
-   ```
-
-5. **Migrations:**
-   ```bash
-   just manage showmigrations
-   just manage migrate --plan
-   ```
-
-6. **Celery Monitoring:**
-   - Open Flower UI: http://localhost:5555
-   - Check task status, worker health, queues
-
-7. **Email Testing:**
-   - Open Mailpit UI: http://localhost:8025
-   - View all emails sent by the application
-
-## Next Steps to Fix Current Error
-
-1. Open `plataforma_de_servicos/produto/admin/gerente_admin.py`
-2. Add `ValorAtributoAdmin` class with `search_fields`
-3. Register `ValorAtributo` in gerente_site
-4. Verify with `just manage check`
-5. Test autocomplete functionality in admin
+1. **Legacy Store App:** `store.Product` still referenced by payment module
+2. **Session Cart:** No persistence for logged-in users
+3. **SKU Generation:** Requires manual call after M2M assignment
 
 ## Security Considerations
 
-- LLM API keys stored in environment variables (DEEPSEEK_API_KEY)
-- Custom User model with email authentication
-- django-allauth handles email verification
-- MFA support enabled
-- Object-level permissions via django-guardian
+- LLM API keys in environment variables
+- Email-based authentication with MFA support
 - CSRF protection enabled
-- Secure session configuration
-
-## Performance Optimizations
-
-- Redis caching for sessions and data
-- WhiteNoise for static file serving
-- django-compressor for asset optimization
-- select_related/prefetch_related in querysets
-- Database indexes on slug fields (unique=True)
-- Celery for async task processing
+- Tenant isolation enforced at middleware level
+- Object-level permissions via django-guardian
 
 ---
 
-**Last Updated:** 2026-01-17
+**Last Updated:** 2026-02-21
 **Django Version:** 5.1.7
-**Python Version:** 3.12.3
-**Current Status:** Error in admin autocomplete_fields - needs ValorAtributo registration
-
+**Python Version:** 3.12.8
+**Current Branch:** feat/multi-tenancy

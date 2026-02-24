@@ -1,24 +1,42 @@
-<div class="card shadow-sm m-2">
-    <a href="{{ variacao.url }}">
-        <img class="img-fluid" alt="Imagem de {{ variacao.nome_completo }}" src="{{ variacao.imagem }}">
-    </a>
+<div class="card shadow-sm m-2 product-card-enhanced">
+    <div class="card-img-wrapper">
+        <a href="{{ variacao.url }}">
+            <img class="img-fluid" alt="Imagem de {{ variacao.nome_completo }}" src="{{ variacao.imagem }}">
+        </a>
+        {% if variacao.estoque < 5 and variacao.estoque > 0 %}
+        <span class="position-absolute top-0 end-0 m-2 badge bg-warning text-dark">
+            <i class="fa fa-fire me-1"></i>Ultimas unidades
+        </span>
+        {% elif variacao.estoque == 0 %}
+        <span class="position-absolute top-0 end-0 m-2 badge bg-secondary">
+            Esgotado
+        </span>
+        {% endif %}
+    </div>
     <div class="card-body">
         <div>
-            <p class="card-text">
-                <a href="{{ variacao.url }}">
-                    {{ variacao.nome_completo|truncatechars:35 }}
+            <p class="card-text product-name mb-2">
+                <a href="{{ variacao.url }}" class="text-decoration-none">
+                    {{ variacao.nome_completo|truncatechars:40 }}
                 </a>
             </p>
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">{{ variacao.preco_formatado }}</h5>
-                <small class="text-muted">Estoque: {{ variacao.estoque }}</small>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="mb-0 product-price">{{ variacao.preco_formatado }}</h5>
             </div>
+            <small class="text-muted d-block mb-3">
+                {% if variacao.estoque > 0 %}
+                    <i class="fa fa-check-circle text-success me-1"></i>Em estoque
+                {% else %}
+                    <i class="fa fa-times-circle text-danger me-1"></i>Indisponivel
+                {% endif %}
+            </small>
         </div>
         <button
             type="button"
             id="add-button-{{ variacao.id }}"
             value="{{ variacao.id }}"
-            class="btn btn-primary btn-sm mt-3 w-100"
+            class="btn btn-primary btn-sm w-100"
+            {% if variacao.estoque == 0 %}disabled{% endif %}
             hx-post="{% url 'cart:cart-add' %}"
             hx-vals='{"variation_id": "{{ variacao.id }}", "action": "post", "product_quantity": 1, "no_redirect": "true"}'
             hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
@@ -27,8 +45,8 @@
             hx-indicator="#add-button-{{ variacao.id }}"
         >
             <span class="htmx-indicator spinner-border spinner-border-sm me-1" role="status"></span>
-            <i class="fa fa-plus htmx-hide-on-request" aria-hidden="true"></i>
-            <span class="htmx-hide-on-request">Adicionar</span>
+            <i class="fa fa-cart-plus htmx-hide-on-request me-1" aria-hidden="true"></i>
+            <span class="htmx-hide-on-request">{% if variacao.estoque > 0 %}Adicionar{% else %}Esgotado{% endif %}</span>
             <span class="htmx-show-on-request">Adicionando...</span>
         </button>
     </div>

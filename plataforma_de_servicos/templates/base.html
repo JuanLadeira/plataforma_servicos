@@ -1,6 +1,6 @@
 {% load static i18n compress%}<!DOCTYPE html>
 {% get_current_language as LANGUAGE_CODE %}
-<html lang="{{ LANGUAGE_CODE }}">
+<html lang="{{ LANGUAGE_CODE }}" data-theme="{{ theme.name }}" class="{% if is_dark_theme %}dark-theme{% endif %}">
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
@@ -33,7 +33,7 @@
 
 {% compress css %}
   <link href="{% static 'css/project.css' %}" rel="stylesheet" />
-  <link id="dark-theme-style" rel="stylesheet" href="{% static 'css/black-theme.css' %}" disabled />
+  <link href="{% static 'css/theme.css' %}" rel="stylesheet" />
 {% endcompress %}
 
 <!-- HTMX indicator styles -->
@@ -244,7 +244,7 @@
 
 {% endblock javascript %}
 </head>
-<body class="{% block bodyclass %}{% endblock bodyclass %}">
+<body class="{% block bodyclass %}{% endblock bodyclass %}{% if is_dark_theme %} dark-theme{% endif %}" style="{{ theme_css_vars }}">
   {% csrf_token %}
   {% block body %}
   <div class="mb-1">
@@ -281,39 +281,72 @@
     </div>
   </div>
 
+  <!-- WhatsApp Floating Button -->
+  <a href="https://wa.me/5500000000000?text=Ol%C3%A1%2C%20vim%20pelo%20site%20e%20gostaria%20de%20mais%20informa%C3%A7%C3%B5es"
+     class="whatsapp-float"
+     target="_blank"
+     rel="noopener noreferrer"
+     title="Fale conosco pelo WhatsApp">
+    <i class="fab fa-whatsapp"></i>
+  </a>
+
+  <!-- Footer -->
+  <footer class="mt-auto">
+    <div class="container py-5">
+      <div class="row g-4">
+        <div class="col-lg-4 col-md-6">
+          <h5 class="mb-3">{{ site_config.site_name }}</h5>
+          <p class="mb-3" style="opacity: 0.8;">
+            Sua loja online de confianca. Produtos de qualidade com os melhores precos do mercado.
+          </p>
+          <div class="d-flex gap-3">
+            <a href="#" class="text-decoration-none" style="font-size: 1.25rem;"><i class="fab fa-facebook"></i></a>
+            <a href="#" class="text-decoration-none" style="font-size: 1.25rem;"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="text-decoration-none" style="font-size: 1.25rem;"><i class="fab fa-whatsapp"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-6">
+          <h6 class="mb-3">Links</h6>
+          <ul class="list-unstyled" style="opacity: 0.8;">
+            <li class="mb-2"><a href="{% url 'home' %}" class="text-decoration-none">Inicio</a></li>
+            <li class="mb-2"><a href="{% url 'about' %}" class="text-decoration-none">Sobre</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <h6 class="mb-3">Atendimento</h6>
+          <ul class="list-unstyled" style="opacity: 0.8;">
+            <li class="mb-2"><i class="fa fa-clock me-2"></i>Seg - Sex: 9h as 18h</li>
+            <li class="mb-2"><i class="fa fa-phone me-2"></i>(00) 0000-0000</li>
+            <li class="mb-2"><i class="fa fa-envelope me-2"></i>contato@email.com</li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <h6 class="mb-3">Formas de Pagamento</h6>
+          <div class="d-flex flex-wrap gap-2" style="opacity: 0.8;">
+            <i class="fab fa-cc-visa fa-2x"></i>
+            <i class="fab fa-cc-mastercard fa-2x"></i>
+            <i class="fab fa-pix fa-2x"></i>
+            <i class="fa fa-barcode fa-2x"></i>
+          </div>
+        </div>
+      </div>
+      <hr style="opacity: 0.2;">
+      <div class="row">
+        <div class="col-md-6 text-center text-md-start">
+          <small style="opacity: 0.6;">&copy; {% now "Y" %} {{ site_config.site_name }}. Todos os direitos reservados.</small>
+        </div>
+        <div class="col-md-6 text-center text-md-end">
+          <small style="opacity: 0.6;">Desenvolvido com <i class="fa fa-heart text-danger"></i></small>
+        </div>
+      </div>
+    </div>
+  </footer>
+
   {% block modal %}
   {% endblock modal %}
   {% block inline_javascript %}
     <script>
       document.addEventListener('DOMContentLoaded', () => {
-        const themeSwitch = document.getElementById('theme-switch');
-        const darkThemeStyle = document.getElementById('dark-theme-style');
-        const body = document.body;
-
-        const applyTheme = (theme) => {
-          if (theme === 'dark') {
-            body.classList.add('dark-mode');
-            darkThemeStyle.removeAttribute('disabled');
-            if(themeSwitch) themeSwitch.checked = true;
-          } else {
-            body.classList.remove('dark-mode');
-            darkThemeStyle.setAttribute('disabled', 'true');
-            if(themeSwitch) themeSwitch.checked = false;
-          }
-        };
-
-        // Apply theme on initial load
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        applyTheme(savedTheme);
-
-        if(themeSwitch) {
-            themeSwitch.addEventListener('change', () => {
-                const newTheme = themeSwitch.checked ? 'dark' : 'light';
-                localStorage.setItem('theme', newTheme);
-                applyTheme(newTheme);
-            });
-        }
-
         // Toast notification system - Minimal Design
         function showToast(message, type = 'success', redirect = null) {
           const container = document.getElementById('toast-container');
