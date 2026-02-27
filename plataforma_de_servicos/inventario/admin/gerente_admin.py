@@ -25,7 +25,7 @@ class InventarioSaldoInline(TabularInline):
         queryset = super().get_queryset(request)
         return queryset.filter(quantidade__gt=0).select_related(
             "produto", "variacao"
-        ).prefetch_related("variacao__valores")
+        ).prefetch_related("variacao__valores").order_by("produto__produto", "variacao__sku")
 
     @admin.display(description="Variação")
     def variacao_display(self, obj):
@@ -62,7 +62,7 @@ class EstoqueItensEntradaInline(TabularInline):
             estoque__movimento=Movimento.ENTRADA.value
         ).select_related(
             "estoque", "estoque__funcionario", "produto", "variacao"
-        ).prefetch_related("variacao__valores")
+        ).prefetch_related("variacao__valores").order_by("-estoque__created")
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -118,7 +118,7 @@ class EstoqueItensSaidaInline(TabularInline):
             estoque__movimento=Movimento.SAIDA.value
         ).select_related(
             "estoque", "estoque__funcionario", "produto", "variacao"
-        ).prefetch_related("variacao__valores")
+        ).prefetch_related("variacao__valores").order_by("-estoque__created")
 
     def has_add_permission(self, request, obj=None):
         return False

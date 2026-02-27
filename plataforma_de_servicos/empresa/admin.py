@@ -75,7 +75,7 @@ class EmpresaAdmin(ModelAdmin):
     def get_gerente_full_url(self, obj):
         if obj.pk:
             return format_html(
-                '<code>https://{}.seudominio.com{}</code>',
+                "<code>https://{}.seudominio.com{}</code>",
                 obj.slug,
                 obj.get_admin_url(),
             )
@@ -85,7 +85,7 @@ class EmpresaAdmin(ModelAdmin):
     def get_vendedor_full_url(self, obj):
         if obj.pk:
             return format_html(
-                '<code>https://{}.seudominio.com{}</code>',
+                "<code>https://{}.seudominio.com{}</code>",
                 obj.slug,
                 obj.get_vendedor_url(),
             )

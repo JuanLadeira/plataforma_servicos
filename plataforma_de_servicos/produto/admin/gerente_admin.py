@@ -537,12 +537,49 @@ class VariacaoProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     list_display = ["produto", "sku", "estoque", "preco_final_display"]
     list_filter = ["produto__categoria"]
     search_fields = ["sku", "produto__produto", "valores__valor"]
-    autocomplete_fields = ["produto", "valores"]
+    autocomplete_fields = ["produto"]  # valores usa widget customizado
     list_select_related = ["produto"]
     list_order_by = ["produto__produto", "sku"]
-    readonly_fields = ["sku"]
+    readonly_fields = ["sku", "estoque"]  # estoque é gerenciado apenas via entradas/saídas
     compressed_fields = True
     warn_unsaved_form = True
+
+    fieldsets = [
+        (
+            "Produto",
+            {
+                "fields": ["produto"],
+                "description": "Selecione o produto para esta variação.",
+            },
+        ),
+        (
+            "Atributos da Variação",
+            {
+                "fields": ["valores"],
+                "description": "Selecione os valores dos atributos que definem esta variação (ex: Cor, Tamanho).",
+            },
+        ),
+        (
+            "Preço",
+            {
+                "fields": ["preco"],
+                "description": "Preço específico desta variação. Se vazio, usa o preço base do produto.",
+            },
+        ),
+        (
+            "Informações do Sistema",
+            {
+                "fields": ["sku", "estoque"],
+                "description": "Campos gerenciados automaticamente pelo sistema.",
+            },
+        ),
+    ]
+
+    class Media:
+        css = {
+            "all": ("css/valores-atributo-widget.css",),
+        }
+        js = ("js/valores-atributo-widget.js", "js/variacao-produto-form.js")
 
     def get_queryset(self, request):
         """Filtra variações pela empresa do tenant."""
@@ -568,6 +605,45 @@ class VariacaoProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
 
         # Fallback seguro para não vazar dados
         return qs.none()
+
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        """Usa widget de checkboxes agrupados para valores."""
+        if db_field.name == "valores":
+            tenant = getattr(request, "tenant", None)
+            obj = getattr(self, "_current_obj", None)
+
+            qs = ValorAtributo.objects.select_related("atributo", "atributo__categoria").order_by(
+                "atributo__nome", "valor",
+            )
+
+            categoria_id = None
+            atributos_config = {}
+
+            # Se editando, filtra pela categoria do produto
+            if obj and obj.produto and obj.produto.categoria:
+                categoria = obj.produto.categoria
+                qs = qs.filter(atributo__categoria=categoria)
+                categoria_id = categoria.pk
+                atributos_config = {
+                    attr.nome: attr.multipla_selecao
+                    for attr in Atributo.objects.filter(categoria=categoria)
+                }
+            elif tenant:
+                # Fallback: filtra pela empresa
+                qs = qs.filter(atributo__categoria__empresa=tenant)
+
+            kwargs["queryset"] = qs
+            kwargs["widget"] = GroupedCheckboxSelectMultiple(
+                categoria_id=categoria_id,
+                admin_site="gerentes",
+                atributos_config=atributos_config,
+            )
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+    def get_form(self, request, obj=None, **kwargs):
+        """Armazena o objeto atual para uso no formfield_for_manytomany."""
+        self._current_obj = obj
+        return super().get_form(request, obj, **kwargs)
 
     @admin.display(description="Preço Final")
     def preco_final_display(self, obj):

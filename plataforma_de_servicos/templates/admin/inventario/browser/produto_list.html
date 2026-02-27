@@ -1,0 +1,149 @@
+{% extends "admin/inventario/browser/base.html" %}
+{% load i18n %}
+
+{% block breadcrumb_items %}
+<li class="text-xs">
+    <a href="{% url 'gerentes:index' %}">{% trans "Home" %}</a>
+    <span class="mx-2 text-base-200 dark:text-base-600">/</span>
+</li>
+<li class="text-xs">
+    <a href="{% url 'gerentes:inventario-browser-list' %}">{% trans "Navegador de Inventários" %}</a>
+    <span class="mx-2 text-base-200 dark:text-base-600">/</span>
+</li>
+<li class="text-xs">
+    {{ inventario.nome }}
+</li>
+{% endblock %}
+
+{% block browser_header %}
+<div class="mb-4">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="font-semibold text-xl text-font-important-light dark:text-font-important-dark">
+                {% trans "Produtos em" %} {{ inventario.nome }}
+            </h1>
+            <p class="text-sm text-base-500 dark:text-base-400 mt-1">
+                {{ produtos_list|length }} produto{{ produtos_list|length|pluralize:"s" }} com estoque neste inventário
+            </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2">
+            <!-- Search -->
+            <form method="get" class="w-full sm:w-auto">
+                <div class="bg-white border border-base-200 flex rounded overflow-hidden shadow-sm lg:w-64 focus-within:ring focus-within:ring-primary-300 focus-within:border-primary-600 dark:bg-base-900 dark:border-base-700 dark:focus-within:border-primary-600 dark:focus-within:ring-primary-700 dark:focus-within:ring-opacity-50">
+                    <input class="font-medium grow min-w-0 h-9 px-3 text-font-default-light text-sm focus:outline-none dark:bg-base-900 dark:text-font-default-dark placeholder-shown:truncate placeholder-base-400"
+                           type="text"
+                           name="q"
+                           value="{{ search_query }}"
+                           placeholder="{% trans 'Buscar produto...' %}">
+                    <button type="submit" class="flex items-center px-2 focus:outline-none">
+                        <span class="material-symbols-outlined md-18 text-base-400 dark:text-base-500">search</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="flex flex-wrap gap-2 mt-4">
+        <a href="{% url 'gerentes:produto_produto_add' %}"
+           class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded shadow-sm bg-primary-600 text-white hover:bg-primary-700 transition-colors">
+            <span class="material-symbols-outlined !text-lg">add</span>
+            {% trans "Novo Produto" %}
+        </a>
+        <a href="{% url 'gerentes:produto_variacaoproduto_add' %}"
+           class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded shadow-sm border border-base-200 bg-white text-base-700 hover:bg-base-50 dark:bg-base-800 dark:border-base-700 dark:text-base-200 dark:hover:bg-base-700 transition-colors">
+            <span class="material-symbols-outlined !text-lg">add</span>
+            {% trans "Nova Variação" %}
+        </a>
+        <a href="{% url 'gerentes:produto_produto_changelist' %}"
+           class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded shadow-sm border border-base-200 bg-white text-base-700 hover:bg-base-50 dark:bg-base-800 dark:border-base-700 dark:text-base-200 dark:hover:bg-base-700 transition-colors">
+            <span class="material-symbols-outlined !text-lg">list</span>
+            {% trans "Todos os Produtos" %}
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block browser_content %}
+{% if produtos_list %}
+<div class="bg-white border border-base-200 overflow-hidden rounded shadow-sm dark:bg-base-900 dark:border-base-800 lg:border">
+    <div class="-mx-1 px-1 overflow-x-auto lg:mx-0 lg:px-0" data-simplebar data-simplebar-auto-hide="false">
+        <table class="block border-spacing-none border-separate w-full lg:table">
+            <thead class="text-base-900 dark:text-base-100">
+                <tr class="bg-base-50 dark:bg-white/[.02]">
+                    <th class="align-middle border-b border-base-200 font-semibold py-2 text-left text-sm whitespace-nowrap hidden px-3 lg:table-cell dark:border-base-800">
+                        {% trans "Produto" %}
+                    </th>
+                    <th class="align-middle border-b border-base-200 font-semibold py-2 text-left text-sm whitespace-nowrap hidden px-3 lg:table-cell dark:border-base-800">
+                        {% trans "Categoria" %}
+                    </th>
+                    <th class="align-middle border-b border-base-200 font-semibold py-2 text-center text-sm whitespace-nowrap hidden px-3 lg:table-cell dark:border-base-800">
+                        {% trans "Variações" %}
+                    </th>
+                    <th class="align-middle border-b border-base-200 font-semibold py-2 text-center text-sm whitespace-nowrap hidden px-3 lg:table-cell dark:border-base-800">
+                        {% trans "Qtd. Total" %}
+                    </th>
+                    <th class="align-middle border-b border-base-200 font-semibold py-2 text-right text-sm whitespace-nowrap hidden px-3 lg:table-cell dark:border-base-800">
+                        {% trans "Ações" %}
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="block lg:table-row-group">
+                {% for item in produtos_list %}
+                <tr class="{% cycle '' 'bg-base-50 dark:bg-white/[.02]' %} block border mb-3 rounded shadow-sm lg:table-row lg:border-none lg:mb-0 lg:shadow-none dark:border-base-800">
+                    <td class="px-3 py-2 align-middle flex border-t border-base-200 font-normal gap-4 min-w-0 overflow-hidden text-left before:flex before:capitalize before:content-[attr(data-label)] before:items-center before:mr-auto first:border-t-0 lg:group-[.first-row]:border-t-0 lg:before:hidden lg:first:border-t lg:py-3 lg:table-cell dark:border-base-800" data-label="{% trans 'Produto' %}">
+                        <a href="{% url 'gerentes:inventario-browser-variacoes' inventario.pk item.produto.pk %}"
+                           class="font-medium text-font-important-light hover:text-primary-600 dark:text-font-important-dark dark:hover:text-primary-500">
+                            {{ item.produto.produto }}
+                        </a>
+                    </td>
+                    <td class="px-3 py-2 align-middle flex border-t border-base-200 font-normal gap-4 min-w-0 overflow-hidden text-left before:flex before:capitalize before:content-[attr(data-label)] before:items-center before:mr-auto first:border-t-0 lg:group-[.first-row]:border-t-0 lg:before:hidden lg:first:border-t lg:py-3 lg:table-cell dark:border-base-800 text-sm text-base-500 dark:text-base-400" data-label="{% trans 'Categoria' %}">
+                        {{ item.produto.categoria.categoria|default:"-" }}
+                    </td>
+                    <td class="px-3 py-2 align-middle flex border-t border-base-200 font-normal gap-4 min-w-0 overflow-hidden text-center before:flex before:capitalize before:content-[attr(data-label)] before:items-center before:mr-auto first:border-t-0 lg:group-[.first-row]:border-t-0 lg:before:hidden lg:first:border-t lg:py-3 lg:table-cell dark:border-base-800 justify-center" data-label="{% trans 'Variações' %}">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400">
+                            {{ item.total_variacoes }}
+                        </span>
+                    </td>
+                    <td class="px-3 py-2 align-middle flex border-t border-base-200 font-normal gap-4 min-w-0 overflow-hidden text-center before:flex before:capitalize before:content-[attr(data-label)] before:items-center before:mr-auto first:border-t-0 lg:group-[.first-row]:border-t-0 lg:before:hidden lg:first:border-t lg:py-3 lg:table-cell dark:border-base-800 justify-center" data-label="{% trans 'Qtd. Total' %}">
+                        {% if item.total_quantidade > 10 %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">
+                            {{ item.total_quantidade }} un.
+                        </span>
+                        {% elif item.total_quantidade > 0 %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400">
+                            {{ item.total_quantidade }} un.
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400">
+                            {% trans "Sem estoque" %}
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-3 py-2 align-middle flex border-t border-base-200 font-normal gap-4 min-w-0 overflow-hidden text-right before:flex before:capitalize before:content-[attr(data-label)] before:items-center before:mr-auto first:border-t-0 lg:group-[.first-row]:border-t-0 lg:before:hidden lg:first:border-t lg:py-3 lg:table-cell dark:border-base-800 justify-end" data-label="{% trans 'Ações' %}">
+                        <a href="{% url 'gerentes:inventario-browser-variacoes' inventario.pk item.produto.pk %}"
+                           class="inline-flex items-center text-sm text-primary-600 hover:text-primary-700 font-medium dark:text-primary-500 dark:hover:text-primary-400">
+                            {% trans "Ver variações" %}
+                            <span class="material-symbols-outlined ml-1 !text-base">chevron_right</span>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="bg-white border border-base-200 flex flex-col grow items-center justify-center py-12 rounded shadow-sm dark:bg-base-900 dark:border-base-800">
+    <span class="material-symbols-outlined !text-5xl text-base-300 dark:text-base-600 mb-2">inventory_2</span>
+    {% if search_query %}
+    <h3 class="text-sm font-medium text-font-important-light dark:text-font-important-dark">{% trans "Nenhum resultado" %}</h3>
+    <p class="mt-1 text-sm text-base-500 dark:text-base-400">{% trans "Nenhum produto encontrado para" %} "{{ search_query }}".</p>
+    {% else %}
+    <h3 class="text-sm font-medium text-font-important-light dark:text-font-important-dark">{% trans "Sem produtos" %}</h3>
+    <p class="mt-1 text-sm text-base-500 dark:text-base-400">{% trans "Nenhum produto com estoque neste inventário." %}</p>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

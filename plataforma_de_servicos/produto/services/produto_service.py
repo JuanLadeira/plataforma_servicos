@@ -13,6 +13,7 @@ from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models.categoria_model import Categoria
 from plataforma_de_servicos.produto.models.produto_model import Produto
 from plataforma_de_servicos.produto.models import VariacaoProduto
+from plataforma_de_servicos.produto.models.atributos import Atributo, ValorAtributo
 
 if TYPE_CHECKING:
     from plataforma_de_servicos.produto.models import VariacaoProduto
@@ -59,6 +60,34 @@ class VariacaoPrecoResult:
     variation_id: int | None
     disponivel: bool
     combinacao_invalida: bool = False
+
+
+@dataclass
+class ValorAtributoDTO:
+    """Representação de um valor de atributo."""
+    id: int
+    valor: str
+    preco_adicional: Decimal | None = None
+    percentual_adicional: Decimal | None = None
+
+
+@dataclass
+class AtributoDTO:
+    """Representação de um atributo com seus valores."""
+    id: int
+    nome: str
+    multipla_selecao: bool
+    valores: list[ValorAtributoDTO]
+
+
+@dataclass
+class AtributosProdutoResult:
+    """Resultado da busca de atributos de um produto."""
+    produto_id: int
+    produto_nome: str
+    categoria_id: int | None
+    categoria_nome: str | None
+    atributos: list[AtributoDTO]
 
 
 class ProdutoService:
@@ -330,3 +359,98 @@ class ProdutoService:
             disponivel=(produto.estoque or 0) > 0,
             combinacao_invalida=True,
         )
+
+    @staticmethod
+    def obter_atributos_para_variacao(produto_id: int) -> AtributosProdutoResult | None:
+        """
+        Obtém os atributos disponíveis para criar variações de um produto.
+
+        Busca os atributos da categoria do produto e retorna seus valores
+        para serem usados no formulário de variação.
+
+        Args:
+            produto_id: ID do produto
+
+        Returns:
+            AtributosProdutoResult ou None se produto não encontrado
+        """
+        try:
+            produto = Produto.objects.select_related("categoria").get(pk=produto_id)
+        except Produto.DoesNotExist:
+            return None
+
+        if not produto.categoria:
+            return AtributosProdutoResult(
+                produto_id=produto.id,
+                produto_nome=produto.produto,
+                categoria_id=None,
+                categoria_nome=None,
+                atributos=[],
+            )
+
+        # Busca atributos da categoria com seus valores
+        atributos = Atributo.objects.filter(
+            categoria=produto.categoria
+        ).prefetch_related("valores").order_by("nome")
+
+        atributos_dto = []
+        for atributo in atributos:
+            valores_dto = [
+                ValorAtributoDTO(
+                    id=valor.id,
+                    valor=valor.valor,
+                    preco_adicional=valor.preco_adicional,
+                    percentual_adicional=valor.percentual_adicional,
+                )
+                for valor in atributo.valores.all().order_by("valor")
+            ]
+
+            atributos_dto.append(AtributoDTO(
+                id=atributo.id,
+                nome=atributo.nome,
+                multipla_selecao=atributo.multipla_selecao,
+                valores=valores_dto,
+            ))
+
+        return AtributosProdutoResult(
+            produto_id=produto.id,
+            produto_nome=produto.produto,
+            categoria_id=produto.categoria.id,
+            categoria_nome=produto.categoria.categoria,
+            atributos=atributos_dto,
+        )
+
+    @staticmethod
+    def atributos_para_dict(result: AtributosProdutoResult) -> dict:
+        """
+        Converte AtributosProdutoResult para dicionário serializável.
+
+        Args:
+            result: Resultado da busca de atributos
+
+        Returns:
+            dict: Dicionário com os dados serializados
+        """
+        return {
+            "produto_id": result.produto_id,
+            "produto_nome": result.produto_nome,
+            "categoria_id": result.categoria_id,
+            "categoria_nome": result.categoria_nome,
+            "atributos": [
+                {
+                    "id": attr.id,
+                    "nome": attr.nome,
+                    "multipla_selecao": attr.multipla_selecao,
+                    "valores": [
+                        {
+                            "id": val.id,
+                            "valor": val.valor,
+                            "preco_adicional": str(val.preco_adicional) if val.preco_adicional else None,
+                            "percentual_adicional": str(val.percentual_adicional) if val.percentual_adicional else None,
+                        }
+                        for val in attr.valores
+                    ],
+                }
+                for attr in result.atributos
+            ],
+        }
