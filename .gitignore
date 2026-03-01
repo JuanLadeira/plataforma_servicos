@@ -6,7 +6,8 @@ __pycache__/
 
 # C extensions
 *.so
-
+.claude/
+.playwright/
 # Distribution / packaging
 .Python
 build/
@@ -64,7 +65,7 @@ celerybeat-schedule
 
 # Environments
 .venv
-venv/
+venc/
 ENV/
 
 # Rope project settings
@@ -276,3 +277,9 @@ plataforma_de_servicos/media/
 .env
 .envs/*
 !.envs/.local/
+
+# Playwright
+.playwright-cli/
+
+# Logs
+debug.log.*

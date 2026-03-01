@@ -2,14 +2,39 @@ from typing import Any
 
 from django import forms
 from django.contrib import admin
+from django.contrib.admin import SimpleListFilter
+from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
 
+from plataforma_de_servicos.core.admin.mixins import RBACAdminMixin
 from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
+from plataforma_de_servicos.users.services import Permission
 from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueItens
 from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models import VariacaoProduto
+from plataforma_de_servicos.produto.models.produto_model import Produto
+
+
+class ProdutoFilter(SimpleListFilter):
+    """Filtro para listar estoques que contêm itens de um produto específico."""
+
+    title = _("Produto")
+    parameter_name = "produto"
+
+    def lookups(self, request, model_admin):
+        # Retorna lista vazia - o filtro será usado via URL apenas
+        return []
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(estoque_itens__produto__id=self.value()).distinct()
+        return queryset
+
+    def has_output(self):
+        # Não mostrar no sidebar, mas ainda processar o parâmetro
+        return False
 
 
 class EstoqueItensForm(forms.ModelForm):
@@ -174,11 +199,16 @@ def get_inventario(estoque):
     return None
 
 
-class EstoqueEntradaAdmin(TenantAwareAdminMixin, ModelAdmin):
+class EstoqueEntradaAdmin(RBACAdminMixin, TenantAwareAdminMixin, ModelAdmin):
+    # RBAC: Permissões de estoque
+    permission_view = Permission.ESTOQUE_VISUALIZAR
+    permission_add = Permission.ESTOQUE_ENTRADA
+    permission_change = Permission.ESTOQUE_ENTRADA
+
     inlines = (EstoqueItensInline,)
     list_display = ("__str__", "nf", "funcionario", "data")
     search_fields = ("nf", "data")
-    list_filter = ("funcionario",)
+    list_filter = ("funcionario", "inventario_destino", ProdutoFilter)
     change_form_template = "admin/estoque/change_form_observacoes_final.html"
 
     compressed_fields = True
@@ -291,11 +321,16 @@ class EstoqueEntradaAdmin(TenantAwareAdminMixin, ModelAdmin):
             formset.save_m2m()
 
 
-class EstoqueSaidaAdmin(TenantAwareAdminMixin, ModelAdmin):
+class EstoqueSaidaAdmin(RBACAdminMixin, TenantAwareAdminMixin, ModelAdmin):
+    # RBAC: Permissões de estoque
+    permission_view = Permission.ESTOQUE_VISUALIZAR
+    permission_add = Permission.ESTOQUE_SAIDA
+    permission_change = Permission.ESTOQUE_SAIDA
+
     inlines = (EstoqueItensInline,)
     list_display = ("__str__", "nf", "funcionario", "origem_saida", "ordem_compra")
     search_fields = ("nf",)
-    list_filter = ("funcionario", "origem_saida")
+    list_filter = ("funcionario", "origem_saida", "inventario_origem", ProdutoFilter)
     change_form_template = "admin/estoque/change_form_observacoes_final.html"
 
     compressed_fields = True
@@ -434,7 +469,12 @@ class EstoqueSaidaAdmin(TenantAwareAdminMixin, ModelAdmin):
             formset.save_m2m()
 
 
-class TransferenciaAdmin(TenantAwareAdminMixin, ModelAdmin):
+class TransferenciaAdmin(RBACAdminMixin, TenantAwareAdminMixin, ModelAdmin):
+    # RBAC: Permissões de estoque
+    permission_view = Permission.ESTOQUE_VISUALIZAR
+    permission_add = Permission.ESTOQUE_TRANSFERENCIA
+    permission_change = Permission.ESTOQUE_TRANSFERENCIA
+
     inlines = (TransferenciaEstoqueItensInline,)
     list_display = ("__str__", "funcionario", "inventario_origem", "inventario_destino", "data")
     search_fields = ("data",)

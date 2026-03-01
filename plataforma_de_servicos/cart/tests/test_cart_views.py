@@ -6,7 +6,6 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.sessions.middleware import SessionMiddleware
-from django.http import Http404
 from django.test import Client
 from django.test import RequestFactory
 from django.test import TestCase
@@ -158,15 +157,22 @@ class CartViewsTest(TestCase):
         self.assertIn("error", response_data)
 
     def test_cart_add_produto_inexistente(self):
-        """Testar adicionar produto que não existe"""
+        """Testar adicionar produto que não existe retorna erro"""
         data = {
             "action": "post",
             "product_id": "99999",
             "product_quantity": "1",
         }
         request = self.create_request_with_middleware(data=data)
-        with self.assertRaises(Http404):
-            cart_add(request)
+        request.META["HTTP_HX_REQUEST"] = "true"
+        response = cart_add(request)
+
+        # CartService retorna erro em vez de levantar Http404
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertTrue(response_data.get("error"))
+        self.assertIn("message", response_data)
+        self.assertIn("Produto não encontrado", response_data["message"])
 
     def test_cart_add_sem_htmx_redireciona_diretamente(self):
         """Testar que sem HTMX retorna redirect direto"""

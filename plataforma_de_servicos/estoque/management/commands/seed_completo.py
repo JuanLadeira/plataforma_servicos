@@ -24,6 +24,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
+from plataforma_de_servicos.core.models import SiteConfig
 from plataforma_de_servicos.corretor.models import InteresseCompra
 from plataforma_de_servicos.corretor.models import ItemInteresse
 from plataforma_de_servicos.corretor.models import StatusInteresse
@@ -37,6 +38,7 @@ from plataforma_de_servicos.produto.models import Categoria
 from plataforma_de_servicos.produto.models import Produto
 from plataforma_de_servicos.produto.models import ValorAtributo
 from plataforma_de_servicos.produto.models import VariacaoProduto
+from plataforma_de_servicos.produto.models.produto_model import Image
 from plataforma_de_servicos.users.models import Funcionario
 from plataforma_de_servicos.users.models import PapelFuncionario
 from plataforma_de_servicos.users.models import User
@@ -271,6 +273,13 @@ AUTOPRIME_DATA = {
         {"nome": "Lucas Martins", "email": "lucas.martins@email.com", "telefone": "(11) 93333-7777"},
         {"nome": "Patrícia Almeida", "email": "patricia.almeida@email.com", "telefone": "(11) 92222-8888"},
     ],
+    "site_config": {
+        "site_name": "AutoPrime",
+        "hero_title": "Veículos e Imóveis Premium",
+        "hero_description": "Encontre carros, motos e imóveis selecionados com as melhores condições do mercado. Qualidade e confiança em cada negócio.",
+        "hero_button_text": "Ver Ofertas",
+        "hero_image_url": "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?q=80&w=2083&auto=format&fit=crop",
+    },
 }
 
 
@@ -487,6 +496,503 @@ AUTOLITROS_DATA = {
         {"nome": "Paulo Ricardo", "email": "paulo.ricardo@email.com", "telefone": "(21) 96666-4444"},
         {"nome": "Beatriz Souza", "email": "beatriz.souza@email.com", "telefone": "(21) 95555-5555"},
     ],
+    "site_config": {
+        "site_name": "AutoLitros",
+        "hero_title": "Sua Mercearia de Confiança",
+        "hero_description": "Produtos frescos e de qualidade para sua família. Bebidas, laticínios, padaria e mercearia com os melhores preços.",
+        "hero_button_text": "Ver Produtos",
+        "hero_image_url": "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?q=80&w=2074&auto=format&fit=crop",
+    },
+}
+
+
+# ==============================================================================
+# DADOS DO ATELIÊ GATO PRETO (Roupas para religiões afro-brasileiras)
+# ==============================================================================
+
+GATOPRETO_DATA = {
+    "empresa": {
+        "nome": "Ateliê Gato Preto",
+        "slug": "gatopreto",
+        "email": "contato@ateliegatopreto.com.br",
+        "imo": "33.444.555/0001-66",
+        "admin_url": "gerencia",
+        "vendedor_url": "vendedores",
+        "primary_color": "#1f2937",
+        "secondary_color": "#6b7280",
+        "accent_color": "#fbbf24",
+    },
+    "categorias": [
+        {
+            "nome": "Roupas Brancas",
+            "atributos": [
+                {
+                    "nome": "Tamanho",
+                    "valores": [
+                        {"valor": "P", "preco_adicional": 0},
+                        {"valor": "M", "preco_adicional": 0},
+                        {"valor": "G", "preco_adicional": 10},
+                        {"valor": "GG", "preco_adicional": 20},
+                        {"valor": "EXG", "preco_adicional": 30},
+                    ],
+                },
+                {
+                    "nome": "Tecido",
+                    "valores": [
+                        {"valor": "Algodão Liso", "preco_adicional": 0},
+                        {"valor": "Algodão com Renda", "preco_adicional": 25},
+                        {"valor": "Laise Bordado", "preco_adicional": 40},
+                        {"valor": "Richelieu", "preco_adicional": 60},
+                    ],
+                },
+            ],
+            "produtos": [
+                {
+                    "nome": "Bata Branca Feminina",
+                    "ncm": "62064000",
+                    "preco": Decimal("89.90"),
+                    "descricao": "Bata feminina branca para giras e sessões. Tecido leve e confortável.",
+                    "imagens": [
+                        "produtos/gatopreto/conjunto-branco-pano-costa-01.jpeg",
+                        "produtos/gatopreto/saia-branca-richelieu-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Calça Branca Feminina",
+                    "ncm": "62046900",
+                    "preco": Decimal("79.90"),
+                    "descricao": "Calça branca feminina com elástico na cintura. Ideal para trabalhos espirituais.",
+                    "imagens": [
+                        "produtos/gatopreto/conjunto-branco-pano-costa-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Saia Branca Godê",
+                    "ncm": "62045900",
+                    "preco": Decimal("95.00"),
+                    "descricao": "Saia branca rodada estilo godê. Perfeita para giras e desenvolvimento.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-branca-richelieu-01.jpeg",
+                        "produtos/gatopreto/conjunto-branco-pano-costa-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Conjunto Branco Masculino",
+                    "ncm": "62034900",
+                    "preco": Decimal("159.90"),
+                    "descricao": "Conjunto calça e bata branca masculina. Acabamento fino.",
+                    "imagens": [
+                        "produtos/gatopreto/conjunto-branco-pano-costa-01.jpeg",
+                        "produtos/gatopreto/saia-branca-richelieu-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Jaleco Branco Unissex",
+                    "ncm": "62034200",
+                    "preco": Decimal("69.90"),
+                    "descricao": "Jaleco branco unissex para médiuns e cambones.",
+                    "imagens": [
+                        "produtos/gatopreto/conjunto-branco-pano-costa-01.jpeg",
+                    ],
+                },
+            ],
+        },
+        {
+            "nome": "Saias de Santo",
+            "atributos": [
+                {
+                    "nome": "Tamanho",
+                    "valores": [
+                        {"valor": "P", "preco_adicional": 0},
+                        {"valor": "M", "preco_adicional": 0},
+                        {"valor": "G", "preco_adicional": 15},
+                        {"valor": "GG", "preco_adicional": 30},
+                        {"valor": "EXG", "preco_adicional": 45},
+                    ],
+                },
+                {
+                    "nome": "Cor/Orixá",
+                    "valores": [
+                        {"valor": "Branco - Oxalá", "preco_adicional": 0},
+                        {"valor": "Azul Claro - Iemanjá", "preco_adicional": 15},
+                        {"valor": "Azul Royal - Ogum", "preco_adicional": 15},
+                        {"valor": "Amarelo Ouro - Oxum", "preco_adicional": 20},
+                        {"valor": "Vermelho - Iansã", "preco_adicional": 15},
+                        {"valor": "Roxo - Nanã", "preco_adicional": 20},
+                        {"valor": "Verde/Preto - Ossain", "preco_adicional": 20},
+                        {"valor": "Marrom/Verde - Oxóssi", "preco_adicional": 15},
+                        {"valor": "Vermelho/Preto - Exu", "preco_adicional": 25},
+                        {"valor": "Rosa - Pomba Gira", "preco_adicional": 25},
+                    ],
+                },
+            ],
+            "produtos": [
+                {
+                    "nome": "Saia de Baiana Tradicional",
+                    "ncm": "62045900",
+                    "preco": Decimal("189.90"),
+                    "descricao": "Saia de baiana tradicional com armação. 5 metros de roda.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-amarela-africana-oxum-01.jpeg",
+                        "produtos/gatopreto/saia-azul-africana-ogum-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Saia de Santo Simples",
+                    "ncm": "62045900",
+                    "preco": Decimal("129.90"),
+                    "descricao": "Saia de santo simples, 3 metros de roda. Ideal para iniciantes.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-azul-africana-ogum-01.jpeg",
+                        "produtos/gatopreto/saia-vermelha-africana-iansa-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Saia de Santo Bordada",
+                    "ncm": "62045900",
+                    "preco": Decimal("249.90"),
+                    "descricao": "Saia de santo com bordados e rendas. Acabamento especial.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-branca-richelieu-01.jpeg",
+                        "produtos/gatopreto/saia-azul-africana-iemanja-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Saia Pomba Gira Luxo",
+                    "ncm": "62045900",
+                    "preco": Decimal("289.90"),
+                    "descricao": "Saia luxuosa para Pomba Gira com babados e rendas pretas.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-rosa-africana-pombagira-01.jpeg",
+                        "produtos/gatopreto/saia-vermelha-africana-iansa-01.jpeg",
+                    ],
+                },
+            ],
+        },
+        {
+            "nome": "Ojás e Turbantes",
+            "atributos": [
+                {
+                    "nome": "Tamanho",
+                    "valores": [
+                        {"valor": "Único", "preco_adicional": 0},
+                        {"valor": "Grande (cabelos volumosos)", "preco_adicional": 15},
+                    ],
+                },
+                {
+                    "nome": "Cor/Orixá",
+                    "valores": [
+                        {"valor": "Branco - Oxalá", "preco_adicional": 0},
+                        {"valor": "Azul Claro - Iemanjá", "preco_adicional": 5},
+                        {"valor": "Azul Royal - Ogum", "preco_adicional": 5},
+                        {"valor": "Amarelo Ouro - Oxum", "preco_adicional": 8},
+                        {"valor": "Vermelho - Iansã", "preco_adicional": 5},
+                        {"valor": "Roxo - Nanã", "preco_adicional": 8},
+                        {"valor": "Multicolorido", "preco_adicional": 12},
+                    ],
+                },
+            ],
+            "produtos": [
+                {
+                    "nome": "Ojá Tradicional",
+                    "ncm": "65050010",
+                    "preco": Decimal("45.90"),
+                    "descricao": "Ojá tradicional em algodão. 2 metros de comprimento.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-branca-richelieu-01.jpeg",
+                        "produtos/gatopreto/conjunto-branco-pano-costa-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Ojá de Renda",
+                    "ncm": "65050010",
+                    "preco": Decimal("69.90"),
+                    "descricao": "Ojá com acabamento em renda nas pontas.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-branca-richelieu-01.jpeg",
+                        "produtos/gatopreto/conjunto-branco-pano-costa-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Turbante Africano",
+                    "ncm": "65050010",
+                    "preco": Decimal("59.90"),
+                    "descricao": "Turbante estilo africano pronto para usar. Tecido ankara.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-amarela-africana-oxum-01.jpeg",
+                        "produtos/gatopreto/saia-azul-africana-ogum-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Torço de Baiana",
+                    "ncm": "65050010",
+                    "preco": Decimal("79.90"),
+                    "descricao": "Torço completo estilo baiana com laço lateral.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-branca-richelieu-01.jpeg",
+                        "produtos/gatopreto/saia-amarela-africana-oxum-01.jpeg",
+                    ],
+                },
+            ],
+        },
+        {
+            "nome": "Panos da Costa",
+            "atributos": [
+                {
+                    "nome": "Tamanho",
+                    "valores": [
+                        {"valor": "Médio (1,5m)", "preco_adicional": 0},
+                        {"valor": "Grande (2m)", "preco_adicional": 30},
+                        {"valor": "Extra Grande (2,5m)", "preco_adicional": 50},
+                    ],
+                },
+                {
+                    "nome": "Cor/Orixá",
+                    "valores": [
+                        {"valor": "Branco - Oxalá", "preco_adicional": 0},
+                        {"valor": "Azul - Iemanjá/Ogum", "preco_adicional": 10},
+                        {"valor": "Amarelo - Oxum", "preco_adicional": 15},
+                        {"valor": "Vermelho - Iansã/Xangô", "preco_adicional": 10},
+                        {"valor": "Verde - Ossain/Oxóssi", "preco_adicional": 10},
+                    ],
+                },
+            ],
+            "produtos": [
+                {
+                    "nome": "Pano da Costa Liso",
+                    "ncm": "63049300",
+                    "preco": Decimal("89.90"),
+                    "descricao": "Pano da costa liso em algodão. Uso tradicional.",
+                    "imagens": [
+                        "produtos/gatopreto/conjunto-branco-pano-costa-01.jpeg",
+                        "produtos/gatopreto/saia-branca-richelieu-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Pano da Costa Bordado",
+                    "ncm": "63049300",
+                    "preco": Decimal("149.90"),
+                    "descricao": "Pano da costa com bordados richelieu nas bordas.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-branca-richelieu-01.jpeg",
+                        "produtos/gatopreto/conjunto-branco-pano-costa-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Pano da Costa Africano",
+                    "ncm": "63049300",
+                    "preco": Decimal("179.90"),
+                    "descricao": "Pano da costa em tecido africano legítimo. Importado.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-azul-africana-ogum-01.jpeg",
+                        "produtos/gatopreto/saia-amarela-africana-oxum-01.jpeg",
+                    ],
+                },
+            ],
+        },
+        {
+            "nome": "Guias e Fios de Conta",
+            "atributos": [
+                {
+                    "nome": "Material",
+                    "valores": [
+                        {"valor": "Miçanga Comum", "preco_adicional": 0},
+                        {"valor": "Cristal", "preco_adicional": 25},
+                        {"valor": "Porcelana", "preco_adicional": 15},
+                        {"valor": "Madeira/Sementes", "preco_adicional": 10},
+                    ],
+                },
+                {
+                    "nome": "Orixá/Entidade",
+                    "valores": [
+                        {"valor": "Oxalá - Branco", "preco_adicional": 0},
+                        {"valor": "Iemanjá - Azul Claro/Cristal", "preco_adicional": 5},
+                        {"valor": "Oxum - Amarelo/Dourado", "preco_adicional": 8},
+                        {"valor": "Iansã - Vermelho/Marrom", "preco_adicional": 5},
+                        {"valor": "Ogum - Azul Royal/Verde", "preco_adicional": 5},
+                        {"valor": "Xangô - Vermelho/Branco", "preco_adicional": 5},
+                        {"valor": "Oxóssi - Verde/Azul Turquesa", "preco_adicional": 5},
+                        {"valor": "Preto Velho - Preto/Branco", "preco_adicional": 5},
+                        {"valor": "Caboclo - Verde/Penas", "preco_adicional": 10},
+                        {"valor": "Exu - Preto/Vermelho", "preco_adicional": 8},
+                        {"valor": "Pomba Gira - Vermelho/Preto", "preco_adicional": 8},
+                        {"valor": "7 Linhas - Multicolorido", "preco_adicional": 15},
+                    ],
+                },
+            ],
+            "produtos": [
+                {
+                    "nome": "Guia Simples",
+                    "ncm": "71171900",
+                    "preco": Decimal("35.90"),
+                    "descricao": "Guia simples de uma volta. Firmeza e proteção.",
+                    "imagens": [
+                        "produtos/gatopreto/conjunto-branco-pano-costa-01.jpeg",
+                        "produtos/gatopreto/saia-branca-richelieu-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Guia de Trabalho",
+                    "ncm": "71171900",
+                    "preco": Decimal("59.90"),
+                    "descricao": "Guia de trabalho com 3 voltas. Para médiuns.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-azul-africana-ogum-01.jpeg",
+                        "produtos/gatopreto/saia-amarela-africana-oxum-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Guia de Bater Cabeça",
+                    "ncm": "71171900",
+                    "preco": Decimal("89.90"),
+                    "descricao": "Guia longa para bater cabeça. 7 voltas.",
+                    "imagens": [
+                        "produtos/gatopreto/conjunto-branco-pano-costa-01.jpeg",
+                        "produtos/gatopreto/saia-branca-richelieu-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Fio de Conta Luxo",
+                    "ncm": "71171900",
+                    "preco": Decimal("129.90"),
+                    "descricao": "Fio de conta especial com firmas e búzios.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-vermelha-africana-iansa-01.jpeg",
+                        "produtos/gatopreto/saia-rosa-africana-pombagira-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Conjunto 7 Guias",
+                    "ncm": "71171900",
+                    "preco": Decimal("199.90"),
+                    "descricao": "Conjunto com 7 guias das linhas principais.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-azul-africana-iemanja-01.jpeg",
+                        "produtos/gatopreto/saia-amarela-africana-oxum-01.jpeg",
+                    ],
+                },
+            ],
+        },
+        {
+            "nome": "Acessórios Rituais",
+            "atributos": [
+                {
+                    "nome": "Tamanho",
+                    "valores": [
+                        {"valor": "Único", "preco_adicional": 0},
+                        {"valor": "Especial", "preco_adicional": 20},
+                    ],
+                },
+            ],
+            "produtos": [
+                {
+                    "nome": "Alfanje Decorativo",
+                    "ncm": "95030099",
+                    "preco": Decimal("79.90"),
+                    "descricao": "Alfanje decorativo para Ogum e Iansã.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-azul-africana-ogum-01.jpeg",
+                        "produtos/gatopreto/saia-vermelha-africana-iansa-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Espelho de Oxum",
+                    "ncm": "70099200",
+                    "preco": Decimal("49.90"),
+                    "descricao": "Espelho dourado decorativo para Oxum.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-amarela-africana-oxum-01.jpeg",
+                        "produtos/gatopreto/saia-branca-richelieu-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Abebé de Oxum",
+                    "ncm": "95030099",
+                    "preco": Decimal("89.90"),
+                    "descricao": "Abebé (leque-espelho) dourado para Oxum.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-amarela-africana-oxum-01.jpeg",
+                        "produtos/gatopreto/saia-azul-africana-iemanja-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Leque de Iansã",
+                    "ncm": "95030099",
+                    "preco": Decimal("59.90"),
+                    "descricao": "Leque vermelho/marrom para Iansã.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-vermelha-africana-iansa-01.jpeg",
+                        "produtos/gatopreto/saia-rosa-africana-pombagira-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Xaxará de Omulu",
+                    "ncm": "95030099",
+                    "preco": Decimal("99.90"),
+                    "descricao": "Xaxará tradicional para Omulu/Obaluaiê.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-branca-richelieu-01.jpeg",
+                        "produtos/gatopreto/conjunto-branco-pano-costa-01.jpeg",
+                    ],
+                },
+                {
+                    "nome": "Sino de Oxalá",
+                    "ncm": "83062900",
+                    "preco": Decimal("45.90"),
+                    "descricao": "Sino branco/prateado para Oxalá.",
+                    "imagens": [
+                        "produtos/gatopreto/saia-branca-richelieu-01.jpeg",
+                        "produtos/gatopreto/conjunto-branco-pano-costa-01.jpeg",
+                    ],
+                },
+            ],
+        },
+    ],
+    "funcionarios": [
+        {
+            "nome": "Mãe Celina",
+            "email": "mae.celina@ateliegatopreto.com.br",
+            "papel": PapelFuncionario.GERENTE,
+            "cargo": "Proprietária",
+            "cpf": "111.222.333-44",
+            "is_corretor": True,
+        },
+        {
+            "nome": "Sandra Oliveira",
+            "email": "sandra@ateliegatopreto.com.br",
+            "papel": PapelFuncionario.VENDEDOR,
+            "cargo": "Consultora de Vendas",
+            "cpf": "222.333.444-55",
+            "is_corretor": True,
+        },
+        {
+            "nome": "Renata Santos",
+            "email": "renata@ateliegatopreto.com.br",
+            "papel": PapelFuncionario.VENDEDOR,
+            "cargo": "Costureira/Vendedora",
+            "cpf": "333.444.555-66",
+            "is_corretor": True,
+        },
+    ],
+    "clientes": [
+        {"nome": "Pai Roberto de Oxóssi", "email": "pai.roberto@email.com", "telefone": "(11) 99111-1111"},
+        {"nome": "Mãe Lúcia de Iemanjá", "email": "mae.lucia@email.com", "telefone": "(11) 98222-2222"},
+        {"nome": "Joana Filha de Oxum", "email": "joana.oxum@email.com", "telefone": "(11) 97333-3333"},
+        {"nome": "Carlos Filho de Ogum", "email": "carlos.ogum@email.com", "telefone": "(11) 96444-4444"},
+        {"nome": "Tereza de Iansã", "email": "tereza.iansa@email.com", "telefone": "(11) 95555-5555"},
+        {"nome": "Pedro Preto Velho", "email": "pedro.pv@email.com", "telefone": "(11) 94666-6666"},
+        {"nome": "Mariana Cabocla", "email": "mariana.cab@email.com", "telefone": "(11) 93777-7777"},
+        {"nome": "Associação Ilê Axé Opô Afonjá", "email": "ile.axe@email.com", "telefone": "(11) 92888-8888"},
+    ],
+    "site_config": {
+        "site_name": "Ateliê Gato Preto",
+        "hero_title": "Roupas e Acessórios para Terreiros",
+        "hero_description": "Roupas brancas, saias de santo, ojás, guias e acessórios rituais. Tradição e respeito às religiões de matriz africana. Axé!",
+        "hero_button_text": "Ver Catálogo",
+        "hero_image_url": "https://images.unsplash.com/photo-1590735213920-68192a487bc2?q=80&w=2070&auto=format&fit=crop",
+        "theme": "gatopreto",
+        "logo": "site/logos/logo-gatopreto.webp",
+    },
 }
 
 
@@ -502,7 +1008,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--empresa",
             type=str,
-            choices=["autoprime", "autolitros", "all"],
+            choices=["autoprime", "autolitros", "gatopreto", "all"],
             default="all",
             help="Qual empresa criar dados (default: all)",
         )
@@ -520,15 +1026,24 @@ class Command(BaseCommand):
         if empresas_para_criar in ["all", "autolitros"]:
             self._criar_dados_empresa(AUTOLITROS_DATA)
 
+        if empresas_para_criar in ["all", "gatopreto"]:
+            self._criar_dados_empresa(GATOPRETO_DATA)
+
         self.stdout.write(
             self.style.SUCCESS("\n✅ Dados de seed criados com sucesso!")
         )
+        self.stdout.write(
+            self.style.NOTICE("\n📋 Usuários criados (senha: teste123):")
+        )
+        self.stdout.write("   - AutoPrime: carlos.silva@autoprime.com.br, ana.souza@autoprime.com.br")
+        self.stdout.write("   - AutoLitros: jose.santos@autolitros.com.br, lucia.mendes@autolitros.com.br")
+        self.stdout.write("   - Gato Preto: mae.celina@ateliegatopreto.com.br, sandra@ateliegatopreto.com.br")
 
     def _limpar_dados(self):
         """Remove dados existentes das empresas de teste."""
         self.stdout.write("🗑️  Limpando dados existentes...")
 
-        empresas = Empresa.objects.filter(slug__in=["autoprime", "autolitros"])
+        empresas = Empresa.objects.filter(slug__in=["autoprime", "autolitros", "gatopreto"])
 
         for empresa in empresas:
             # Deletar registros protegidos em ordem correta (de baixo para cima nas dependências)
@@ -548,7 +1063,8 @@ class Command(BaseCommand):
             EstoqueItens.objects.filter(estoque__empresa=empresa).delete()
             Estoque.objects.filter(empresa=empresa).delete()
 
-            # 5. Variações, Produtos, Valores, Atributos e Categorias
+            # 5. Imagens, Variações, Produtos, Valores, Atributos e Categorias
+            Image.objects.filter(produto__empresa=empresa).delete()
             VariacaoProduto.objects.filter(produto__empresa=empresa).delete()
             Produto.objects.filter(empresa=empresa).delete()
             ValorAtributo.objects.filter(atributo__categoria__empresa=empresa).delete()
@@ -562,7 +1078,10 @@ class Command(BaseCommand):
             ConfiguracaoComissao.objects.filter(empresa=empresa).delete()
             Funcionario.objects.filter(empresa=empresa).delete()
 
-            # 8. Agora pode deletar a empresa
+            # 8. Configuração do site
+            SiteConfig.objects.filter(empresa=empresa).delete()
+
+            # 9. Agora pode deletar a empresa
             empresa.delete()
 
         # Limpa usuários órfãos de teste
@@ -571,6 +1090,9 @@ class Command(BaseCommand):
         ).delete()
         User.objects.filter(
             email__endswith="@autolitros.com.br"
+        ).delete()
+        User.objects.filter(
+            email__endswith="@ateliegatopreto.com.br"
         ).delete()
 
         self.stdout.write(self.style.SUCCESS("   Dados limpos!"))
@@ -585,25 +1107,28 @@ class Command(BaseCommand):
         # 1. Criar empresa
         empresa = self._criar_empresa(empresa_data)
 
-        # 2. Criar inventário principal
+        # 2. Criar configuração do site (banner, título, descrição)
+        self._criar_site_config(empresa, data.get("site_config", {}))
+
+        # 3. Criar inventário principal
         inventario = self._criar_inventario(empresa)
 
-        # 3. Criar categorias, atributos, valores e produtos
+        # 4. Criar categorias, atributos, valores e produtos
         produtos_criados = []
         for cat_data in data["categorias"]:
             categoria, produtos = self._criar_categoria_completa(empresa, cat_data)
             produtos_criados.extend(produtos)
 
-        # 4. Criar entradas de estoque
+        # 5. Criar entradas de estoque
         self._criar_entradas_estoque(empresa, inventario, produtos_criados)
 
-        # 5. Criar funcionários
+        # 6. Criar funcionários
         funcionarios = self._criar_funcionarios(empresa, data["funcionarios"])
 
-        # 6. Criar configuração de comissão
+        # 7. Criar configuração de comissão
         self._criar_configuracao_comissao(empresa)
 
-        # 7. Criar interesses de compra e ordens
+        # 8. Criar interesses de compra e ordens
         self._criar_interesses_e_ordens(
             empresa,
             funcionarios,
@@ -631,6 +1156,31 @@ class Command(BaseCommand):
         action = "criada" if created else "atualizada"
         self.stdout.write(f"   ✓ Empresa {action}: {empresa.nome}")
         return empresa
+
+    def _criar_site_config(self, empresa: Empresa, config_data: dict):
+        """Cria ou atualiza a configuração do site para a empresa."""
+        if not config_data:
+            return
+
+        defaults = {
+            "site_name": config_data.get("site_name", empresa.nome),
+            "hero_title": config_data.get("hero_title", "Bem-vindo"),
+            "hero_description": config_data.get("hero_description", ""),
+            "hero_button_text": config_data.get("hero_button_text", "Ver Mais"),
+            "hero_image_url": config_data.get("hero_image_url", ""),
+            "theme": config_data.get("theme", "default"),
+        }
+        # Adiciona logo se fornecido
+        if config_data.get("logo"):
+            defaults["logo"] = config_data["logo"]
+
+        config, created = SiteConfig.objects.update_or_create(
+            empresa=empresa,
+            defaults=defaults,
+        )
+        action = "criada" if created else "atualizada"
+        theme_name = config.get_theme().display_name
+        self.stdout.write(f"   ✓ Configuração do site {action}: {config.site_name} (Tema: {theme_name})")
 
     def _criar_inventario(self, empresa: Empresa) -> Inventario:
         """Cria inventário principal da empresa."""
@@ -695,6 +1245,10 @@ class Command(BaseCommand):
             )
             self.stdout.write(f"      └─ Produto: {produto.produto}")
 
+            # Criar imagens do produto
+            if "imagens" in prod_data:
+                self._criar_imagens_produto(produto, prod_data["imagens"])
+
             # Criar variações combinando atributos
             variacoes = self._criar_variacoes_produto(produto, cat_data["atributos"])
             produtos.append((produto, variacoes))
@@ -739,6 +1293,19 @@ class Command(BaseCommand):
 
         self.stdout.write(f"         └─ {len(variacoes)} variações criadas")
         return variacoes
+
+    def _criar_imagens_produto(self, produto: Produto, imagens: list):
+        """Cria imagens para um produto a partir de paths de arquivos locais."""
+        # Limpa imagens existentes
+        produto.images.all().delete()
+
+        for order, img_path in enumerate(imagens, start=1):
+            Image.objects.create(
+                produto=produto,
+                image=img_path,
+                order=order,
+            )
+        self.stdout.write(f"         └─ {len(imagens)} imagens adicionadas")
 
     def _criar_entradas_estoque(
         self,

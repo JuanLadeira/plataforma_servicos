@@ -1,7 +1,10 @@
 """
-Mixins para admin com suporte a multitenancy.
+Mixins para admin com suporte a multitenancy e RBAC.
 """
 from django import forms
+
+from plataforma_de_servicos.users.services.permission_service import Permission
+from plataforma_de_servicos.users.services.permission_service import PermissionService
 
 
 def _has_empresa_field(model):
@@ -175,3 +178,120 @@ class TenantAwareInlineMixin:
                 kwargs["queryset"] = related_model.objects.filter(empresa=tenant)
 
         return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+
+class RBACAdminMixin:
+    """
+    Mixin para controle de acesso baseado em funções (RBAC).
+
+    Aplica permissões granulares baseadas no papel do funcionário
+    (Vendedor, Gerente, Admin) usando o PermissionService.
+
+    Uso:
+        class MeuModelAdmin(RBACAdminMixin, TenantAwareAdminMixin, ModelAdmin):
+            permission_view = Permission.PRODUTO_VISUALIZAR
+            permission_add = Permission.PRODUTO_CRIAR
+            permission_change = Permission.PRODUTO_EDITAR
+            permission_delete = Permission.PRODUTO_DELETAR
+            vendedor_readonly_fields = ['preco_custo', 'margem']
+    """
+
+    # Permissões requeridas para cada ação
+    permission_view: Permission | None = None
+    permission_add: Permission | None = None
+    permission_change: Permission | None = None
+    permission_delete: Permission | None = None
+
+    # Campos que devem ser readonly para vendedores
+    vendedor_readonly_fields: list = []
+
+    def _get_permission_service(self, request):
+        """Obtém instância do PermissionService para o usuário."""
+        if not hasattr(request, "_permission_service"):
+            request._permission_service = PermissionService(request.user)
+        return request._permission_service
+
+    def has_view_permission(self, request, obj=None):
+        """Verifica permissão de visualização."""
+        if request.user.is_superuser:
+            return True
+
+        if self.permission_view:
+            service = self._get_permission_service(request)
+            if not service.has_permission(self.permission_view):
+                return False
+
+        return super().has_view_permission(request, obj)
+
+    def has_add_permission(self, request):
+        """Verifica permissão de criação."""
+        if request.user.is_superuser:
+            return True
+
+        if self.permission_add:
+            service = self._get_permission_service(request)
+            if not service.has_permission(self.permission_add):
+                return False
+
+        return super().has_add_permission(request)
+
+    def has_change_permission(self, request, obj=None):
+        """Verifica permissão de edição."""
+        if request.user.is_superuser:
+            return True
+
+        if self.permission_change:
+            service = self._get_permission_service(request)
+            if not service.has_permission(self.permission_change):
+                return False
+
+            # Vendedores só podem editar objetos que criaram
+            if obj and service.is_vendedor and not service.is_gerente:
+                if not service.can_edit_object(obj):
+                    return False
+
+        return super().has_change_permission(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        """Verifica permissão de exclusão."""
+        if request.user.is_superuser:
+            return True
+
+        if self.permission_delete:
+            service = self._get_permission_service(request)
+            if not service.has_permission(self.permission_delete):
+                return False
+
+        return super().has_delete_permission(request, obj)
+
+    def get_queryset(self, request):
+        """Filtra queryset por permissão se necessário."""
+        qs = super().get_queryset(request)
+
+        if request.user.is_superuser:
+            return qs
+
+        service = self._get_permission_service(request)
+
+        # Aplicar filtro de permissão se houver
+        if self.permission_view:
+            qs = service.filter_by_permission(qs, self.permission_view)
+
+        return qs
+
+    def get_readonly_fields(self, request, obj=None):
+        """Adiciona campos readonly para vendedores."""
+        readonly = list(super().get_readonly_fields(request, obj) or [])
+
+        if request.user.is_superuser:
+            return readonly
+
+        service = self._get_permission_service(request)
+
+        # Vendedores têm campos extras como readonly
+        if service.is_vendedor and not service.is_gerente:
+            readonly.extend(
+                f for f in self.vendedor_readonly_fields if f not in readonly
+            )
+
+        return readonly

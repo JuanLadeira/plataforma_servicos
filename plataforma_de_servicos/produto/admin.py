@@ -17,6 +17,7 @@ class VariacaoProdutoInline(admin.TabularInline):
     model = VariacaoProduto
     extra = 1
     autocomplete_fields = ('valores',)
+    readonly_fields = ('estoque',)  # estoque é gerenciado apenas via entradas/saídas
 
 @admin.register(Produto)
 class ProdutoAdmin(admin.ModelAdmin):
@@ -24,6 +25,7 @@ class ProdutoAdmin(admin.ModelAdmin):
     list_filter = ('disponivel', 'categoria')
     search_fields = ('produto', 'descricao')
     prepopulated_fields = {'slug': ('produto',)}
+    readonly_fields = ('estoque',)  # estoque é gerenciado apenas via entradas/saídas
     inlines = [VariacaoProdutoInline]
     change_list_template = 'admin/produto/produto_changelist.html'
 

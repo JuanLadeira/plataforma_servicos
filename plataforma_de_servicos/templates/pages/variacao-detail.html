@@ -506,7 +506,7 @@
                             <div class="row g-3 align-items-center">
                                 <div class="col-5 col-md-4">
                                     <label class="form-label small text-muted mb-1">Quantidade</label>
-                                    <select class="form-select" id="select-{{ variacao.id }}" {% if variacao.estoque == 0 %}disabled{% endif %}>
+                                    <select class="form-select quantity-select" id="select-{{ variacao.id }}" name="product_quantity" {% if variacao.estoque == 0 %}disabled{% endif %}>
                                         {% for i in variacao.get_stock_range %}
                                             <option value="{{ i }}">{{ i }}</option>
                                         {% endfor %}

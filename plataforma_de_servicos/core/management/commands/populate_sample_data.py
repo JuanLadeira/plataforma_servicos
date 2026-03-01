@@ -11,23 +11,20 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from plataforma_de_servicos.corretor.models import InteresseCompra
-from plataforma_de_servicos.users.models import Funcionario
 from plataforma_de_servicos.empresa.models import Empresa
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
-from plataforma_de_servicos.estoque.models import Estoque, EstoqueItens
+from plataforma_de_servicos.estoque.models import Estoque
+from plataforma_de_servicos.estoque.models import EstoqueItens
 from plataforma_de_servicos.inventario.models import Inventario
-from plataforma_de_servicos.produto.models import (
-    Atributo,
-    Categoria,
-    Produto,
-    ValorAtributo,
-    VariacaoProduto,
-)
+from plataforma_de_servicos.produto.models import Atributo
+from plataforma_de_servicos.produto.models import Categoria
+from plataforma_de_servicos.produto.models import Produto
+from plataforma_de_servicos.produto.models import ValorAtributo
+from plataforma_de_servicos.produto.models import VariacaoProduto
+from plataforma_de_servicos.users.models import Funcionario
 from plataforma_de_servicos.vendas.models import StatusOrdemCompra
-from plataforma_de_servicos.vendas.models.ordem_compra import (
-    ItemOrdemCompra,
-    OrdemCompra,
-)
+from plataforma_de_servicos.vendas.models.ordem_compra import ItemOrdemCompra
+from plataforma_de_servicos.vendas.models.ordem_compra import OrdemCompra
 
 User = get_user_model()
 
@@ -194,7 +191,7 @@ class Command(BaseCommand):
         for c, preco in cores:
             ValorAtributo.objects.get_or_create(
                 atributo=cor, valor=c,
-                defaults={"preco_adicional": preco}
+                defaults={"preco_adicional": preco},
             )
         atributos["cor"] = cor
 
@@ -220,7 +217,7 @@ class Command(BaseCommand):
         for c, preco in cambios:
             ValorAtributo.objects.get_or_create(
                 atributo=cambio, valor=c,
-                defaults={"preco_adicional": preco}
+                defaults={"preco_adicional": preco},
             )
         atributos["cambio"] = cambio
 
@@ -236,7 +233,7 @@ class Command(BaseCommand):
         for c, preco in combustiveis:
             ValorAtributo.objects.get_or_create(
                 atributo=combustivel, valor=c,
-                defaults={"preco_adicional": preco}
+                defaults={"preco_adicional": preco},
             )
         atributos["combustivel"] = combustivel
 
@@ -255,7 +252,7 @@ class Command(BaseCommand):
         for m, preco in motores:
             ValorAtributo.objects.get_or_create(
                 atributo=motor, valor=m,
-                defaults={"preco_adicional": preco}
+                defaults={"preco_adicional": preco},
             )
         atributos["motor"] = motor
 
@@ -275,7 +272,7 @@ class Command(BaseCommand):
         for d, preco in direcoes:
             ValorAtributo.objects.get_or_create(
                 atributo=direcao, valor=d,
-                defaults={"preco_adicional": preco}
+                defaults={"preco_adicional": preco},
             )
         atributos["direcao"] = direcao
 
@@ -289,7 +286,7 @@ class Command(BaseCommand):
         for a, preco in ares:
             ValorAtributo.objects.get_or_create(
                 atributo=ar, valor=a,
-                defaults={"preco_adicional": preco}
+                defaults={"preco_adicional": preco},
             )
         atributos["ar"] = ar
 
@@ -304,7 +301,7 @@ class Command(BaseCommand):
         for s, preco in segurancas:
             ValorAtributo.objects.get_or_create(
                 atributo=seguranca, valor=s,
-                defaults={"preco_adicional": preco}
+                defaults={"preco_adicional": preco},
             )
         atributos["seguranca"] = seguranca
 
@@ -335,7 +332,7 @@ class Command(BaseCommand):
         for f, preco in freios:
             ValorAtributo.objects.get_or_create(
                 atributo=freio_moto, valor=f,
-                defaults={"preco_adicional": preco}
+                defaults={"preco_adicional": preco},
             )
         atributos["freio_moto"] = freio_moto
 
@@ -349,7 +346,7 @@ class Command(BaseCommand):
         for p, preco in partidas:
             ValorAtributo.objects.get_or_create(
                 atributo=partida, valor=p,
-                defaults={"preco_adicional": preco}
+                defaults={"preco_adicional": preco},
             )
         atributos["partida"] = partida
 
@@ -379,7 +376,7 @@ class Command(BaseCommand):
         for v, preco in vagas_opcoes:
             ValorAtributo.objects.get_or_create(
                 atributo=vagas, valor=v,
-                defaults={"preco_adicional": preco}
+                defaults={"preco_adicional": preco},
             )
         atributos["vagas"] = vagas
 
@@ -402,7 +399,7 @@ class Command(BaseCommand):
         for c, preco in condominios:
             ValorAtributo.objects.get_or_create(
                 atributo=condominio, valor=c,
-                defaults={"preco_adicional": preco}
+                defaults={"preco_adicional": preco},
             )
         atributos["condominio"] = condominio
 
@@ -428,7 +425,7 @@ class Command(BaseCommand):
         for m, preco in mobiliado_opcoes:
             ValorAtributo.objects.get_or_create(
                 atributo=mobiliado, valor=m,
-                defaults={"preco_adicional": preco}
+                defaults={"preco_adicional": preco},
             )
         atributos["mobiliado"] = mobiliado
 
@@ -436,7 +433,7 @@ class Command(BaseCommand):
         lazer, _ = Atributo.objects.get_or_create(nome="Itens de Lazer")
         lazer_opcoes = [
             "Piscina", "Academia", "Salão de Festas", "Churrasqueira",
-            "Playground", "Quadra", "Sauna", "Espaço Gourmet", "Coworking"
+            "Playground", "Quadra", "Sauna", "Espaço Gourmet", "Coworking",
         ]
         for l in lazer_opcoes:
             ValorAtributo.objects.get_or_create(atributo=lazer, valor=l)
@@ -446,7 +443,7 @@ class Command(BaseCommand):
         caracteristicas, _ = Atributo.objects.get_or_create(nome="Características")
         caracteristicas_opcoes = [
             "Varanda Gourmet", "Closet", "Lavabo", "Cozinha Americana",
-            "Área de Serviço", "Depósito Privativo", "Pé-direito Duplo"
+            "Área de Serviço", "Depósito Privativo", "Pé-direito Duplo",
         ]
         for c in caracteristicas_opcoes:
             ValorAtributo.objects.get_or_create(atributo=caracteristicas, valor=c)
@@ -921,9 +918,7 @@ class Command(BaseCommand):
             for var in variacoes_selecionadas:
                 # Veículos geralmente têm poucas unidades (1-3)
                 # Imóveis são únicos (1)
-                if "Apartamento" in produto.produto or "Casa" in produto.produto or "Terreno" in produto.produto:
-                    qtde = 1
-                elif "Sala" in produto.produto or "Loja" in produto.produto or "Galpão" in produto.produto:
+                if "Apartamento" in produto.produto or "Casa" in produto.produto or "Terreno" in produto.produto or "Sala" in produto.produto or "Loja" in produto.produto or "Galpão" in produto.produto:
                     qtde = 1
                 else:
                     qtde = random.randint(1, 3)

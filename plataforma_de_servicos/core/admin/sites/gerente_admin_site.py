@@ -1,9 +1,12 @@
 from django.contrib import admin
 from django.contrib import messages
+from django.http import JsonResponse
+from django.urls import path
 from unfold.admin import ModelAdmin
 from unfold.sites import UnfoldAdminSite
 
 from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
+from plataforma_de_servicos.produto.services.produto_service import ProdutoService
 from plataforma_de_servicos.core.admin.site_config_admin import SiteConfigGerenteAdmin
 from plataforma_de_servicos.core.models import SiteConfig
 from plataforma_de_servicos.corretor.admin.gerente_admin import (
@@ -37,6 +40,20 @@ from plataforma_de_servicos.vendas.admin.comissao_admin import (
     ConfiguracaoComissaoGerenteAdmin,
 )
 from plataforma_de_servicos.vendas.models import Comissao, ConfiguracaoComissao, OrdemCompra
+from plataforma_de_servicos.inventario.views_gerente import (
+    inventario_browser_list,
+    inventario_browser_produtos,
+    inventario_browser_variacoes,
+    inventario_export_saldo,
+)
+
+
+def produto_atributos_api(request, produto_id, admin_site=None):
+    """API endpoint para retornar os atributos de um produto para variações."""
+    result = ProdutoService.obter_atributos_para_variacao(produto_id)
+    if result is None:
+        return JsonResponse({"error": "Produto não encontrado"}, status=404)
+    return JsonResponse(ProdutoService.atributos_para_dict(result))
 
 
 class UserGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
@@ -146,6 +163,47 @@ class GerenteAdminSite(UnfoldAdminSite):
             return request.user.funcionario.empresa is not None
 
         return False
+
+    def get_urls(self):
+        """Adiciona URLs customizadas para o navegador de inventário."""
+        from functools import partial
+
+        urls = super().get_urls()
+
+        # Wrapper para passar o admin_site para as views
+        def wrap_view(view_func):
+            def wrapper(request, *args, **kwargs):
+                return view_func(request, *args, admin_site=self, **kwargs)
+            return wrapper
+
+        custom_urls = [
+            path(
+                "inventario-browser/",
+                self.admin_view(wrap_view(inventario_browser_list)),
+                name="inventario-browser-list",
+            ),
+            path(
+                "inventario-browser/<int:inventario_id>/produtos/",
+                self.admin_view(wrap_view(inventario_browser_produtos)),
+                name="inventario-browser-produtos",
+            ),
+            path(
+                "inventario-browser/<int:inventario_id>/produtos/<int:produto_id>/",
+                self.admin_view(wrap_view(inventario_browser_variacoes)),
+                name="inventario-browser-variacoes",
+            ),
+            path(
+                "inventario-browser/<int:inventario_id>/export/",
+                self.admin_view(wrap_view(inventario_export_saldo)),
+                name="inventario-export-saldo",
+            ),
+            path(
+                "api/produto/<int:produto_id>/atributos/",
+                self.admin_view(wrap_view(produto_atributos_api)),
+                name="produto-atributos-api",
+            ),
+        ]
+        return custom_urls + urls
 
     def _get_tenant_customization(self, tenant):
         """Retorna dicionário com customizações do tenant."""

@@ -3,10 +3,12 @@ from django.utils.html import format_html
 from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
 
+from plataforma_de_servicos.core.admin.mixins import RBACAdminMixin
 from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueItens
 from plataforma_de_servicos.inventario.models import InventarioSaldo
+from plataforma_de_servicos.users.services import Permission
 
 
 class InventarioSaldoInline(TabularInline):
@@ -25,7 +27,7 @@ class InventarioSaldoInline(TabularInline):
         queryset = super().get_queryset(request)
         return queryset.filter(quantidade__gt=0).select_related(
             "produto", "variacao"
-        ).prefetch_related("variacao__valores")
+        ).prefetch_related("variacao__valores").order_by("produto__produto", "variacao__sku")
 
     @admin.display(description="Variação")
     def variacao_display(self, obj):
@@ -62,7 +64,7 @@ class EstoqueItensEntradaInline(TabularInline):
             estoque__movimento=Movimento.ENTRADA.value
         ).select_related(
             "estoque", "estoque__funcionario", "produto", "variacao"
-        ).prefetch_related("variacao__valores")
+        ).prefetch_related("variacao__valores").order_by("-estoque__created")
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -118,7 +120,7 @@ class EstoqueItensSaidaInline(TabularInline):
             estoque__movimento=Movimento.SAIDA.value
         ).select_related(
             "estoque", "estoque__funcionario", "produto", "variacao"
-        ).prefetch_related("variacao__valores")
+        ).prefetch_related("variacao__valores").order_by("-estoque__created")
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -150,7 +152,12 @@ class EstoqueItensSaidaInline(TabularInline):
         return obj.estoque.get_origem_saida_display() if obj.estoque and obj.estoque.origem_saida else "-"
 
 
-class InventarioGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
+class InventarioGerenteAdmin(RBACAdminMixin, TenantAwareAdminMixin, ModelAdmin):
+    # RBAC: Permissões de inventário
+    permission_view = Permission.INVENTARIO_VISUALIZAR
+    permission_add = Permission.INVENTARIO_CRIAR
+    permission_change = Permission.INVENTARIO_EDITAR
+
     list_display = ["nome", "slug", "is_ativo", "exibir_na_vitrine"]
     list_filter = ["is_ativo", "exibir_na_vitrine"]
     list_editable = ["exibir_na_vitrine"]

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ config.title }}</title>
+    <style>
+        @page {
+            size: {% if config.page_orientation == 'landscape' %}A4 landscape{% else %}A4{% endif %};
+            margin: 1.5cm;
+            @top-center {
+                content: "{{ config.title }}";
+                font-size: 10px;
+                color: #666;
+            }
+            @bottom-center {
+                content: "Página " counter(page) " de " counter(pages);
+                font-size: 10px;
+                color: #666;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #1E3A5F;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            color: #1E3A5F;
+            margin-bottom: 5px;
+        }
+
+        .header .subtitle {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .header .company {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .meta-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 10px;
+            color: #666;
+        }
+
+        .meta-info .left {
+            text-align: left;
+        }
+
+        .meta-info .right {
+            text-align: right;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        thead {
+            display: table-header-group;
+        }
+
+        th {
+            background-color: #1E3A5F;
+            color: white;
+            font-weight: bold;
+            text-align: left;
+            padding: 8px 10px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 6px 10px;
+            border-bottom: 1px solid #ddd;
+            font-size: 10px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .totals {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f0f4f8;
+            border-radius: 5px;
+        }
+
+        .totals h3 {
+            font-size: 12px;
+            color: #1E3A5F;
+            margin-bottom: 10px;
+        }
+
+        .totals .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .totals .total-row:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            font-size: 9px;
+            color: #666;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        .badge-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        {% if config.company_name %}
+        <p class="company">{{ config.company_name }}</p>
+        {% endif %}
+        <h1>{{ config.title }}</h1>
+        {% if config.subtitle %}
+        <p class="subtitle">{{ config.subtitle }}</p>
+        {% endif %}
+    </div>
+
+    <div class="meta-info">
+        <div class="left">
+            <strong>Total de registros:</strong> {{ total_records }}
+        </div>
+        <div class="right">
+            <strong>Gerado em:</strong> {{ generated_at|date:"d/m/Y H:i" }}
+            {% if config.generated_by %}
+            <br><strong>Por:</strong> {{ config.generated_by }}
+            {% endif %}
+        </div>
+    </div>
+
+    {% if rows %}
+    <table>
+        <thead>
+            <tr>
+                {% for col in columns %}
+                <th class="{% if col.align == 'right' %}text-right{% elif col.align == 'center' %}text-center{% endif %}">
+                    {{ col.header }}
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                {% for cell in row %}
+                <td class="{% if cell.align == 'right' %}text-right{% elif cell.align == 'center' %}text-center{% endif %}">
+                    {{ cell.value }}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>Nenhum registro encontrado para os filtros selecionados.</p>
+    </div>
+    {% endif %}
+
+    {% if config.extra_data.show_totals %}
+    <div class="totals">
+        <h3>Resumo</h3>
+        {% if config.extra_data.total_value %}
+        <div class="total-row">
+            <span>Valor Total do Inventário:</span>
+            <span>R$ {{ config.extra_data.total_value|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+        {% if config.extra_data.total_comissao %}
+        <div class="total-row">
+            <span>Total de Comissões:</span>
+            <span>R$ {{ config.extra_data.total_comissao|floatformat:2 }}</span>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <p>Este relatório foi gerado automaticamente pelo sistema.</p>
+        <p>{{ config.company_name }} - Plataforma de Serviços</p>
+    </div>
+</body>
+</html>

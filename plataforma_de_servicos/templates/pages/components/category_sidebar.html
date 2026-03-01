@@ -7,24 +7,49 @@
         </h5>
     </div>
 
+    <!-- Active filters display -->
+    {% if active_filters %}
+    <div class="active-filters px-3 py-2 border-bottom">
+        <small class="text-muted d-block mb-2">Filtros ativos:</small>
+        <div class="filter-chips d-flex flex-wrap gap-1">
+            {% for filter in active_filters %}
+            <span class="badge bg-primary filter-chip"
+                  data-filter-type="{{ filter.type }}"
+                  data-filter-value="{{ filter.value }}">
+                {{ filter.label }}
+                {% if filter.removable %}
+                <button type="button" class="btn-close btn-close-white ms-1"
+                        style="font-size: 0.6rem;"
+                        onclick="removeFilter('{{ filter.type }}', '{{ filter.value }}')"
+                        aria-label="Remover filtro"></button>
+                {% endif %}
+            </span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     <nav class="sidebar-nav">
         <ul class="category-list">
             <li class="category-item">
                 <a href="#"
                    class="category-link {% if not selected_category or selected_category == 'all' %}active{% endif %}"
-                   hx-get="{% url 'home' %}"
+                   hx-get="{% url 'home' %}{% if search_query %}?search={{ search_query }}{% endif %}"
                    hx-target="#productListContent"
                    hx-push-url="true"
                    hx-on::after-request="updateActiveCategory(this)">
                     <i class="fa fa-grid-2 me-2"></i>
                     <span>Todos os Produtos</span>
+                    {% if total_count and not selected_category %}
+                    <span class="category-count">{{ total_count }}</span>
+                    {% endif %}
                 </a>
             </li>
             {% for category in categories %}
             <li class="category-item">
                 <a href="#"
                    class="category-link {% if selected_category == category.id %}active{% endif %}"
-                   hx-get="{% url 'home' %}?category={{ category.id }}"
+                   hx-get="{% url 'home' %}?category={{ category.id }}{% if search_query %}&search={{ search_query }}{% endif %}"
                    hx-target="#productListContent"
                    hx-push-url="true"
                    hx-on::after-request="updateActiveCategory(this)">
@@ -64,25 +89,48 @@
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body p-0">
+        <!-- Active filters display (mobile) -->
+        {% if active_filters %}
+        <div class="active-filters px-3 py-2 border-bottom">
+            <small class="text-muted d-block mb-2">Filtros ativos:</small>
+            <div class="filter-chips d-flex flex-wrap gap-1">
+                {% for filter in active_filters %}
+                <span class="badge bg-primary filter-chip">
+                    {{ filter.label }}
+                    {% if filter.removable %}
+                    <button type="button" class="btn-close btn-close-white ms-1"
+                            style="font-size: 0.6rem;"
+                            onclick="removeFilter('{{ filter.type }}', '{{ filter.value }}')"
+                            aria-label="Remover filtro"></button>
+                    {% endif %}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
         <nav class="sidebar-nav">
             <ul class="category-list">
                 <li class="category-item">
                     <a href="#"
                        class="category-link {% if not selected_category or selected_category == 'all' %}active{% endif %}"
-                       hx-get="{% url 'home' %}"
+                       hx-get="{% url 'home' %}{% if search_query %}?search={{ search_query }}{% endif %}"
                        hx-target="#productListContent"
                        hx-push-url="true"
                        data-bs-dismiss="offcanvas"
                        hx-on::after-request="updateActiveCategory(this)">
                         <i class="fa fa-grid-2 me-2"></i>
                         <span>Todos os Produtos</span>
+                        {% if total_count and not selected_category %}
+                        <span class="category-count">{{ total_count }}</span>
+                        {% endif %}
                     </a>
                 </li>
                 {% for category in categories %}
                 <li class="category-item">
                     <a href="#"
                        class="category-link {% if selected_category == category.id %}active{% endif %}"
-                       hx-get="{% url 'home' %}?category={{ category.id }}"
+                       hx-get="{% url 'home' %}?category={{ category.id }}{% if search_query %}&search={{ search_query }}{% endif %}"
                        hx-target="#productListContent"
                        hx-push-url="true"
                        data-bs-dismiss="offcanvas"
@@ -90,7 +138,7 @@
                         <i class="fa fa-tag me-2"></i>
                         <span>{{ category.categoria }}</span>
                         {% if category.produto_count %}
-                        <span class="category-count">{{ category.count }}</span>
+                        <span class="category-count">{{ category.produto_count }}</span>
                         {% endif %}
                     </a>
                 </li>
@@ -111,5 +159,33 @@ function updateActiveCategory(element) {
     document.querySelectorAll(`.category-link[hx-get="${href}"]`).forEach(link => {
         link.classList.add('active');
     });
+}
+
+function removeFilter(filterType, filterValue) {
+    // Get current URL parameters
+    const url = new URL(window.location.href);
+    const params = url.searchParams;
+
+    // Remove the filter based on type
+    if (filterType === 'category') {
+        params.delete('category');
+    } else if (filterType === 'search') {
+        params.delete('search');
+        // Also clear the search input
+        const searchInput = document.getElementById('searchBar');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+    } else if (filterType === 'price') {
+        params.delete('min_price');
+        params.delete('max_price');
+    }
+
+    // Build new URL
+    const newUrl = params.toString() ? `/?${params.toString()}` : '/';
+
+    // Use HTMX to fetch the new content
+    htmx.ajax('GET', newUrl, {target: '#productListContent', swap: 'innerHTML'});
+    history.pushState(null, '', newUrl);
 }
 </script>

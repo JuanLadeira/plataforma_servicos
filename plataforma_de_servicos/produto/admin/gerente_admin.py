@@ -3,11 +3,16 @@ from django.contrib import admin
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.forms.models import BaseInlineFormSet
+from import_export.admin import ImportExportModelAdmin
 from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
 from unfold.contrib.forms.widgets import ArrayWidget
 from unfold.contrib.forms.widgets import WysiwygWidget
+from unfold.contrib.import_export.forms import ExportForm, ImportForm
+from unfold.decorators import display, action
+from django.utils.translation import gettext_lazy as _
 
+from plataforma_de_servicos.core.admin.mixins import RBACAdminMixin
 from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
 from plataforma_de_servicos.core.admin.mixins import TenantAwareInlineMixin
 from plataforma_de_servicos.inventario.models import InventarioSaldo
@@ -17,6 +22,14 @@ from plataforma_de_servicos.produto.models import Image
 from plataforma_de_servicos.produto.models import Produto
 from plataforma_de_servicos.produto.models import ValorAtributo
 from plataforma_de_servicos.produto.models import VariacaoProduto
+from plataforma_de_servicos.produto.resources import (
+    AtributoResource,
+    CategoriaResource,
+    TenantAwareProdutoResource,
+    TenantAwareVariacaoResource,
+    ValorAtributoResource,
+)
+from plataforma_de_servicos.users.services import Permission
 
 
 class InventarioSaldoInline(TabularInline):
@@ -193,7 +206,26 @@ class VariacaoProdutoInline(TenantAwareInlineMixin, TabularInline):
         return "-"
 
 
-class ProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
+class ProdutoGerenteAdmin(RBACAdminMixin, TenantAwareAdminMixin, ImportExportModelAdmin, ModelAdmin):
+    # RBAC: Permissões por papel
+    permission_view = Permission.PRODUTO_VISUALIZAR
+    permission_add = Permission.PRODUTO_CRIAR
+    permission_change = Permission.PRODUTO_EDITAR
+    permission_delete = Permission.PRODUTO_DELETAR
+    # Vendedores não podem ver/editar estes campos
+    vendedor_readonly_fields = ["estoque_minimo"]
+
+    # Import/Export configuration
+    resource_classes = [TenantAwareProdutoResource]
+    import_form_class = ImportForm
+    export_form_class = ExportForm
+
+    def get_resource_kwargs(self, request, *args, **kwargs):
+        """Passa a empresa do tenant para o Resource."""
+        kwargs = super().get_resource_kwargs(request, *args, **kwargs)
+        kwargs["empresa"] = getattr(request, "tenant", None)
+        return kwargs
+
     list_display = ["produto", "preco", "categoria", "count_variations"]
     list_display_links = ["produto"]
     list_per_page = 30
@@ -346,7 +378,18 @@ class ProdutoInline(TabularInline):
     readonly_fields = ["produto", "data", "ncm", "importado"]
 
 
-class CategoriaGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
+class CategoriaGerenteAdmin(RBACAdminMixin, TenantAwareAdminMixin, ImportExportModelAdmin, ModelAdmin):
+    # RBAC: Permissões por papel
+    permission_view = Permission.CATEGORIA_VISUALIZAR
+    permission_add = Permission.CATEGORIA_CRIAR
+    permission_change = Permission.CATEGORIA_EDITAR
+    permission_delete = Permission.CATEGORIA_DELETAR
+
+    # Import/Export configuration
+    resource_classes = [CategoriaResource]
+    import_form_class = ImportForm
+    export_form_class = ExportForm
+
     list_display = ["categoria"]
     list_order_by = ["categoria"]
     list_order_by_desc = ["-categoria"]
@@ -380,7 +423,13 @@ class ValorAtributoGerenteInline(TabularInline):
     verbose_name_plural = "Valores do Atributo (escolha preço OU percentual, não ambos)"
 
 
-class AtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
+class AtributoGerenteAdmin(RBACAdminMixin, TenantAwareAdminMixin, ModelAdmin):
+    # RBAC: Usa mesmas permissões de produto (atributos são configuração de produto)
+    permission_view = Permission.PRODUTO_VISUALIZAR
+    permission_add = Permission.PRODUTO_CRIAR
+    permission_change = Permission.PRODUTO_EDITAR
+    permission_delete = Permission.PRODUTO_DELETAR
+
     list_display = ["nome", "categoria", "multipla_selecao_display", "count_valores"]
     list_filter = ["categoria", "multipla_selecao"]
     search_fields = ["nome", "categoria__categoria"]
@@ -452,7 +501,13 @@ class AtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
         return obj.valores.count()
 
 
-class ValorAtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
+class ValorAtributoGerenteAdmin(RBACAdminMixin, TenantAwareAdminMixin, ModelAdmin):
+    # RBAC: Usa mesmas permissões de produto
+    permission_view = Permission.PRODUTO_VISUALIZAR
+    permission_add = Permission.PRODUTO_CRIAR
+    permission_change = Permission.PRODUTO_EDITAR
+    permission_delete = Permission.PRODUTO_DELETAR
+
     form = ValorAtributoGerenteForm
     list_display = ["atributo", "valor", "categoria_display", "modificador_display"]
     list_filter = ["atributo__categoria", "atributo"]
@@ -531,48 +586,240 @@ class ValorAtributoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
             return f"+{obj.percentual_adicional}%"
         return "-"
 
+class VariacaoProdutoGerenteAdmin(RBACAdminMixin, TenantAwareAdminMixin, ModelAdmin):
+    """Admin para VariacaoProduto com visual moderno Unfold e Busca Avançada."""
+    
+    # --- Lógica de Permissões e Tenant (Mantida) ---
+    permission_view = Permission.VARIACAO_VISUALIZAR
+    permission_add = Permission.VARIACAO_CRIAR
+    permission_change = Permission.VARIACAO_EDITAR
+    permission_delete = Permission.VARIACAO_DELETAR
 
-class VariacaoProdutoGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
-    """Admin para VariacaoProduto - usado principalmente para autocomplete no Estoque."""
-    list_display = ["produto", "sku", "estoque", "preco_final_display"]
-    list_filter = ["produto__categoria"]
-    search_fields = ["sku", "produto__produto", "valores__valor"]
-    autocomplete_fields = ["produto", "valores"]
-    list_select_related = ["produto"]
-    list_order_by = ["produto__produto", "sku"]
-    readonly_fields = ["sku"]
+    # --- Configurações Visuais Unfold ---
+    list_fullwidth = True
+    list_filter_sheet = True      
+    list_filter_submit = True     
     compressed_fields = True
     warn_unsaved_form = True
 
-    def get_queryset(self, request):
-        """Filtra variações pela empresa do tenant."""
-        qs = super().get_queryset(request).select_related(
-            "produto",
-        ).prefetch_related("valores", "valores__atributo")
+    # --- BUSCA AVANÇADA (O que você solicitou) ---
+    # Ao definir search_fields, o Unfold 2.0+ automaticamente usa o textarea expansível.
+    search_fields = ["sku", "produto__produto", "valores__valor"]
+    
+    # Este texto aparece como ajuda e habilita a percepção de "Query Language" no UI
+    search_help_text = _("Pesquisa avançada: Use termos específicos ou combine palavras-chave para filtrar SKUs, Produtos ou Atributos.")
 
-        tenant = getattr(request, "tenant", None)
+    # --- Listagem Estilo 'Driver' ---
+    list_display = [
+        "display_identificacao", 
+        "display_estoque_status", 
+        "preco_final_display",
+        "produto__categoria"
+    ]
+    
+    list_filter = ["produto__categoria", "valores__atributo"]
+    autocomplete_fields = ["produto"]
+    list_select_related = ["produto"]
 
-        # No admin de gerentes, sempre filtra por tenant
-        if self._is_gerente_admin():
-            if not tenant:
-                return qs.none()  # Segurança: sem tenant, sem dados
-            return qs.filter(produto__empresa=tenant)
+    # --- Quick Filters (Tabs) ---
+    def get_tabs(self, request):
+        """Abas superiores para filtragem rápida de estoque."""
+        return [
+            {
+                "title": _("Todas"),
+                "link": "./",
+                "is_active": not request.GET.get("estoque"),
+            },
+            {
+                "title": _("Em Estoque"),
+                "link": "?estoque=disponivel",
+                "is_active": request.GET.get("estoque") == "disponivel",
+            },
+            {
+                "title": _("Estoque Baixo"),
+                "link": "?estoque=baixo",
+                "is_active": request.GET.get("estoque") == "baixo",
+            },
+        ]
 
-        # No admin principal, superusuário sem tenant vê tudo
-        if request.user.is_superuser and not tenant:
-            return qs
+    # --- Colunas Decoradas ---
+    @display(description=_("Produto / SKU"), header=True)
+    def display_identificacao(self, obj):
+        return [
+            obj.produto.produto,
+            f"SKU: {obj.sku}",
+        ]
 
-        # Para outros casos (ex: superuser com tenant), filtra
-        if tenant:
-            return qs.filter(produto__empresa=tenant)
+    @display(
+        description=_("Estoque"),
+        label={
+            "ALTA": "success",
+            "BAIXA": "warning",
+            "ZERO": "danger",
+        },
+    )
+    def display_estoque_status(self, obj):
+        if obj.estoque > 10: return "ALTA"
+        if obj.estoque > 0: return "BAIXA"
+        return "ZERO"
 
-        # Fallback seguro para não vazar dados
-        return qs.none()
-
-    @admin.display(description="Preço Final")
+    @display(description=_("Preço Final"))
     def preco_final_display(self, obj):
-        """Mostra o preço final calculado."""
         if obj.pk:
             preco = obj.calcular_preco_final()
             return f"R$ {preco:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
         return "-"
+
+    # --- Ações de Linha ---
+    actions_row = ["duplicar_variacao"]
+
+    @action(description=_("Duplicar"), icon="content_copy")
+    def duplicar_variacao(self, modeladmin, request, queryset):
+        pass
+
+    # --- Lógica de Queryset ---
+    def get_queryset(self, request):
+        qs = super().get_queryset(request).select_related("produto").prefetch_related("valores", "valores__atributo")
+        
+        estoque_filter = request.GET.get("estoque")
+        if estoque_filter == "disponivel":
+            qs = qs.filter(estoque__gt=10)
+        elif estoque_filter == "baixo":
+            qs = qs.filter(estoque__gt=0, estoque__lte=10)
+        elif estoque_filter == "zerado":
+            qs = qs.filter(estoque=0)
+
+        tenant = getattr(request, "tenant", None)
+        if self._is_gerente_admin():
+            if not tenant: return qs.none()
+            return qs.filter(produto__empresa=tenant)
+        return qs
+
+    # (Manter get_form, formfield_for_manytomany e Media como no seu original)
+
+# class VariacaoProdutoGerenteAdmin(RBACAdminMixin, TenantAwareAdminMixin, ModelAdmin):
+#     """Admin para VariacaoProduto - usado principalmente para autocomplete no Estoque."""
+#     # RBAC: Usa mesmas permissões de variação
+#     permission_view = Permission.VARIACAO_VISUALIZAR
+#     permission_add = Permission.VARIACAO_CRIAR
+#     permission_change = Permission.VARIACAO_EDITAR
+#     permission_delete = Permission.VARIACAO_DELETAR
+
+#     list_display = ["produto", "sku", "estoque", "preco_final_display"]
+#     list_filter = ["produto__categoria", "valores__atributo"]
+#     search_fields = ["sku", "produto__produto", "valores__valor"]
+#     autocomplete_fields = ["produto"]  # valores usa widget customizado
+#     list_select_related = ["produto"]
+#     list_order_by = ["produto__produto", "sku"]
+#     readonly_fields = ["sku", "estoque"]  # estoque é gerenciado apenas via entradas/saídas
+#     compressed_fields = True
+#     warn_unsaved_form = True
+
+#     fieldsets = [
+#         (
+#             "Produto",
+#             {
+#                 "fields": ["produto"],
+#                 "description": "Selecione o produto para esta variação.",
+#             },
+#         ),
+#         (
+#             "Atributos da Variação",
+#             {
+#                 "fields": ["valores"],
+#                 "description": "Selecione os valores dos atributos que definem esta variação (ex: Cor, Tamanho).",
+#             },
+#         ),
+#         (
+#             "Preço",
+#             {
+#                 "fields": ["preco"],
+#                 "description": "Preço específico desta variação. Se vazio, usa o preço base do produto.",
+#             },
+#         ),
+#         (
+#             "Informações do Sistema",
+#             {
+#                 "fields": ["sku", "estoque"],
+#                 "description": "Campos gerenciados automaticamente pelo sistema.",
+#             },
+#         ),
+#     ]
+
+#     class Media:
+#         css = {
+#             "all": ("css/valores-atributo-widget.css",),
+#         }
+#         js = ("js/valores-atributo-widget.js", "js/variacao-produto-form.js")
+
+#     def get_queryset(self, request):
+#         """Filtra variações pela empresa do tenant."""
+#         qs = super().get_queryset(request).select_related(
+#             "produto",
+#         ).prefetch_related("valores", "valores__atributo")
+
+#         tenant = getattr(request, "tenant", None)
+
+#         # No admin de gerentes, sempre filtra por tenant
+#         if self._is_gerente_admin():
+#             if not tenant:
+#                 return qs.none()  # Segurança: sem tenant, sem dados
+#             return qs.filter(produto__empresa=tenant)
+
+#         # No admin principal, superusuário sem tenant vê tudo
+#         if request.user.is_superuser and not tenant:
+#             return qs
+
+#         # Para outros casos (ex: superuser com tenant), filtra
+#         if tenant:
+#             return qs.filter(produto__empresa=tenant)
+
+#         # Fallback seguro para não vazar dados
+#         return qs.none()
+
+#     def formfield_for_manytomany(self, db_field, request, **kwargs):
+#         """Usa widget de checkboxes agrupados para valores."""
+#         if db_field.name == "valores":
+#             tenant = getattr(request, "tenant", None)
+#             obj = getattr(self, "_current_obj", None)
+
+#             qs = ValorAtributo.objects.select_related("atributo", "atributo__categoria").order_by(
+#                 "atributo__nome", "valor",
+#             )
+
+#             categoria_id = None
+#             atributos_config = {}
+
+#             # Se editando, filtra pela categoria do produto
+#             if obj and obj.produto and obj.produto.categoria:
+#                 categoria = obj.produto.categoria
+#                 qs = qs.filter(atributo__categoria=categoria)
+#                 categoria_id = categoria.pk
+#                 atributos_config = {
+#                     attr.nome: attr.multipla_selecao
+#                     for attr in Atributo.objects.filter(categoria=categoria)
+#                 }
+#             elif tenant:
+#                 # Fallback: filtra pela empresa
+#                 qs = qs.filter(atributo__categoria__empresa=tenant)
+
+#             kwargs["queryset"] = qs
+#             kwargs["widget"] = GroupedCheckboxSelectMultiple(
+#                 categoria_id=categoria_id,
+#                 admin_site="gerentes",
+#                 atributos_config=atributos_config,
+#             )
+#         return super().formfield_for_manytomany(db_field, request, **kwargs)
+
+#     def get_form(self, request, obj=None, **kwargs):
+#         """Armazena o objeto atual para uso no formfield_for_manytomany."""
+#         self._current_obj = obj
+#         return super().get_form(request, obj, **kwargs)
+
+#     @admin.display(description="Preço Final")
+#     def preco_final_display(self, obj):
+#         """Mostra o preço final calculado."""
+#         if obj.pk:
+#             preco = obj.calcular_preco_final()
+#             return f"R$ {preco:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+#         return "-"

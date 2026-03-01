@@ -88,6 +88,7 @@ THIRD_PARTY_APPS = [
     "allauth.mfa",
     "allauth.socialaccount",
     "django_celery_beat",
+    "import_export",
 ]
 
 
@@ -479,5 +480,126 @@ UNFOLD_GERENTE_ADMIN = {
             "important-light": "24 24 27",    # preto suave
             "important-dark": "250 250 250",  # branco
         },
+    },
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+        "navigation": [
+            {
+                "title": "Navegação Rápida",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Navegador de Inventários",
+                        "icon": "inventory_2",
+                        "link": lambda request: "/gerentes/inventario-browser/",
+                    },
+                ],
+            },
+            {
+                "title": "Catálogo",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Produtos",
+                        "icon": "inventory",
+                        "link": lambda request: "/gerentes/produto/produto/",
+                    },
+                    {
+                        "title": "Categorias",
+                        "icon": "category",
+                        "link": lambda request: "/gerentes/produto/categoria/",
+                    },
+                    {
+                        "title": "Atributos",
+                        "icon": "tune",
+                        "link": lambda request: "/gerentes/produto/atributo/",
+                    },
+                    {
+                        "title": "Valores de Atributo",
+                        "icon": "label",
+                        "link": lambda request: "/gerentes/produto/valoratributo/",
+                    },
+                    {
+                        "title": "Variações",
+                        "icon": "layers",
+                        "link": lambda request: "/gerentes/produto/variacaoproduto/",
+                    },
+                ],
+            },
+            {
+                "title": "Estoque",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Inventários",
+                        "icon": "warehouse",
+                        "link": lambda request: "/gerentes/inventario/inventario/",
+                    },
+                    {
+                        "title": "Entradas",
+                        "icon": "add_box",
+                        "link": lambda request: "/gerentes/estoque/estoqueentrada/",
+                    },
+                    {
+                        "title": "Saídas",
+                        "icon": "outbox",
+                        "link": lambda request: "/gerentes/estoque/estoquesaida/",
+                    },
+                    {
+                        "title": "Transferências",
+                        "icon": "sync_alt",
+                        "link": lambda request: "/gerentes/estoque/transferencia/",
+                    },
+                ],
+            },
+            {
+                "title": "Vendas",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Interesses de Compra",
+                        "icon": "shopping_cart",
+                        "link": lambda request: "/gerentes/corretor/interessecompra/",
+                    },
+                    {
+                        "title": "Ordens de Compra",
+                        "icon": "receipt_long",
+                        "link": lambda request: "/gerentes/vendas/ordemcompra/",
+                    },
+                    {
+                        "title": "Comissões",
+                        "icon": "payments",
+                        "link": lambda request: "/gerentes/vendas/comissao/",
+                    },
+                    {
+                        "title": "Config. Comissões",
+                        "icon": "settings",
+                        "link": lambda request: "/gerentes/vendas/configuracaocomissao/",
+                    },
+                ],
+            },
+            {
+                "title": "Configurações",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Usuários",
+                        "icon": "people",
+                        "link": lambda request: "/gerentes/users/user/",
+                    },
+                    {
+                        "title": "Funcionários",
+                        "icon": "badge",
+                        "link": lambda request: "/gerentes/users/funcionario/",
+                    },
+                    {
+                        "title": "Configuração do Site",
+                        "icon": "tune",
+                        "link": lambda request: "/gerentes/core/siteconfig/",
+                    },
+                ],
+            },
+        ],
     },
 }

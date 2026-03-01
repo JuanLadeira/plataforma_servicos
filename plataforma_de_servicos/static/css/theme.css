@@ -246,6 +246,95 @@ a:hover {
   border-color: rgba(255, 255, 255, 0.15);
 }
 
+/* Quantity select with proper contrast */
+.quantity-select {
+  min-width: 70px;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  font-weight: 500;
+  background-color: var(--color-bg, #ffffff);
+  color: var(--color-text, #1e293b);
+  border: 2px solid var(--color-primary, #0ea5e9);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quantity-select:hover {
+  border-color: var(--color-accent, #f59e0b);
+}
+
+.quantity-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb, 14, 165, 233), 0.25);
+  outline: none;
+}
+
+.quantity-select option {
+  background-color: var(--color-bg, #ffffff);
+  color: var(--color-text, #1e293b);
+  padding: 0.5rem;
+}
+
+.dark-theme .quantity-select {
+  background-color: var(--color-bg-secondary, #1f2937);
+  color: var(--color-text, #ffffff);
+  border-color: var(--color-primary);
+}
+
+.dark-theme .quantity-select option {
+  background-color: var(--color-bg-secondary, #1f2937);
+  color: var(--color-text, #ffffff);
+}
+
+/* Specific fix for very dark themes like gatopreto */
+.dark-theme .quantity-select,
+.dark-theme .form-select.quantity-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+
+/* Quantity controls in mini-cart */
+.quantity-controls {
+  background-color: var(--color-bg-secondary, #f8fafc);
+  border-radius: 20px;
+  padding: 2px 4px;
+}
+
+.quantity-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.quantity-btn:hover {
+  transform: scale(1.1);
+}
+
+.quantity-display {
+  min-width: 24px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.dark-theme .quantity-controls {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .quantity-btn.btn-outline-secondary {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--color-text);
+}
+
+.dark-theme .quantity-btn.btn-outline-primary {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
 /* ==========================================================================
    BADGES
    ========================================================================== */
