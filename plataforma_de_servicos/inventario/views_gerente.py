@@ -5,12 +5,18 @@ Fluxo de navegação:
     Inventários → Produtos do Inventário → Variações com saldo específico
 """
 
+from django.contrib import messages
 from django.db.models import Count
 from django.db.models import Q
 from django.db.models import Sum
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 
+from plataforma_de_servicos.core.services.report_service import ReportFormat
+from plataforma_de_servicos.core.services.report_service import ReportService
+from plataforma_de_servicos.core.services.report_service import ReportType
 from plataforma_de_servicos.inventario.models import Inventario
 from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models.produto_model import Produto
@@ -233,3 +239,39 @@ def inventario_browser_variacoes(request, inventario_id, produto_id, admin_site)
         "admin/inventario/browser/variacao_list.html",
         context,
     )
+
+
+def inventario_export_saldo(request, inventario_id, admin_site):
+    """
+    Exporta o saldo de estoque de um inventário específico.
+    URL: /gerentes/inventario-browser/<inventario_id>/export/
+    """
+    tenant = get_tenant_from_request(request)
+
+    # Obtém o inventário
+    inventario_qs = Inventario.objects.all()
+    if tenant:
+        inventario_qs = inventario_qs.filter(empresa=tenant)
+
+    inventario = get_object_or_404(inventario_qs, pk=inventario_id)
+
+    # Determina o formato
+    format_param = request.GET.get("format", "excel").lower()
+    if format_param == "pdf":
+        report_format = ReportFormat.PDF
+    else:
+        report_format = ReportFormat.EXCEL
+
+    # Gera o relatório usando o ReportService
+    report_service = ReportService(inventario.empresa)
+    result = report_service.generate(
+        report_type=ReportType.INVENTORY_STOCK,
+        format=report_format,
+        filters={"inventario_id": inventario_id},
+    )
+
+    if result.success and result.response:
+        return result.response
+    else:
+        messages.error(request, f"Erro ao gerar relatório: {result.message}")
+        return redirect("gerentes:inventario-browser-produtos", inventario_id=inventario_id)

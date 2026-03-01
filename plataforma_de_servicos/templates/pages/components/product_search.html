@@ -1,12 +1,15 @@
-<div class="mb-4 mt-2">
+<div class="mb-4 mt-2 px-3">
     <input
         type="text"
         class="form-control search-bar"
         id="searchBar"
         name="search"
         placeholder="Procure por produtos..."
+        value="{{ search_query|default:'' }}"
         hx-get="{% url 'home' %}"
-        hx-target="#productList"
+        hx-target="#productListContent"
         hx-trigger="keyup changed delay:500ms"
+        hx-include="this"
+        hx-push-url="true"
     >
 </div>

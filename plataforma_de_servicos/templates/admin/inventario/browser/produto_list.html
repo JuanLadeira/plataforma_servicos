@@ -61,6 +61,21 @@
             <span class="material-symbols-outlined !text-lg">list</span>
             {% trans "Todos os Produtos" %}
         </a>
+
+        <!-- Separador visual -->
+        <span class="hidden sm:block w-px bg-base-200 dark:bg-base-700 mx-1"></span>
+
+        <!-- Botões de Exportação -->
+        <a href="{% url 'gerentes:inventario-export-saldo' inventario.pk %}?format=excel"
+           class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded shadow-sm border border-base-200 bg-white text-base-700 hover:bg-base-50 dark:bg-base-800 dark:border-base-700 dark:text-base-200 dark:hover:bg-base-700 transition-colors">
+            <span class="material-symbols-outlined !text-lg">table_view</span>
+            {% trans "Exportar Excel" %}
+        </a>
+        <a href="{% url 'gerentes:inventario-export-saldo' inventario.pk %}?format=pdf"
+           class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded shadow-sm border border-base-200 bg-white text-base-700 hover:bg-base-50 dark:bg-base-800 dark:border-base-700 dark:text-base-200 dark:hover:bg-base-700 transition-colors">
+            <span class="material-symbols-outlined !text-lg">picture_as_pdf</span>
+            {% trans "Exportar PDF" %}
+        </a>
     </div>
 </div>
 {% endblock %}

@@ -39,8 +39,30 @@
                                         {{ valor.valor }}{% if not forloop.last %}, {% endif %}
                                     {% endfor %}
                                 </small>
-                                <div class="d-flex justify-content-between align-items-center mt-1">
-                                    <span class="text-muted small">Qtd: {{ item.qty }}</span>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <div class="quantity-controls d-flex align-items-center">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary quantity-btn"
+                                                hx-post="{% url 'cart:cart-decrement' %}"
+                                                hx-vals='{"item_key": "{{ item.variation.id }}", "action": "post"}'
+                                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                                hx-target="#cart-offcanvas-content"
+                                                hx-swap="innerHTML"
+                                                title="Diminuir quantidade">
+                                            <i class="fa fa-minus"></i>
+                                        </button>
+                                        <span class="quantity-display mx-2 fw-semibold">{{ item.qty }}</span>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary quantity-btn"
+                                                hx-post="{% url 'cart:cart-increment' %}"
+                                                hx-vals='{"item_key": "{{ item.variation.id }}", "action": "post"}'
+                                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                                hx-target="#cart-offcanvas-content"
+                                                hx-swap="innerHTML"
+                                                title="Aumentar quantidade">
+                                            <i class="fa fa-plus"></i>
+                                        </button>
+                                    </div>
                                     <strong class="text-primary">R$ {{ item.total }}</strong>
                                 </div>
                             </div>
@@ -67,8 +89,30 @@
                                         <i class="fa fa-trash text-danger"></i>
                                     </button>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center mt-1">
-                                    <span class="text-muted small">Qtd: {{ item.qty }}</span>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <div class="quantity-controls d-flex align-items-center">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary quantity-btn"
+                                                hx-post="{% url 'cart:cart-decrement' %}"
+                                                hx-vals='{"item_key": "produto_{{ item.produto.id }}", "action": "post"}'
+                                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                                hx-target="#cart-offcanvas-content"
+                                                hx-swap="innerHTML"
+                                                title="Diminuir quantidade">
+                                            <i class="fa fa-minus"></i>
+                                        </button>
+                                        <span class="quantity-display mx-2 fw-semibold">{{ item.qty }}</span>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary quantity-btn"
+                                                hx-post="{% url 'cart:cart-increment' %}"
+                                                hx-vals='{"item_key": "produto_{{ item.produto.id }}", "action": "post"}'
+                                                hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                                                hx-target="#cart-offcanvas-content"
+                                                hx-swap="innerHTML"
+                                                title="Aumentar quantidade">
+                                            <i class="fa fa-plus"></i>
+                                        </button>
+                                    </div>
                                     <strong class="text-primary">R$ {{ item.total }}</strong>
                                 </div>
                             </div>

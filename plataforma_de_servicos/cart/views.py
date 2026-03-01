@@ -1,18 +1,23 @@
+"""
+Cart Views - Controladores para o carrinho de compras.
+
+Segue o padrão Model -> Service -> View.
+Toda a lógica de negócio está no CartService, as views apenas
+consomem o serviço e renderizam respostas.
+"""
 import json
 import logging
 
 from django.contrib import messages
 from django.http import HttpResponse
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.urls import reverse
 
 from plataforma_de_servicos.cart.cart import Cart
-from plataforma_de_servicos.produto.models import Produto
-from plataforma_de_servicos.produto.models import VariacaoProduto
+from plataforma_de_servicos.cart.services import CartService
 
 logger = logging.getLogger("django")
 
@@ -43,91 +48,61 @@ def cart_mini(request):
 
 
 def cart_summary(request):
-    cart = Cart(request)
+    """Exibe a página completa do carrinho."""
+    service = CartService(request)
     context = {
-        "cart": cart,
+        "cart": service.get_cart(),
     }
     return render(request, "pages/cart-summary.html", context)
 
 
 def cart_add(request):
-    cart = Cart(request)
-    tenant = getattr(request, "tenant", None)
+    """Adiciona item ao carrinho via CartService."""
+    service = CartService(request)
 
     if request.POST.get("action") == "post":
         product_id = request.POST.get("product_id")
         variation_id = request.POST.get("variation_id")
         product_quantity = int(request.POST.get("product_quantity", 1))
-        no_redirect = request.POST.get("no_redirect")  # Para requisições da home
+        no_redirect = request.POST.get("no_redirect")
 
-        # Filtra por tenant para evitar adicionar produtos de outras empresas
-        if variation_id:
-            queryset = VariacaoProduto.objects.all()
-            if tenant:
-                queryset = queryset.filter(produto__empresa=tenant)
-            variation = get_object_or_404(queryset, id=variation_id)
-            produto = variation.produto
-            estoque_disponivel = variation.estoque
-            produto_nome = f"{produto.produto} ({variation})"
-        else:
-            queryset = Produto.objects.all()
-            if tenant:
-                queryset = queryset.filter(empresa=tenant)
-            produto = get_object_or_404(queryset, id=product_id)
-            estoque_disponivel = produto.estoque
-            produto_nome = produto.produto
-            variation = None  # Para uso no método add_product
+        # Usar o serviço para adicionar
+        result = service.add_item(
+            product_id=int(product_id) if product_id and not variation_id else None,
+            variation_id=int(variation_id) if variation_id else None,
+            quantity=product_quantity,
+        )
 
-        cart_key = str(variation_id) if variation_id else f"produto_{product_id}"
-        quantidade_no_carrinho = cart.cart.get(cart_key, {}).get("qty", 0)
-        quantidade_total_solicitada = quantidade_no_carrinho + product_quantity
-
-        if quantidade_total_solicitada > estoque_disponivel:
-            if quantidade_no_carrinho > 0:
-                error_msg = f"Você já adicionou a quantidade máxima de '{produto_nome}' ao seu carrinho."
-            else:
-                error_msg = f"Estoque insuficiente para '{produto_nome}'. Disponível: {estoque_disponivel}."
-            
-            messages.error(request, error_msg)
+        if not result.success:
+            messages.error(request, result.message)
             if request.headers.get("HX-Request"):
                 if no_redirect:
-                    # Retornar HTML para a home - badge + toast de erro
-                    response = HttpResponse(_render_cart_badge(request, cart))
+                    response = HttpResponse(_render_cart_badge(request, service.get_cart()))
                     response["HX-Trigger"] = json.dumps({
-                        "showToast": {"message": error_msg, "type": "error"},
+                        "showToast": {"message": result.message, "type": "error"},
                     })
                     return response
-                # Retornar JSON para o handler do produto-detail.html
                 return JsonResponse({
                     "error": True,
-                    "message": error_msg,
+                    "message": result.message,
                     "redirect": reverse("cart:cart-summary"),
                 })
             return redirect("cart:cart-summary")
 
-        if variation:
-            cart.add(variation=variation, product_qty=product_quantity)
-        else:
-            cart.add_product(produto=produto, product_qty=product_quantity)
-
-        success_msg = f"{produto_nome} adicionado ao carrinho!"
-        messages.success(request, success_msg)
-
+        messages.success(request, result.message)
         if request.headers.get("HX-Request"):
             if no_redirect:
-                # Retornar HTML para a home - badge + trigger para abrir offcanvas
-                response = HttpResponse(_render_cart_badge(request, cart))
+                response = HttpResponse(_render_cart_badge(request, service.get_cart()))
                 response["HX-Trigger"] = json.dumps({
-                    "showToast": {"message": success_msg, "type": "success"},
+                    "showToast": {"message": result.message, "type": "success"},
                     "openCartOffcanvas": True,
                 })
                 return response
-            # Retornar JSON para o handler do produto-detail.html
             return JsonResponse({
                 "success": True,
-                "message": success_msg,
+                "message": result.message,
                 "redirect": reverse("cart:cart-summary"),
-                "qty": len(cart),
+                "qty": result.cart_quantity,
             })
 
         return redirect("cart:cart-summary")
@@ -136,87 +111,117 @@ def cart_add(request):
 
 
 def cart_delete(request):
-    cart = Cart(request)
+    """Remove item do carrinho via CartService."""
+    service = CartService(request)
+
     if request.POST.get("action") == "post":
         variation_id = request.POST.get("variation_id")
-        cart.delete(variation=variation_id)
+        result = service.remove_item(item_key=variation_id)
 
-        cart_quantity = len(cart)
-        cart_total = cart.get_total()
-        messages.success(request, "Item removido do carrinho com sucesso!")
+        messages.success(request, result.message)
         return JsonResponse({
-            "qty": cart_quantity,
-            "total": f"{cart_total:.2f}",
+            "qty": result.cart_quantity,
+            "total": f"{result.cart_total:.2f}",
         })
+
     return JsonResponse({"error": "Invalid request"}, status=400)
 
 
 def cart_delete_mini(request):
     """Remove item do carrinho e retorna o offcanvas atualizado."""
-    cart = Cart(request)
+    service = CartService(request)
+
     if request.POST.get("action") == "post":
         variation_id = request.POST.get("variation_id")
-        cart.delete(variation=variation_id)
+        result = service.remove_item(item_key=variation_id)
 
-        # Retorna o offcanvas atualizado com toast
-        response = HttpResponse(_render_cart_offcanvas(request, cart))
+        response = HttpResponse(_render_cart_offcanvas(request, service.get_cart()))
         response["HX-Trigger"] = json.dumps({
             "showToast": {
-                "message": "Item removido do carrinho!",
-                "type": "success",
+                "message": result.message,
+                "type": "success" if result.success else "error",
             },
         })
         return response
+
     return JsonResponse({"error": "Invalid request"}, status=400)
 
 
 def cart_update(request):
-    cart = Cart(request)
-    tenant = getattr(request, "tenant", None)
+    """Atualiza quantidade de item no carrinho via CartService."""
+    service = CartService(request)
 
     if request.POST.get("action") == "post":
         variation_id = request.POST.get("variation_id")
         product_quantity = int(request.POST.get("product_quantity"))
 
-        # Validar quantidade máxima baseada no estoque (filtrado por tenant)
-        if variation_id.startswith("produto_"):
-            produto_id = int(variation_id.replace("produto_", ""))
-            queryset = Produto.objects.all()
-            if tenant:
-                queryset = queryset.filter(empresa=tenant)
-            produto = get_object_or_404(queryset, id=produto_id)
-            max_estoque = produto.estoque
-            preco_unitario = produto.preco
-        else:
-            queryset = VariacaoProduto.objects.all()
-            if tenant:
-                queryset = queryset.filter(produto__empresa=tenant)
-            variation = get_object_or_404(queryset, id=variation_id)
-            max_estoque = variation.estoque
-            preco_unitario = variation.calcular_preco_final()
+        result = service.update_item(
+            item_key=variation_id,
+            quantity=product_quantity,
+        )
 
-        # Limitar quantidade ao estoque disponível
-        if product_quantity > max_estoque:
+        if not result.success:
             return JsonResponse({
-                "error": f"Quantidade máxima disponível: {max_estoque}",
+                "error": result.message,
             }, status=400)
 
-        if product_quantity < 1:
-            return JsonResponse({
-                "error": "Quantidade mínima: 1",
-            }, status=400)
-
-        cart.update(variation=variation_id, qty=product_quantity)
-
-        # Calcular total do item
-        item_total = preco_unitario * product_quantity
-
-        cart_quantity = len(cart)
-        cart_total = cart.get_total()
-        messages.success(request, "Carrinho atualizado com sucesso!")
+        messages.success(request, result.message)
         return JsonResponse({
-            "qty": cart_quantity,
-            "total": f"{cart_total:.2f}",
-            "item_total": f"{item_total:.2f}",
+            "qty": result.cart_quantity,
+            "total": f"{result.cart_total:.2f}",
+            "item_total": f"{result.item_total:.2f}" if result.item_total else "0.00",
         })
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+def cart_increment(request):
+    """Incrementa quantidade de item no carrinho (+1)."""
+    service = CartService(request)
+
+    if request.POST.get("action") == "post":
+        item_key = request.POST.get("item_key")
+        result = service.increment_item(item_key=item_key)
+
+        if not result.success:
+            response = HttpResponse(_render_cart_offcanvas(request, service.get_cart()))
+            response["HX-Trigger"] = json.dumps({
+                "showToast": {"message": result.message, "type": "error"},
+            })
+            return response
+
+        response = HttpResponse(_render_cart_offcanvas(request, service.get_cart()))
+        response["HX-Trigger"] = json.dumps({
+            "cartUpdated": {
+                "qty": result.cart_quantity,
+                "total": f"{result.cart_total:.2f}",
+            },
+        })
+        return response
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+def cart_decrement(request):
+    """Decrementa quantidade de item no carrinho (-1)."""
+    service = CartService(request)
+
+    if request.POST.get("action") == "post":
+        item_key = request.POST.get("item_key")
+        result = service.decrement_item(item_key=item_key)
+
+        response = HttpResponse(_render_cart_offcanvas(request, service.get_cart()))
+        if result.success:
+            response["HX-Trigger"] = json.dumps({
+                "cartUpdated": {
+                    "qty": result.cart_quantity,
+                    "total": f"{result.cart_total:.2f}",
+                },
+            })
+        else:
+            response["HX-Trigger"] = json.dumps({
+                "showToast": {"message": result.message, "type": "error"},
+            })
+        return response
+
     return JsonResponse({"error": "Invalid request"}, status=400)

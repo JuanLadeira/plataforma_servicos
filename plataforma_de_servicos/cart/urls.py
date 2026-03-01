@@ -11,4 +11,6 @@ urlpatterns = [
     path("delete-mini/", views.cart_delete_mini, name="cart-delete-mini"),
     path("update/", views.cart_update, name="cart-update"),
     path("mini/", views.cart_mini, name="cart-mini"),
+    path("increment/", views.cart_increment, name="cart-increment"),
+    path("decrement/", views.cart_decrement, name="cart-decrement"),
 ]

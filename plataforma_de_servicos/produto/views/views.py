@@ -12,26 +12,38 @@ from plataforma_de_servicos.produto.models import VariacaoProduto
 from plataforma_de_servicos.produto.models.categoria_model import Categoria
 from plataforma_de_servicos.produto.models.produto_model import Produto
 from plataforma_de_servicos.produto.services import ProdutoService
+from plataforma_de_servicos.produto.services.search_service import ProductSearchService
+from plataforma_de_servicos.produto.services.search_service import SearchParams
 
 logger = logging.getLogger("django")
 
 
 def home(request):
+    """
+    View principal da vitrine usando ProductSearchService.
+
+    Suporta:
+    - Filtro por categoria via query param 'category'
+    - Busca textual via query param 'search'
+    - Requisições HTMX para atualização parcial
+    - Sincronização de filtros ativos e contagem de categorias
+    """
     category_id = request.GET.get("category")
     search = request.GET.get("search")
 
-    # Busca e prepara as variações de produtos para a vitrine
-    variacoes, categoria = ProdutoService.listar_variacoes_vitrine(
+    # Usar o ProductSearchService para busca centralizada
+    search_service = ProductSearchService(request.tenant)
+    params = SearchParams(
         category_id=category_id,
-        search=search,
-        empresa=request.tenant,
+        search_query=search,
     )
+    result = search_service.search(params)
 
     if search:
         logger.info("Filtro de busca aplicado: %s", search)
 
-    # Prepara as variações para o template
-    variacoes_vitrine = ProdutoService.preparar_variacoes_para_vitrine(variacoes)
+    # Prepara as variações para o template (mantém compatibilidade)
+    variacoes_vitrine = ProdutoService.preparar_variacoes_para_vitrine(result.variations)
 
     selected_category = None
     if category_id:
@@ -42,8 +54,13 @@ def home(request):
 
     context = {
         "my_variations": variacoes_vitrine,
-        "categoria": categoria,
+        "categoria": result.category or result.category_name,
         "selected_category": selected_category,
+        # Novos campos do ProductSearchService
+        "active_filters": result.active_filters,
+        "category_counts": result.category_counts,
+        "total_count": result.total_count,
+        "search_query": search or "",
     }
 
     if request.headers.get("HX-Request"):

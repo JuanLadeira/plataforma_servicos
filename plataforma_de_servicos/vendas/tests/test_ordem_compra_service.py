@@ -25,8 +25,13 @@ def usuario():
 
 @pytest.fixture
 def produto_teste():
-    """Cria um produto de teste."""
-    return Produto.objects.create(produto="Produto de Teste Final", preco=150.00, ncm="00001111")
+    """Cria um produto de teste com estoque disponível."""
+    return Produto.objects.create(
+        produto="Produto de Teste Final",
+        preco=150.00,
+        ncm="00001111",
+        estoque=100,  # Estoque suficiente para testes
+    )
 
 @pytest.fixture
 def ordem_compra_pendente(produto_teste):

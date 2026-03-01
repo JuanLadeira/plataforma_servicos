@@ -44,6 +44,7 @@ from plataforma_de_servicos.inventario.views_gerente import (
     inventario_browser_list,
     inventario_browser_produtos,
     inventario_browser_variacoes,
+    inventario_export_saldo,
 )
 
 
@@ -190,6 +191,11 @@ class GerenteAdminSite(UnfoldAdminSite):
                 "inventario-browser/<int:inventario_id>/produtos/<int:produto_id>/",
                 self.admin_view(wrap_view(inventario_browser_variacoes)),
                 name="inventario-browser-variacoes",
+            ),
+            path(
+                "inventario-browser/<int:inventario_id>/export/",
+                self.admin_view(wrap_view(inventario_export_saldo)),
+                name="inventario-export-saldo",
             ),
             path(
                 "api/produto/<int:produto_id>/atributos/",
