@@ -8,6 +8,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
+from plataforma_de_servicos.core.tenancy import filtrar_por_tenant
 from plataforma_de_servicos.produto.models import VariacaoProduto
 
 logger = logging.getLogger(__name__)
@@ -43,7 +44,8 @@ def get_saldo_variacao(request):
 
 
     try:
-        variacao = VariacaoProduto.objects.select_related("produto").prefetch_related("valores").get(pk=variacao_id)
+        variacoes = filtrar_por_tenant(VariacaoProduto.objects.all(), request, "produto__empresa")
+        variacao = variacoes.select_related("produto").prefetch_related("valores").get(pk=variacao_id)
         variacao_estoque = variacao.estoque
 
         logger.debug(f"Variação encontrada: {variacao} para variacao_id={variacao_id}")

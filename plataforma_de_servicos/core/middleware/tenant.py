@@ -19,7 +19,7 @@ class TenantMiddleware:
     - Funcionários só podem acessar o subdomínio da sua empresa
     """
 
-    PORTAL_PREFIXES = ("/gerentes/", "/vendedores/")
+    PORTAL_PREFIXES = ("/gerentes/", "/vendedores/", "/estoque/api/")
 
     def __init__(self, get_response):
         self.get_response = get_response

@@ -5,6 +5,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
+from plataforma_de_servicos.core.tenancy import filtrar_por_tenant
 from plataforma_de_servicos.produto.models import VariacaoProduto
 
 
@@ -22,10 +23,8 @@ def variacao_autocomplete(request):
     # Queryset base
     qs = VariacaoProduto.objects.select_related("produto").prefetch_related("valores")
 
-    # Filtra por tenant se disponível
-    tenant = getattr(request, "tenant", None)
-    if tenant:
-        qs = qs.filter(produto__empresa=tenant)
+    # Filtra por tenant (fail-closed)
+    qs = filtrar_por_tenant(qs, request, "produto__empresa")
 
     # Filtra por termo de busca
     if term:
