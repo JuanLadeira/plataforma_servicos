@@ -541,20 +541,22 @@ class OrdemCompraService:
             OrdemCompraServiceError: Se a ordem não puder ser rejeitada
                                      ou se o motivo não for informado
         """
-        if not ordem.pode_rejeitar:
-            raise OrdemCompraServiceError(
-                f"Ordem {ordem.numero} não pode ser rejeitada. Status atual: {ordem.status}",
-            )
-
         if not motivo or not motivo.strip():
             raise OrdemCompraServiceError("É obrigatório informar o motivo da rejeição.")
 
-        ordem.status = StatusOrdemCompra.REJEITADA
-        ordem.aprovado_por = usuario
-        ordem.data_aprovacao = timezone.now()
-        ordem.motivo_rejeicao = motivo.strip()
-        ordem.save()
+        travada = OrdemCompraService._travar(ordem)
+        if not travada.pode_rejeitar:
+            raise OrdemCompraServiceError(
+                f"Ordem {travada.numero} não pode ser rejeitada. Status atual: {travada.get_status_display()}",
+            )
 
+        travada.status = StatusOrdemCompra.REJEITADA
+        travada.aprovado_por = usuario
+        travada.data_aprovacao = timezone.now()
+        travada.motivo_rejeicao = motivo.strip()
+        travada.save(update_fields=["status", "aprovado_por", "data_aprovacao", "motivo_rejeicao", "modified"])
+
+        ordem.refresh_from_db()
         return ordem
 
     @staticmethod
@@ -572,14 +574,16 @@ class OrdemCompraService:
         Raises:
             OrdemCompraServiceError: Se a ordem não puder ser faturada
         """
-        if not ordem.pode_faturar:
+        travada = OrdemCompraService._travar(ordem)
+        if not travada.pode_faturar:
             raise OrdemCompraServiceError(
-                f"Ordem {ordem.numero} não pode ser faturada. Status atual: {ordem.status}",
+                f"Ordem {travada.numero} não pode ser faturada. Status atual: {travada.get_status_display()}",
             )
 
-        ordem.status = StatusOrdemCompra.FATURADA
-        ordem.save()
+        travada.status = StatusOrdemCompra.FATURADA
+        travada.save(update_fields=["status", "modified"])
 
+        ordem.refresh_from_db()
         return ordem
 
     @staticmethod
@@ -598,16 +602,18 @@ class OrdemCompraService:
         Raises:
             OrdemCompraServiceError: Se a ordem não puder ser cancelada
         """
-        if not ordem.pode_cancelar:
+        travada = OrdemCompraService._travar(ordem)
+        if not travada.pode_cancelar:
             raise OrdemCompraServiceError(
-                f"Ordem {ordem.numero} não pode ser cancelada. Status atual: {ordem.status}",
+                f"Ordem {travada.numero} não pode ser cancelada. Status atual: {travada.get_status_display()}",
             )
 
-        ordem.status = StatusOrdemCompra.CANCELADA
+        travada.status = StatusOrdemCompra.CANCELADA
         if motivo:
-            ordem.observacoes = f"{ordem.observacoes}\n\nCancelamento: {motivo}".strip()
-        ordem.save()
+            travada.observacoes = f"{travada.observacoes}\n\nCancelamento: {motivo}".strip()
+        travada.save(update_fields=["status", "observacoes", "modified"])
 
+        ordem.refresh_from_db()
         return ordem
 
     @staticmethod
@@ -625,12 +631,14 @@ class OrdemCompraService:
         Raises:
             OrdemCompraServiceError: Se a ordem não puder ser concluída
         """
-        if not ordem.pode_concluir:
+        travada = OrdemCompraService._travar(ordem)
+        if not travada.pode_concluir:
             raise OrdemCompraServiceError(
-                f"Ordem {ordem.numero} não pode ser concluída. Status atual: {ordem.status}",
+                f"Ordem {travada.numero} não pode ser concluída. Status atual: {travada.get_status_display()}",
             )
 
-        ordem.status = StatusOrdemCompra.CONCLUIDA
-        ordem.save()
+        travada.status = StatusOrdemCompra.CONCLUIDA
+        travada.save(update_fields=["status", "modified"])
 
+        ordem.refresh_from_db()
         return ordem
