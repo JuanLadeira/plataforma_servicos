@@ -17,24 +17,10 @@ from django.template.response import TemplateResponse
 from plataforma_de_servicos.core.services.report_service import ReportFormat
 from plataforma_de_servicos.core.services.report_service import ReportService
 from plataforma_de_servicos.core.services.report_service import ReportType
+from plataforma_de_servicos.core.tenancy import filtrar_por_tenant
 from plataforma_de_servicos.inventario.models import Inventario
 from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models.produto_model import Produto
-
-
-def get_tenant_from_request(request):
-    """Obtém o tenant do request."""
-    return getattr(request, "tenant", None)
-
-
-def filtrar_por_tenant(queryset, request, campo="empresa"):
-    """Filtra pelo tenant; sem tenant, só superusuário vê tudo (fail-closed)."""
-    tenant = get_tenant_from_request(request)
-    if tenant:
-        return queryset.filter(**{campo: tenant})
-    if request.user.is_superuser:
-        return queryset
-    return queryset.none()
 
 
 def inventario_browser_list(request, admin_site):
