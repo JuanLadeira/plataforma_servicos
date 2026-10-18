@@ -28,7 +28,12 @@ def test_lista_saldo_duplicado(sem_constraints_de_saldo):
     InventarioSaldoFactory(inventario=inv, produto=prod, quantidade=2)
     InventarioSaldoFactory(inventario=inv, produto=prod, quantidade=3)
     (dup,) = saldos.saldos_duplicados(InventarioSaldo)
-    assert (dup["inventario_id"], dup["produto_id"], dup["variacao_id"], dup["n"]) == (inv.pk, prod.pk, None, 2)
+    assert (dup["inventario_id"], dup["produto_id"], dup["variacao_id"], dup["n"]) == (
+        inv.pk,
+        prod.pk,
+        None,
+        2,
+    )
 
 
 def test_corrigir_junta_duplicados_somando(sem_constraints_de_saldo):
@@ -44,7 +49,9 @@ def test_lista_divergencia_entre_variacao_e_depositos():
     v = VariacaoProdutoFactory(estoque=10)
     InventarioSaldoFactory(produto=v.produto, variacao=v, quantidade=7)
     divergentes = list(saldos.variacoes_divergentes(VariacaoProduto, InventarioSaldo))
-    assert [(d.pk, d.estoque, d.total_depositos) for d in divergentes] == [(v.pk, 10, 7)]
+    assert [(d.pk, d.estoque, d.total_depositos) for d in divergentes] == [
+        (v.pk, 10, 7)
+    ]
 
 
 def test_variacao_igual_a_soma_de_dois_depositos_nao_diverge():
@@ -87,7 +94,9 @@ def test_filtro_por_empresa():
     vb = VariacaoProdutoFactory(estoque=10, produto=ProdutoFactory(empresa=empresa_b))
     InventarioSaldoFactory(produto=va.produto, variacao=va, quantidade=1)
     InventarioSaldoFactory(produto=vb.produto, variacao=vb, quantidade=1)
-    divergentes = saldos.variacoes_divergentes(VariacaoProduto, InventarioSaldo, empresa=empresa_a.slug)
+    divergentes = saldos.variacoes_divergentes(
+        VariacaoProduto, InventarioSaldo, empresa=empresa_a.slug
+    )
     assert list(divergentes) == [va]
 
 

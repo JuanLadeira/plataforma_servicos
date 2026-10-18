@@ -110,6 +110,8 @@ def corrigir(Produto, VariacaoProduto, InventarioSaldo, empresa=None):  # noqa: 
         manter.save(update_fields=["quantidade"])
         InventarioSaldo.objects.filter(pk__in=[s.pk for s in sobras]).delete()
     for v in variacoes_divergentes(VariacaoProduto, InventarioSaldo, empresa):
-        VariacaoProduto.objects.filter(pk=v.pk).update(estoque=max(v.total_depositos, 0))
+        VariacaoProduto.objects.filter(pk=v.pk).update(
+            estoque=max(v.total_depositos, 0)
+        )
     for p in produtos_divergentes(Produto, InventarioSaldo, empresa):
         Produto.objects.filter(pk=p.pk).update(estoque=max(p.total_depositos, 0))

@@ -51,7 +51,9 @@ def test_cria_saldo_de_deposito_que_nao_existe():
     (saldo,) = travas.saldos.values()
     assert saldo.pk
     assert saldo.quantidade == 0
-    assert InventarioSaldo.objects.filter(inventario=dep_vazio, produto=produto).exists()
+    assert InventarioSaldo.objects.filter(
+        inventario=dep_vazio, produto=produto
+    ).exists()
 
 
 def test_transferencia_trava_origem_e_destino():
@@ -60,4 +62,7 @@ def test_transferencia_trava_origem_e_destino():
     estoque = cenarios.transferencia([(produto, 2)], origem=origem, destino=destino)
     with transaction.atomic():
         travas = travar_saldos(estoque, _itens(estoque))
-    assert set(travas.saldos) == {(origem.pk, produto.pk, None), (destino.pk, produto.pk, None)}
+    assert set(travas.saldos) == {
+        (origem.pk, produto.pk, None),
+        (destino.pk, produto.pk, None),
+    }

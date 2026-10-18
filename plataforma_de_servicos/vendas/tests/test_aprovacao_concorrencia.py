@@ -13,8 +13,12 @@ from plataforma_de_servicos.vendas.models import Comissao
 from plataforma_de_servicos.vendas.models import ConfiguracaoComissao
 from plataforma_de_servicos.vendas.models import OrdemCompra
 from plataforma_de_servicos.vendas.models import StatusOrdemCompra
-from plataforma_de_servicos.vendas.services.ordem_compra_service import EstoqueInsuficienteError
-from plataforma_de_servicos.vendas.services.ordem_compra_service import OrdemCompraService
+from plataforma_de_servicos.vendas.services.ordem_compra_service import (
+    EstoqueInsuficienteError,
+)
+from plataforma_de_servicos.vendas.services.ordem_compra_service import (
+    OrdemCompraService,
+)
 from plataforma_de_servicos.vendas.tests.factories import ItemOrdemCompraFactory
 from plataforma_de_servicos.vendas.tests.factories import OrdemCompraFactory
 
@@ -23,13 +27,17 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 def _empresa_com_deposito():
     empresa = EmpresaFactory()
-    ConfiguracaoComissao.objects.create(empresa=empresa, percentual_padrao=Decimal("5.00"))
+    ConfiguracaoComissao.objects.create(
+        empresa=empresa, percentual_padrao=Decimal("5.00")
+    )
     return empresa, cenarios.deposito(empresa=empresa, nome="Principal", padrao=True)
 
 
 def _ordem(empresa, variacao, quantidade, **kwargs):
     ordem = OrdemCompraFactory(empresa=empresa, deposito_padrao=False, **kwargs)
-    ItemOrdemCompraFactory(ordem=ordem, produto=variacao.produto, variacao=variacao, quantidade=quantidade)
+    ItemOrdemCompraFactory(
+        ordem=ordem, produto=variacao.produto, variacao=variacao, quantidade=quantidade
+    )
     return ordem
 
 
@@ -64,5 +72,11 @@ def test_duas_ordens_disputando_o_ultimo_item_so_uma_aprova(monkeypatch):
     erro = next(r[1] for r in resultados if r[0] == "erro")
     assert isinstance(erro, EstoqueInsuficienteError)
     assert cenarios.saldos(v, padrao) == (0, 0, 0)
-    status = sorted(OrdemCompra.objects.filter(pk__in=[o1.pk, o2.pk]).values_list("status", flat=True))
-    assert status == sorted([StatusOrdemCompra.APROVADA, StatusOrdemCompra.PENDENTE_APROVACAO])
+    status = sorted(
+        OrdemCompra.objects.filter(pk__in=[o1.pk, o2.pk]).values_list(
+            "status", flat=True
+        )
+    )
+    assert status == sorted(
+        [StatusOrdemCompra.APROVADA, StatusOrdemCompra.PENDENTE_APROVACAO]
+    )

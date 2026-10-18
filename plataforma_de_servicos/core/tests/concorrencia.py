@@ -28,7 +28,9 @@ def em_paralelo(*funcoes, timeout=30):
         finally:
             connection.close()
 
-    threads = [threading.Thread(target=rodar, args=(i, f)) for i, f in enumerate(funcoes)]
+    threads = [
+        threading.Thread(target=rodar, args=(i, f)) for i, f in enumerate(funcoes)
+    ]
     for t in threads:
         t.start()
     for t in threads:

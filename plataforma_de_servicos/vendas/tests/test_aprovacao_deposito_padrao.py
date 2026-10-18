@@ -15,9 +15,15 @@ from plataforma_de_servicos.vendas.models import Comissao
 from plataforma_de_servicos.vendas.models import ConfiguracaoComissao
 from plataforma_de_servicos.vendas.models import OrdemCompra
 from plataforma_de_servicos.vendas.models import StatusOrdemCompra
-from plataforma_de_servicos.vendas.services.ordem_compra_service import EstoqueInsuficienteError
-from plataforma_de_servicos.vendas.services.ordem_compra_service import OrdemCompraService
-from plataforma_de_servicos.vendas.services.ordem_compra_service import OrdemCompraServiceError
+from plataforma_de_servicos.vendas.services.ordem_compra_service import (
+    EstoqueInsuficienteError,
+)
+from plataforma_de_servicos.vendas.services.ordem_compra_service import (
+    OrdemCompraService,
+)
+from plataforma_de_servicos.vendas.services.ordem_compra_service import (
+    OrdemCompraServiceError,
+)
 from plataforma_de_servicos.vendas.tests.factories import ItemOrdemCompraFactory
 from plataforma_de_servicos.vendas.tests.factories import OrdemCompraFactory
 
@@ -29,14 +35,18 @@ def ordem_com_itens(empresa, itens, **kwargs):
     for alvo, qtd in itens:
         variacao = alvo if isinstance(alvo, VariacaoProduto) else None
         produto = variacao.produto if variacao else alvo
-        ItemOrdemCompraFactory(ordem=ordem, produto=produto, variacao=variacao, quantidade=qtd)
+        ItemOrdemCompraFactory(
+            ordem=ordem, produto=produto, variacao=variacao, quantidade=qtd
+        )
     return ordem
 
 
 @pytest.fixture
 def empresa():
     empresa = EmpresaFactory()
-    ConfiguracaoComissao.objects.create(empresa=empresa, percentual_padrao=Decimal("5.00"))
+    ConfiguracaoComissao.objects.create(
+        empresa=empresa, percentual_padrao=Decimal("5.00")
+    )
     return empresa
 
 
@@ -88,7 +98,9 @@ def test_empresa_sem_padrao_nao_aprova_e_nao_grava_nada(empresa, usuario):
     _nada_gravado(ordem)
 
 
-def test_saldo_insuficiente_no_padrao_vira_erro_de_estoque_e_desfaz_tudo(empresa, padrao, usuario):
+def test_saldo_insuficiente_no_padrao_vira_erro_de_estoque_e_desfaz_tudo(
+    empresa, padrao, usuario
+):
     outro = cenarios.deposito(empresa=empresa, nome="Secundário")
     v = cenarios.variacao_com_saldo({padrao: 1, outro: 9}, empresa=empresa)
     ordem = ordem_com_itens(empresa, [(v, 3)], com_corretor=True)
@@ -108,7 +120,9 @@ def test_validar_estoque_usa_o_saldo_do_deposito_padrao(empresa, padrao):
 
 
 def test_validar_estoque_sem_padrao_e_invalido_sem_levantar(empresa):
-    produto = cenarios.produto_com_saldo({cenarios.deposito(empresa=empresa): 5}, empresa=empresa)
+    produto = cenarios.produto_com_saldo(
+        {cenarios.deposito(empresa=empresa): 5}, empresa=empresa
+    )
     ordem = ordem_com_itens(empresa, [(produto, 1)])
     resultado = OrdemCompraService.validar_estoque(ordem)
     assert not resultado.is_valid
@@ -127,7 +141,9 @@ def test_criar_ordem_manual_valida_pelo_deposito_padrao(empresa, padrao):
 
 
 def test_criar_ordem_manual_sem_padrao_com_validacao_falha(empresa):
-    produto = cenarios.produto_com_saldo({cenarios.deposito(empresa=empresa): 5}, empresa=empresa)
+    produto = cenarios.produto_com_saldo(
+        {cenarios.deposito(empresa=empresa): 5}, empresa=empresa
+    )
     with pytest.raises(OrdemCompraServiceError, match="depósito padrão"):
         OrdemCompraService.criar_ordem_manual(
             empresa=empresa,
@@ -141,7 +157,11 @@ def test_admin_mostra_mensagem_de_erro_em_vez_de_500(empresa, padrao, monkeypatc
     ordem = ordem_com_itens(empresa, [(produto, 2)])
     admin = OrdemCompraAdmin(OrdemCompra, AdminSite())
     mensagens = []
-    monkeypatch.setattr(admin, "message_user", lambda request, msg, level=None, **kw: mensagens.append(msg))
+    monkeypatch.setattr(
+        admin,
+        "message_user",
+        lambda request, msg, level=None, **kw: mensagens.append(msg),
+    )
     request = RequestFactory().post("/")
     request.user = UserFactory(is_staff=True, is_superuser=True)
 

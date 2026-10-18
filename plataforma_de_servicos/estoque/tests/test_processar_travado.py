@@ -17,7 +17,9 @@ def test_processar_duas_vezes_aplica_uma():
     v = cenarios.variacao_com_saldo({dep: 0})
     estoque = cenarios.entrada([(v, 5)], destino=dep)
     estoque.processar()
-    Estoque.objects.get(pk=estoque.pk).processar()  # outra instância, como faria outro request
+    Estoque.objects.get(
+        pk=estoque.pk
+    ).processar()  # outra instância, como faria outro request
     assert cenarios.saldos(v, dep) == (5, 5, 5)
 
 
@@ -69,7 +71,9 @@ def test_transferencia_sem_saldo_na_origem_falha():
     origem, destino = cenarios.deposito(), cenarios.deposito()
     produto = cenarios.produto_com_saldo({origem: 1, destino: 4})
     with pytest.raises(InventarioSaldoInsuficienteError):
-        cenarios.transferencia([(produto, 2)], origem=origem, destino=destino).processar()
+        cenarios.transferencia(
+            [(produto, 2)], origem=origem, destino=destino
+        ).processar()
     assert cenarios.saldos(produto, origem) == (None, 5, 1)
     assert cenarios.saldo_deposito(destino, produto) == 4
 
@@ -79,7 +83,9 @@ def test_saida_nao_sobrescreve_campos_editados_do_produto():
     produto = cenarios.produto_com_saldo({dep: 5})
     saida = cenarios.saida([(produto, 1)], origem=dep)
     item = saida.estoque_itens.select_related("produto").get()
-    Produto.objects.filter(pk=produto.pk).update(preco=Decimal("99.90"))  # edição "concorrente"
+    Produto.objects.filter(pk=produto.pk).update(
+        preco=Decimal("99.90")
+    )  # edição "concorrente"
     assert item.produto.preco != Decimal("99.90")
     saida.processar()
     produto.refresh_from_db()

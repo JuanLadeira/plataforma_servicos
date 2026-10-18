@@ -39,7 +39,9 @@ def test_empresas_diferentes_podem_ter_cada_uma_seu_padrao():
 
 
 def test_padrao_precisa_estar_ativo():
-    inv = InventarioFactory.build(nome="Inativo", empresa=EmpresaFactory(), padrao=True, is_ativo=False)
+    inv = InventarioFactory.build(
+        nome="Inativo", empresa=EmpresaFactory(), padrao=True, is_ativo=False
+    )
     with pytest.raises(ValidationError):
         inv.clean()
 

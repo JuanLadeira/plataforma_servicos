@@ -56,7 +56,10 @@ class Command(BaseCommand):
         )
         problemas += self._secao(
             "Estoque negativo em produto",
-            (f"produto #{p.pk} {p.produto}: {p.estoque}" for p in saldos.produtos_negativos(Produto, empresa)),
+            (
+                f"produto #{p.pk} {p.produto}: {p.estoque}"
+                for p in saldos.produtos_negativos(Produto, empresa)
+            ),
         )
         problemas += self._secao(
             "Saldo duplicado em depósito",
@@ -70,7 +73,9 @@ class Command(BaseCommand):
             "Variação divergente da soma dos depósitos",
             (
                 f"variação #{v.pk}: estoque={v.estoque} depósitos={v.total_depositos}"
-                for v in saldos.variacoes_divergentes(VariacaoProduto, InventarioSaldo, empresa)
+                for v in saldos.variacoes_divergentes(
+                    VariacaoProduto, InventarioSaldo, empresa
+                )
             ),
         )
         problemas += self._secao(

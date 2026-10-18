@@ -4,8 +4,8 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.empresa.tests.factories import EmpresaFactory
+from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.choices.origem_saida import OrigemSaida
 from plataforma_de_servicos.estoque.exceptions import ProdutoSaldoInsuficienteError
 from plataforma_de_servicos.estoque.models import Estoque

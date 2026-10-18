@@ -3,8 +3,12 @@ import pytest
 from plataforma_de_servicos.users.tests.factories import UserFactory
 from plataforma_de_servicos.vendas.models import OrdemCompra
 from plataforma_de_servicos.vendas.models import StatusOrdemCompra
-from plataforma_de_servicos.vendas.services.ordem_compra_service import OrdemCompraService
-from plataforma_de_servicos.vendas.services.ordem_compra_service import OrdemCompraServiceError
+from plataforma_de_servicos.vendas.services.ordem_compra_service import (
+    OrdemCompraService,
+)
+from plataforma_de_servicos.vendas.services.ordem_compra_service import (
+    OrdemCompraServiceError,
+)
 from plataforma_de_servicos.vendas.tests.factories import OrdemCompraFactory
 
 pytestmark = pytest.mark.django_db

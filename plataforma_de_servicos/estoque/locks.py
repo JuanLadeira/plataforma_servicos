@@ -24,7 +24,9 @@ from plataforma_de_servicos.produto.models.produto_model import Produto
 
 @dataclass
 class Travas:
-    saldos: dict = field(default_factory=dict)  # (inventario_id, produto_id, variacao_id) -> InventarioSaldo
+    saldos: dict = field(
+        default_factory=dict
+    )  # (inventario_id, produto_id, variacao_id) -> InventarioSaldo
     variacoes: dict = field(default_factory=dict)  # pk -> VariacaoProduto
     produtos: dict = field(default_factory=dict)  # pk -> Produto
 
@@ -38,7 +40,11 @@ def inventarios_do_movimento(estoque):
 
 
 def _travar_ou_criar_saldo(inventario_id, produto_id, variacao_id):
-    filtro = {"inventario_id": inventario_id, "produto_id": produto_id, "variacao_id": variacao_id}
+    filtro = {
+        "inventario_id": inventario_id,
+        "produto_id": produto_id,
+        "variacao_id": variacao_id,
+    }
     try:
         return InventarioSaldo.objects.select_for_update().get(**filtro)
     except InventarioSaldo.DoesNotExist:
@@ -67,9 +73,17 @@ def travar_saldos(estoque, itens):
 
     ids_var = sorted({it.variacao_id for it in itens if it.variacao_id})
     travas.variacoes = {
-        v.pk: v for v in VariacaoProduto.objects.select_for_update().filter(pk__in=ids_var).order_by("pk")
+        v.pk: v
+        for v in VariacaoProduto.objects.select_for_update()
+        .filter(pk__in=ids_var)
+        .order_by("pk")
     }
 
     ids_prod = sorted({it.produto_id for it in itens})
-    travas.produtos = {p.pk: p for p in Produto.objects.select_for_update().filter(pk__in=ids_prod).order_by("pk")}
+    travas.produtos = {
+        p.pk: p
+        for p in Produto.objects.select_for_update()
+        .filter(pk__in=ids_prod)
+        .order_by("pk")
+    }
     return travas
