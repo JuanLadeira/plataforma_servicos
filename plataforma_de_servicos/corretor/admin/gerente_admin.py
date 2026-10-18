@@ -13,7 +13,6 @@ from unfold.decorators import action
 
 from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
 from plataforma_de_servicos.corretor.admin.forms import DescarteInteresseForm
-from plataforma_de_servicos.corretor.models import InteresseCompra
 from plataforma_de_servicos.corretor.models import ItemInteresse
 from plataforma_de_servicos.corretor.models import StatusInteresse
 from plataforma_de_servicos.corretor.services import InteresseCompraService
@@ -131,22 +130,22 @@ class InteresseCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
 
     def has_detail_atender_permission(self, request: HttpRequest, object_id: int) -> bool:
         """Verifica se pode iniciar atendimento."""
-        interesse = InteresseCompra.objects.filter(pk=object_id).first()
+        interesse = self.get_queryset(request).filter(pk=object_id).first()
         return interesse is not None and interesse.pode_atender
 
     def has_detail_converter_permission(self, request: HttpRequest, object_id: int) -> bool:
         """Verifica se pode converter para ordem."""
-        interesse = InteresseCompra.objects.filter(pk=object_id).first()
+        interesse = self.get_queryset(request).filter(pk=object_id).first()
         return interesse is not None and interesse.pode_converter
 
     def has_detail_descartar_permission(self, request: HttpRequest, object_id: int) -> bool:
         """Verifica se pode descartar."""
-        interesse = InteresseCompra.objects.filter(pk=object_id).first()
+        interesse = self.get_queryset(request).filter(pk=object_id).first()
         return interesse is not None and interesse.pode_descartar
 
     def has_detail_retornar_permission(self, request: HttpRequest, object_id: int) -> bool:
         """Verifica se pode retornar para novo."""
-        interesse = InteresseCompra.objects.filter(pk=object_id).first()
+        interesse = self.get_queryset(request).filter(pk=object_id).first()
         return interesse is not None and interesse.pode_retornar
 
     # ========================================
@@ -160,7 +159,7 @@ class InteresseCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     )
     def detail_atender(self, request: HttpRequest, object_id: int) -> HttpResponse:
         """Inicia o atendimento do interesse."""
-        interesse = get_object_or_404(InteresseCompra, pk=object_id)
+        interesse = get_object_or_404(self.get_queryset(request), pk=object_id)
 
         # Verifica se o usuário é um funcionário com permissão de corretor
         funcionario = getattr(request.user, "funcionario", None)
@@ -196,7 +195,7 @@ class InteresseCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     )
     def detail_converter(self, request: HttpRequest, object_id: int) -> HttpResponse:
         """Converte o interesse em ordem de compra."""
-        interesse = get_object_or_404(InteresseCompra, pk=object_id)
+        interesse = get_object_or_404(self.get_queryset(request), pk=object_id)
 
         try:
             InteresseCompraService.converter(interesse)
@@ -219,7 +218,7 @@ class InteresseCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     )
     def detail_descartar(self, request: HttpRequest, object_id: int) -> HttpResponse:
         """Descarta o interesse (requer motivo opcional)."""
-        interesse = get_object_or_404(InteresseCompra, pk=object_id)
+        interesse = get_object_or_404(self.get_queryset(request), pk=object_id)
         form = DescarteInteresseForm(request.POST or None)
 
         if request.method == "POST" and form.is_valid():
@@ -258,7 +257,7 @@ class InteresseCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     )
     def detail_retornar(self, request: HttpRequest, object_id: int) -> HttpResponse:
         """Retorna o interesse para status Novo."""
-        interesse = get_object_or_404(InteresseCompra, pk=object_id)
+        interesse = get_object_or_404(self.get_queryset(request), pk=object_id)
 
         try:
             InteresseCompraService.retornar(interesse)

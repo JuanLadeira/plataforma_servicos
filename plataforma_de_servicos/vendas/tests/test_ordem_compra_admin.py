@@ -5,6 +5,7 @@ from django.contrib.admin.sites import AdminSite
 from django.test import RequestFactory
 
 from plataforma_de_servicos.core.admin.sites.gerente_admin_site import gerente_site
+from plataforma_de_servicos.empresa.tests.factories import EmpresaFactory
 from plataforma_de_servicos.users.tests.factories import UserFactory
 from plataforma_de_servicos.vendas.admin import OrdemCompraGerenteAdmin
 from plataforma_de_servicos.vendas.admin.forms import CancelamentoOrdemForm
@@ -78,71 +79,83 @@ class TestOrdemCompraGerenteAdminPermissions:
         ordem = OrdemCompraFactory(status=StatusOrdemCompra.PENDENTE_APROVACAO)
         request = request_factory.get("/")
         request.user = admin_user
+        request.tenant = ordem.empresa
         assert gerente_admin.has_detail_aprovar_permission(request, ordem.pk) is True
 
     def test_has_detail_aprovar_permission_aprovada(self, gerente_admin, request_factory, admin_user):
         ordem = OrdemCompraFactory(status=StatusOrdemCompra.APROVADA)
         request = request_factory.get("/")
         request.user = admin_user
+        request.tenant = ordem.empresa
         assert gerente_admin.has_detail_aprovar_permission(request, ordem.pk) is False
 
     def test_has_detail_aprovar_permission_ordem_inexistente(self, gerente_admin, request_factory, admin_user):
         request = request_factory.get("/")
         request.user = admin_user
+        request.tenant = EmpresaFactory()
         assert gerente_admin.has_detail_aprovar_permission(request, 99999) is False
 
     def test_has_detail_rejeitar_permission_pendente(self, gerente_admin, request_factory, admin_user):
         ordem = OrdemCompraFactory(status=StatusOrdemCompra.PENDENTE_APROVACAO)
         request = request_factory.get("/")
         request.user = admin_user
+        request.tenant = ordem.empresa
         assert gerente_admin.has_detail_rejeitar_permission(request, ordem.pk) is True
 
     def test_has_detail_rejeitar_permission_aprovada(self, gerente_admin, request_factory, admin_user):
         ordem = OrdemCompraFactory(status=StatusOrdemCompra.APROVADA)
         request = request_factory.get("/")
         request.user = admin_user
+        request.tenant = ordem.empresa
         assert gerente_admin.has_detail_rejeitar_permission(request, ordem.pk) is False
 
     def test_has_detail_faturar_permission_aprovada(self, gerente_admin, request_factory, admin_user):
         ordem = OrdemCompraFactory(status=StatusOrdemCompra.APROVADA)
         request = request_factory.get("/")
         request.user = admin_user
+        request.tenant = ordem.empresa
         assert gerente_admin.has_detail_faturar_permission(request, ordem.pk) is True
 
     def test_has_detail_faturar_permission_pendente(self, gerente_admin, request_factory, admin_user):
         ordem = OrdemCompraFactory(status=StatusOrdemCompra.PENDENTE_APROVACAO)
         request = request_factory.get("/")
         request.user = admin_user
+        request.tenant = ordem.empresa
         assert gerente_admin.has_detail_faturar_permission(request, ordem.pk) is False
 
     def test_has_detail_concluir_permission_faturada(self, gerente_admin, request_factory, admin_user):
         ordem = OrdemCompraFactory(status=StatusOrdemCompra.FATURADA)
         request = request_factory.get("/")
         request.user = admin_user
+        request.tenant = ordem.empresa
         assert gerente_admin.has_detail_concluir_permission(request, ordem.pk) is True
 
     def test_has_detail_concluir_permission_aprovada(self, gerente_admin, request_factory, admin_user):
         ordem = OrdemCompraFactory(status=StatusOrdemCompra.APROVADA)
         request = request_factory.get("/")
         request.user = admin_user
+        request.tenant = ordem.empresa
         assert gerente_admin.has_detail_concluir_permission(request, ordem.pk) is False
 
     def test_has_detail_cancelar_permission_pendente(self, gerente_admin, request_factory, admin_user):
         ordem = OrdemCompraFactory(status=StatusOrdemCompra.PENDENTE_APROVACAO)
         request = request_factory.get("/")
         request.user = admin_user
+        request.tenant = ordem.empresa
         assert gerente_admin.has_detail_cancelar_permission(request, ordem.pk) is True
 
     def test_has_detail_cancelar_permission_aprovada(self, gerente_admin, request_factory, admin_user):
         ordem = OrdemCompraFactory(status=StatusOrdemCompra.APROVADA)
         request = request_factory.get("/")
         request.user = admin_user
+        request.tenant = ordem.empresa
         assert gerente_admin.has_detail_cancelar_permission(request, ordem.pk) is True
 
     def test_has_detail_cancelar_permission_faturada(self, gerente_admin, request_factory, admin_user):
         ordem = OrdemCompraFactory(status=StatusOrdemCompra.FATURADA)
         request = request_factory.get("/")
         request.user = admin_user
+        request.tenant = ordem.empresa
         assert gerente_admin.has_detail_cancelar_permission(request, ordem.pk) is False
 
 

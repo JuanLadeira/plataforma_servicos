@@ -63,3 +63,9 @@ STORAGES = {
 # ------------------------------------------------------------------------------
 # ALLOWED_HOSTS for multitenancy tests
 ALLOWED_HOSTS = ["*"]
+
+# CELERY
+# ------------------------------------------------------------------------------
+# Executa tasks de forma síncrona, sem depender do broker (Redis)
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True

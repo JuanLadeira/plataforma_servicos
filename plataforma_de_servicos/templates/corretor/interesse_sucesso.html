@@ -22,7 +22,7 @@
                         <div class="alert alert-info text-start">
                             <h6><i class="fa fa-info-circle me-2"></i>Detalhes do seu interesse:</h6>
                             <ul class="mb-0">
-                                <li><strong>Protocolo:</strong> #{{ interesse.id }}</li>
+                                <li><strong>Protocolo:</strong> {{ interesse.numero|default:interesse.pk }}</li>
                                 <li><strong>E-mail:</strong> {{ interesse.email_cliente }}</li>
                                 <li><strong>Telefone:</strong> {{ interesse.telefone_cliente }}</li>
                             </ul>

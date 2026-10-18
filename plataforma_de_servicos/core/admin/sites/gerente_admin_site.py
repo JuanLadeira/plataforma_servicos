@@ -50,7 +50,10 @@ from plataforma_de_servicos.inventario.views_gerente import (
 
 def produto_atributos_api(request, produto_id, admin_site=None):
     """API endpoint para retornar os atributos de um produto para variações."""
-    result = ProdutoService.obter_atributos_para_variacao(produto_id)
+    tenant = getattr(request, "tenant", None)
+    if not tenant and not request.user.is_superuser:
+        return JsonResponse({"error": "Produto não encontrado"}, status=404)
+    result = ProdutoService.obter_atributos_para_variacao(produto_id, empresa=tenant)
     if result is None:
         return JsonResponse({"error": "Produto não encontrado"}, status=404)
     return JsonResponse(ProdutoService.atributos_para_dict(result))

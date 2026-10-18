@@ -364,11 +364,12 @@ class TestMainDomainAccess:
         assert "Óleo 5W30 Sintético" not in content
 
     def test_main_domain_with_tenant_param_shows_products(
-        self, client, empresa_autoprime, produto_autoprime, produto_autolitros
+        self, client, empresa_autoprime, produto_autoprime, produto_autolitros, settings,
     ):
         """
-        Domínio principal com ?tenant=slug mostra produtos da empresa.
+        Com DEBUG, domínio principal com ?tenant=slug mostra produtos da empresa.
         """
+        settings.DEBUG = True
         response = client.get(
             "/?tenant=autoprime",
             HTTP_HOST="localhost:8000",

@@ -326,10 +326,10 @@ class TestOrdemCompraServiceVinculaProdutos:
     def test_criar_ordem_vincula_produto_existente(self):
         """Testa que o produto é vinculado quando existe no banco."""
         # Criar produto real
-        produto = ProdutoFactory(produto="Camisa Polo")
+        produto = ProdutoFactory(produto="Camisa Polo", empresa=EmpresaFactory())
 
         # Criar interesse com item que tem o mesmo nome do produto
-        interesse = InteresseCompraFactory(status=StatusInteresse.NOVO)
+        interesse = InteresseCompraFactory(status=StatusInteresse.NOVO, empresa=produto.empresa)
         ItemInteresseFactory(
             interesse=interesse,
             produto_nome="Camisa Polo",
@@ -349,7 +349,7 @@ class TestOrdemCompraServiceVinculaProdutos:
     def test_criar_ordem_vincula_variacao_existente(self):
         """Testa que a variação é vinculada quando existe no banco."""
         # Criar produto com variação
-        produto = ProdutoFactory(produto="Camiseta Básica")
+        produto = ProdutoFactory(produto="Camiseta Básica", empresa=EmpresaFactory())
         atributo_cor = AtributoFactory(nome="Cor")
         atributo_tamanho = AtributoFactory(nome="Tamanho")
         valor_azul = ValorAtributoFactory(atributo=atributo_cor, valor="Azul")
@@ -359,7 +359,7 @@ class TestOrdemCompraServiceVinculaProdutos:
         variacao.valores.set([valor_azul, valor_m])
 
         # Criar interesse com item que corresponde à variação
-        interesse = InteresseCompraFactory(status=StatusInteresse.NOVO)
+        interesse = InteresseCompraFactory(status=StatusInteresse.NOVO, empresa=produto.empresa)
         ItemInteresseFactory(
             interesse=interesse,
             produto_nome="Camiseta Básica",
@@ -397,10 +397,10 @@ class TestOrdemCompraServiceVinculaProdutos:
 
     def test_criar_ordem_variacao_nao_encontrada_vincula_so_produto(self):
         """Testa que só produto é vinculado se variação não corresponder."""
-        produto = ProdutoFactory(produto="Tênis Runner")
+        produto = ProdutoFactory(produto="Tênis Runner", empresa=EmpresaFactory())
         # Não criar variação
 
-        interesse = InteresseCompraFactory(status=StatusInteresse.NOVO)
+        interesse = InteresseCompraFactory(status=StatusInteresse.NOVO, empresa=produto.empresa)
         ItemInteresseFactory(
             interesse=interesse,
             produto_nome="Tênis Runner",
