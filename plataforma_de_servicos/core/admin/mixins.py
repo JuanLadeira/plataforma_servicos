@@ -59,12 +59,16 @@ class TenantAwareAdminMixin:
                 return qs.filter(empresa=tenant)
             return qs
 
-        # Admin principal: superusuário sem tenant vê tudo
+        # Superusuário sem tenant vê tudo
         if request.user.is_superuser and not tenant:
             return qs
 
+        # Demais usuários sem tenant não veem nada (fail-closed)
+        if not tenant:
+            return qs.none()
+
         # Se o modelo tem campo empresa, filtra pelo tenant
-        if _has_empresa_field(self.model) and tenant:
+        if _has_empresa_field(self.model):
             return qs.filter(empresa=tenant)
 
         return qs

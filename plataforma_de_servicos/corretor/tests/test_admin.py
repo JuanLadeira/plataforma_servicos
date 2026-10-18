@@ -262,7 +262,9 @@ class TestInteresseCompraGerenteAdminPermissions:
     def setup_method(self):
         """Setup comum para os testes."""
         self.admin = InteresseCompraGerenteAdmin(InteresseCompra, AdminSite())
-        self.request = Mock()
+        # Superusuário sem tenant no admin principal vê todos os interesses
+        self.request = Mock(tenant=None)
+        self.request.user.is_superuser = True
 
     def test_has_detail_atender_permission_status_novo(self):
         """Pode atender quando status é NOVO."""

@@ -66,21 +66,26 @@ class StockValidationResult:
         return [item for item in self.items if not item.is_valid]
 
 
-def _buscar_produto_e_variacao(produto_nome: str, variacao_info: str) -> tuple[Produto | None, VariacaoProduto | None]:
+def _buscar_produto_e_variacao(
+    produto_nome: str, variacao_info: str, empresa,
+) -> tuple[Produto | None, VariacaoProduto | None]:
     """
     Busca o produto pelo nome e a variação pelas informações de atributos.
 
     Args:
         produto_nome: Nome do produto
         variacao_info: String com informações da variação (ex: "Cor: Azul, Tamanho: M")
+        empresa: Empresa dona do produto (nunca busca em outras empresas)
 
     Returns:
         Tupla com (Produto, VariacaoProduto) ou (None, None) se não encontrar
     """
-    # Buscar produto pelo nome exato
-    try:
-        produto = Produto.objects.get(produto=produto_nome)
-    except Produto.DoesNotExist:
+    if empresa is None:
+        return None, None
+
+    # Buscar produto pelo nome exato, dentro da empresa
+    produto = Produto.objects.filter(empresa=empresa, produto=produto_nome).first()
+    if produto is None:
         return None, None
 
     # Se não há informação de variação, retornar só o produto
@@ -409,6 +414,7 @@ class OrdemCompraService:
             produto, variacao = _buscar_produto_e_variacao(
                 item_interesse.produto_nome,
                 item_interesse.variacao_info,
+                interesse.empresa,
             )
 
             ItemOrdemCompra.objects.create(

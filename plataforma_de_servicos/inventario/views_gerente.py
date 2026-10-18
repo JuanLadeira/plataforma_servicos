@@ -27,17 +27,23 @@ def get_tenant_from_request(request):
     return getattr(request, "tenant", None)
 
 
+def filtrar_por_tenant(queryset, request, campo="empresa"):
+    """Filtra pelo tenant; sem tenant, só superusuário vê tudo (fail-closed)."""
+    tenant = get_tenant_from_request(request)
+    if tenant:
+        return queryset.filter(**{campo: tenant})
+    if request.user.is_superuser:
+        return queryset
+    return queryset.none()
+
+
 def inventario_browser_list(request, admin_site):
     """
     Lista todos os inventários com contagem de produtos e variações.
     URL: /gerentes/inventario-browser/
     """
-    tenant = get_tenant_from_request(request)
-
-    # Filtra por tenant se disponível
-    inventarios = Inventario.objects.all()
-    if tenant:
-        inventarios = inventarios.filter(empresa=tenant)
+    # Filtra por tenant (fail-closed)
+    inventarios = filtrar_por_tenant(Inventario.objects.all(), request)
 
     # Anota com contagens de produtos e variações com saldo > 0
     inventarios = inventarios.annotate(
@@ -78,12 +84,8 @@ def inventario_browser_produtos(request, inventario_id, admin_site):
     Lista produtos de um inventário específico com seus saldos.
     URL: /gerentes/inventario-browser/<inventario_id>/produtos/
     """
-    tenant = get_tenant_from_request(request)
-
     # Obtém o inventário
-    inventario_qs = Inventario.objects.all()
-    if tenant:
-        inventario_qs = inventario_qs.filter(empresa=tenant)
+    inventario_qs = filtrar_por_tenant(Inventario.objects.all(), request)
 
     inventario = get_object_or_404(inventario_qs, pk=inventario_id)
 
@@ -154,19 +156,13 @@ def inventario_browser_variacoes(request, inventario_id, produto_id, admin_site)
     Lista variações de um produto com saldos específicos do inventário.
     URL: /gerentes/inventario-browser/<inventario_id>/produtos/<produto_id>/
     """
-    tenant = get_tenant_from_request(request)
-
     # Obtém o inventário
-    inventario_qs = Inventario.objects.all()
-    if tenant:
-        inventario_qs = inventario_qs.filter(empresa=tenant)
+    inventario_qs = filtrar_por_tenant(Inventario.objects.all(), request)
 
     inventario = get_object_or_404(inventario_qs, pk=inventario_id)
 
     # Obtém o produto
-    produto_qs = Produto.objects.all()
-    if tenant:
-        produto_qs = produto_qs.filter(empresa=tenant)
+    produto_qs = filtrar_por_tenant(Produto.objects.all(), request)
 
     produto = get_object_or_404(produto_qs.select_related("categoria"), pk=produto_id)
 
@@ -246,12 +242,8 @@ def inventario_export_saldo(request, inventario_id, admin_site):
     Exporta o saldo de estoque de um inventário específico.
     URL: /gerentes/inventario-browser/<inventario_id>/export/
     """
-    tenant = get_tenant_from_request(request)
-
     # Obtém o inventário
-    inventario_qs = Inventario.objects.all()
-    if tenant:
-        inventario_qs = inventario_qs.filter(empresa=tenant)
+    inventario_qs = filtrar_por_tenant(Inventario.objects.all(), request)
 
     inventario = get_object_or_404(inventario_qs, pk=inventario_id)
 

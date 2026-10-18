@@ -262,9 +262,10 @@ class TestDevTenantSupport:
     """Testes para suporte a tenant em desenvolvimento."""
 
     def test_dev_tenant_from_query_param(
-        self, middleware, request_factory, empresa_autoprime
+        self, middleware, request_factory, empresa_autoprime, settings,
     ):
-        """Pode definir tenant via query param no domínio principal."""
+        """Com DEBUG, pode definir tenant via query param no domínio principal."""
+        settings.DEBUG = True
         request = request_factory.get("/", {"tenant": "autoprime"})
         request.META["HTTP_HOST"] = "localhost:8000"
         request.session = {}
@@ -274,9 +275,10 @@ class TestDevTenantSupport:
         assert result.tenant == empresa_autoprime
 
     def test_dev_tenant_persists_in_session(
-        self, middleware, request_factory, empresa_autoprime
+        self, middleware, request_factory, empresa_autoprime, settings,
     ):
-        """Tenant de desenvolvimento é persistido na sessão."""
+        """Com DEBUG, tenant de desenvolvimento é persistido na sessão."""
+        settings.DEBUG = True
         session = {}
 
         # Primeira requisição com query param
@@ -294,6 +296,19 @@ class TestDevTenantSupport:
         result = middleware(request2)
 
         assert result.tenant == empresa_autoprime
+
+    def test_dev_tenant_ignorado_sem_debug(
+        self, middleware, request_factory, empresa_autoprime, settings,
+    ):
+        """Em produção (DEBUG=False), ?tenant= não seleciona empresa."""
+        settings.DEBUG = False
+        request = request_factory.get("/", {"tenant": "autoprime"})
+        request.META["HTTP_HOST"] = "localhost:8000"
+        request.session = {"dev_tenant_slug": "autoprime"}
+
+        result = middleware(request)
+
+        assert result.tenant is None
 
 
 @pytest.mark.django_db

@@ -235,12 +235,12 @@ class InteresseCompraVendedorAdmin(TenantAwareAdminMixin, ModelAdmin):
 
     def has_detail_atender_permission(self, request: HttpRequest, object_id: int) -> bool:
         """Verifica se pode iniciar atendimento."""
-        interesse = InteresseCompra.objects.filter(pk=object_id).first()
+        interesse = self.get_queryset(request).filter(pk=object_id).first()
         return interesse is not None and interesse.pode_atender
 
     def has_detail_converter_permission(self, request: HttpRequest, object_id: int) -> bool:
         """Verifica se pode converter para ordem."""
-        interesse = InteresseCompra.objects.filter(pk=object_id).first()
+        interesse = self.get_queryset(request).filter(pk=object_id).first()
         if not interesse or not interesse.pode_converter:
             return False
 
@@ -253,7 +253,7 @@ class InteresseCompraVendedorAdmin(TenantAwareAdminMixin, ModelAdmin):
 
     def has_detail_descartar_permission(self, request: HttpRequest, object_id: int) -> bool:
         """Verifica se pode descartar."""
-        interesse = InteresseCompra.objects.filter(pk=object_id).first()
+        interesse = self.get_queryset(request).filter(pk=object_id).first()
         if not interesse or not interesse.pode_descartar:
             return False
 
@@ -275,7 +275,7 @@ class InteresseCompraVendedorAdmin(TenantAwareAdminMixin, ModelAdmin):
     )
     def detail_atender(self, request: HttpRequest, object_id: int) -> HttpResponse:
         """Inicia o atendimento do interesse, atribuindo ao vendedor logado."""
-        interesse = get_object_or_404(InteresseCompra, pk=object_id)
+        interesse = get_object_or_404(self.get_queryset(request), pk=object_id)
 
         # Obtém o vendedor logado
         funcionario = getattr(request.user, "funcionario", None)
@@ -311,7 +311,7 @@ class InteresseCompraVendedorAdmin(TenantAwareAdminMixin, ModelAdmin):
     )
     def detail_converter(self, request: HttpRequest, object_id: int) -> HttpResponse:
         """Converte o interesse em ordem de compra."""
-        interesse = get_object_or_404(InteresseCompra, pk=object_id)
+        interesse = get_object_or_404(self.get_queryset(request), pk=object_id)
 
         try:
             InteresseCompraService.converter(interesse)
@@ -334,7 +334,7 @@ class InteresseCompraVendedorAdmin(TenantAwareAdminMixin, ModelAdmin):
     )
     def detail_descartar(self, request: HttpRequest, object_id: int) -> HttpResponse:
         """Descarta o interesse."""
-        interesse = get_object_or_404(InteresseCompra, pk=object_id)
+        interesse = get_object_or_404(self.get_queryset(request), pk=object_id)
         form = DescarteInteresseForm(request.POST or None)
 
         if request.method == "POST" and form.is_valid():

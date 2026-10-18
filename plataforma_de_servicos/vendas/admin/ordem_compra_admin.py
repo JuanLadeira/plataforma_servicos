@@ -410,27 +410,27 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
 
     def has_detail_aprovar_permission(self, request: HttpRequest, object_id: int) -> bool:
         """Verifica se pode aprovar a ordem."""
-        ordem = OrdemCompra.objects.filter(pk=object_id).first()
+        ordem = self.get_queryset(request).filter(pk=object_id).first()
         return ordem is not None and ordem.pode_aprovar
 
     def has_detail_rejeitar_permission(self, request: HttpRequest, object_id: int) -> bool:
         """Verifica se pode rejeitar a ordem."""
-        ordem = OrdemCompra.objects.filter(pk=object_id).first()
+        ordem = self.get_queryset(request).filter(pk=object_id).first()
         return ordem is not None and ordem.pode_rejeitar
 
     def has_detail_faturar_permission(self, request: HttpRequest, object_id: int) -> bool:
         """Verifica se pode faturar a ordem."""
-        ordem = OrdemCompra.objects.filter(pk=object_id).first()
+        ordem = self.get_queryset(request).filter(pk=object_id).first()
         return ordem is not None and ordem.pode_faturar
 
     def has_detail_concluir_permission(self, request: HttpRequest, object_id: int) -> bool:
         """Verifica se pode concluir a ordem."""
-        ordem = OrdemCompra.objects.filter(pk=object_id).first()
+        ordem = self.get_queryset(request).filter(pk=object_id).first()
         return ordem is not None and ordem.pode_concluir
 
     def has_detail_cancelar_permission(self, request: HttpRequest, object_id: int) -> bool:
         """Verifica se pode cancelar a ordem."""
-        ordem = OrdemCompra.objects.filter(pk=object_id).first()
+        ordem = self.get_queryset(request).filter(pk=object_id).first()
         return ordem is not None and ordem.pode_cancelar
 
     # ========================================
@@ -444,7 +444,7 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     )
     def detail_aprovar(self, request: HttpRequest, object_id: int) -> HttpResponse:
         """Aprova a ordem de compra."""
-        ordem = get_object_or_404(OrdemCompra, pk=object_id)
+        ordem = get_object_or_404(self.get_queryset(request), pk=object_id)
         try:
             OrdemCompraService.aprovar(ordem, request.user)
             self.message_user(
@@ -465,7 +465,7 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     )
     def detail_rejeitar(self, request: HttpRequest, object_id: int) -> HttpResponse:
         """Rejeita a ordem de compra (requer motivo)."""
-        ordem = get_object_or_404(OrdemCompra, pk=object_id)
+        ordem = get_object_or_404(self.get_queryset(request), pk=object_id)
         form = RejeicaoOrdemForm(request.POST or None)
 
         if request.method == "POST" and form.is_valid():
@@ -504,7 +504,7 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     )
     def detail_faturar(self, request: HttpRequest, object_id: int) -> HttpResponse:
         """Marca a ordem como faturada."""
-        ordem = get_object_or_404(OrdemCompra, pk=object_id)
+        ordem = get_object_or_404(self.get_queryset(request), pk=object_id)
         try:
             OrdemCompraService.faturar(ordem)
             self.message_user(
@@ -525,7 +525,7 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     )
     def detail_concluir(self, request: HttpRequest, object_id: int) -> HttpResponse:
         """Marca a ordem como concluida."""
-        ordem = get_object_or_404(OrdemCompra, pk=object_id)
+        ordem = get_object_or_404(self.get_queryset(request), pk=object_id)
         try:
             OrdemCompraService.concluir(ordem)
             self.message_user(
@@ -546,7 +546,7 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
     )
     def detail_cancelar(self, request: HttpRequest, object_id: int) -> HttpResponse:
         """Cancela a ordem de compra (motivo opcional)."""
-        ordem = get_object_or_404(OrdemCompra, pk=object_id)
+        ordem = get_object_or_404(self.get_queryset(request), pk=object_id)
         form = CancelamentoOrdemForm(request.POST or None)
 
         if request.method == "POST" and form.is_valid():

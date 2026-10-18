@@ -2,6 +2,7 @@
 import logging
 from dataclasses import asdict
 
+from django.http import Http404
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render
@@ -84,9 +85,9 @@ def produto_detail(request, produto_slug):
     tenant = getattr(request, "tenant", None)
 
     # Filtra por tenant para evitar vazamento de dados entre empresas
-    queryset = Produto.objects.all()
-    if tenant:
-        queryset = queryset.filter(empresa=tenant)
+    if not tenant:
+        raise Http404("Página não encontrada")
+    queryset = Produto.objects.filter(empresa=tenant)
 
     produto = get_object_or_404(queryset, slug=produto_slug)
 
@@ -134,9 +135,9 @@ def calcular_preco_variacao(request):
         return JsonResponse({"error": "Produto não informado"}, status=400)
 
     # Filtra por tenant para evitar vazamento de dados entre empresas
-    queryset = Produto.objects.all()
-    if tenant:
-        queryset = queryset.filter(empresa=tenant)
+    if not tenant:
+        raise Http404("Página não encontrada")
+    queryset = Produto.objects.filter(empresa=tenant)
 
     produto = get_object_or_404(queryset, id=produto_id)
 
@@ -152,9 +153,11 @@ def variacao_detail(request, sku):
     tenant = getattr(request, "tenant", None)
 
     # Filtra por tenant para evitar vazamento de dados entre empresas
-    queryset = VariacaoProduto.objects.select_related("produto__categoria")
-    if tenant:
-        queryset = queryset.filter(produto__empresa=tenant)
+    if not tenant:
+        raise Http404("Página não encontrada")
+    queryset = VariacaoProduto.objects.select_related("produto__categoria").filter(
+        produto__empresa=tenant,
+    )
 
     variacao = get_object_or_404(queryset, sku=sku)
     produto = variacao.produto

@@ -361,7 +361,9 @@ class ProdutoService:
         )
 
     @staticmethod
-    def obter_atributos_para_variacao(produto_id: int) -> AtributosProdutoResult | None:
+    def obter_atributos_para_variacao(
+        produto_id: int, empresa=None,
+    ) -> AtributosProdutoResult | None:
         """
         Obtém os atributos disponíveis para criar variações de um produto.
 
@@ -370,12 +372,16 @@ class ProdutoService:
 
         Args:
             produto_id: ID do produto
+            empresa: Se informada, só encontra produtos dessa empresa
 
         Returns:
             AtributosProdutoResult ou None se produto não encontrado
         """
+        queryset = Produto.objects.select_related("categoria")
+        if empresa is not None:
+            queryset = queryset.filter(empresa=empresa)
         try:
-            produto = Produto.objects.select_related("categoria").get(pk=produto_id)
+            produto = queryset.get(pk=produto_id)
         except Produto.DoesNotExist:
             return None
 

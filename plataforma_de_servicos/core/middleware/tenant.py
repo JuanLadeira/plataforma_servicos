@@ -1,6 +1,7 @@
 """
 Middleware para identificar o tenant (empresa) baseado no subdomínio ou usuário autenticado.
 """
+from django.conf import settings
 from django.http import Http404, HttpResponseForbidden
 from django.template.loader import render_to_string
 
@@ -17,6 +18,8 @@ class TenantMiddleware:
     - Admin da empresa: Endpoint customizável via campo admin_url (padrão: /gerentes/)
     - Funcionários só podem acessar o subdomínio da sua empresa
     """
+
+    PORTAL_PREFIXES = ("/gerentes/", "/vendedores/")
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -53,10 +56,10 @@ class TenantMiddleware:
             return self.get_response(request)
 
         # Domínio principal sem subdomínio (localhost/desenvolvimento)
-        # Suporta tenant via query param ou sessão para facilitar testes
+        # Suporta tenant via query param ou sessão apenas com DEBUG
 
-        # Para /gerentes/, tenta obter do usuário primeiro
-        if request.path.startswith("/gerentes/"):
+        # Para os portais, tenta obter do usuário primeiro
+        if request.path.startswith(self.PORTAL_PREFIXES):
             request.tenant = self._get_tenant_from_user(request)
             if not request.tenant:
                 request.tenant = self._get_dev_tenant(request)
@@ -159,7 +162,10 @@ class TenantMiddleware:
         return None
 
     def _get_dev_tenant(self, request):
-        """Para desenvolvimento: obtém tenant via query param ou sessão."""
+        """Para desenvolvimento: obtém tenant via query param ou sessão (só com DEBUG)."""
+        if not settings.DEBUG:
+            return None
+
         empresa_slug = request.GET.get("tenant")
         if empresa_slug:
             request.session["dev_tenant_slug"] = empresa_slug

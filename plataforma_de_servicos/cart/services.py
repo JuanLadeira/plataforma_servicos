@@ -331,14 +331,10 @@ class CartService:
 
     def _get_variation(self, variation_id: int) -> VariacaoProduto:
         """Obtém uma variação filtrada por tenant."""
-        queryset = VariacaoProduto.objects.all()
-        if self.tenant:
-            queryset = queryset.filter(produto__empresa=self.tenant)
+        queryset = VariacaoProduto.objects.filter(produto__empresa=self.tenant)
         return get_object_or_404(queryset, id=variation_id)
 
     def _get_product(self, product_id: int) -> Produto:
         """Obtém um produto filtrado por tenant."""
-        queryset = Produto.objects.all()
-        if self.tenant:
-            queryset = queryset.filter(empresa=self.tenant)
+        queryset = Produto.objects.filter(empresa=self.tenant)
         return get_object_or_404(queryset, id=product_id)
