@@ -14,6 +14,7 @@ class InventarioFactory(DjangoModelFactory):
     nome = factory.Faker("company")
     is_ativo = True
     exibir_na_vitrine = False
+    padrao = False
 
 
 class InventarioSaldoFactory(DjangoModelFactory):

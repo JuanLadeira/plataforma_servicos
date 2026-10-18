@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db import transaction
 from django.utils.html import format_html
 from unfold.admin import ModelAdmin
 from unfold.admin import TabularInline
@@ -7,6 +8,7 @@ from plataforma_de_servicos.core.admin.mixins import RBACAdminMixin
 from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.models.estoque_itens_model import EstoqueItens
+from plataforma_de_servicos.inventario.models import Inventario
 from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.users.services import Permission
 
@@ -158,8 +160,8 @@ class InventarioGerenteAdmin(RBACAdminMixin, TenantAwareAdminMixin, ModelAdmin):
     permission_add = Permission.INVENTARIO_CRIAR
     permission_change = Permission.INVENTARIO_EDITAR
 
-    list_display = ["nome", "slug", "is_ativo", "exibir_na_vitrine"]
-    list_filter = ["is_ativo", "exibir_na_vitrine"]
+    list_display = ["nome", "slug", "is_ativo", "exibir_na_vitrine", "padrao"]
+    list_filter = ["is_ativo", "exibir_na_vitrine", "padrao"]
     list_editable = ["exibir_na_vitrine"]
     list_order_by = ["nome"]
     list_order_by_desc = ["-nome"]
@@ -179,8 +181,11 @@ class InventarioGerenteAdmin(RBACAdminMixin, TenantAwareAdminMixin, ModelAdmin):
         (
             "Configurações de Exibição",
             {
-                "fields": ["exibir_na_vitrine"],
-                "description": "Configure se os produtos deste inventário devem aparecer na vitrine da página inicial.",
+                "fields": ["exibir_na_vitrine", "padrao"],
+                "description": (
+                    "Configure se os produtos deste inventário devem aparecer na vitrine da página inicial. "
+                    "As ordens aprovadas dão baixa no depósito padrão."
+                ),
             },
         ),
     ]
@@ -201,3 +206,11 @@ class InventarioGerenteAdmin(RBACAdminMixin, TenantAwareAdminMixin, ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related()
+
+    def save_model(self, request, obj, form, change):
+        """Ao marcar um depósito como padrão, desmarca o anterior da mesma empresa."""
+        with transaction.atomic():
+            empresa_id = obj.empresa_id or getattr(getattr(request, "tenant", None), "pk", None)
+            if obj.padrao and empresa_id:
+                Inventario.objects.filter(empresa_id=empresa_id, padrao=True).exclude(pk=obj.pk).update(padrao=False)
+            super().save_model(request, obj, form, change)

@@ -20,3 +20,11 @@ class VariacaoSaldoInsuficienteError(Exception):
 class ProtocoloProcessadoError(Exception):
     def __init__(self):
         super().__init__("Já foi dado baixa nessa entrega.")
+
+
+class InventarioSaldoInsuficienteError(Exception):
+    def __init__(self, saldo, quantidade, item):
+        super().__init__(
+            f"Saldo insuficiente de '{item}' no depósito {getattr(saldo.inventario, 'nome', saldo.inventario)}: "
+            f"saldo {saldo.quantidade}, solicitado {quantidade}.",
+        )

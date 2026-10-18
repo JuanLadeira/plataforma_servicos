@@ -1,16 +1,18 @@
 from decimal import Decimal
-from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
+from plataforma_de_servicos.empresa.tests.factories import EmpresaFactory
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.choices.origem_saida import OrigemSaida
+from plataforma_de_servicos.estoque.exceptions import ProdutoSaldoInsuficienteError
 from plataforma_de_servicos.estoque.models import Estoque
 from plataforma_de_servicos.estoque.models import EstoqueItens
 from plataforma_de_servicos.estoque.services import EstoqueService
 from plataforma_de_servicos.inventario.models import Inventario
+from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models import Categoria
 from plataforma_de_servicos.produto.models import Produto
 from plataforma_de_servicos.produto.models import VariacaoProduto
@@ -29,8 +31,11 @@ class EstoqueServiceTest(TestCase):
             password="testpass123",
         )
 
+        self.ordem_compra = OrdemCompraFactory()
+
         self.inventario = Inventario.objects.create(
             nome="Estoque Principal",
+            empresa=self.ordem_compra.empresa,
         )
 
         self.categoria = Categoria.objects.create(categoria="Eletrônicos")
@@ -56,7 +61,11 @@ class EstoqueServiceTest(TestCase):
             estoque=5,
         )
 
-        self.ordem_compra = OrdemCompraFactory()
+        InventarioSaldo.objects.create(inventario=self.inventario, produto=self.produto1, quantidade=5)
+        InventarioSaldo.objects.create(
+            inventario=self.inventario, produto=self.produto1, variacao=self.variacao, quantidade=5,
+        )
+        InventarioSaldo.objects.create(inventario=self.inventario, produto=self.produto2, quantidade=20)
 
     def test_criar_saida_por_ordem_compra(self):
         """Testar criação de saída de estoque para ordem de compra"""
@@ -201,22 +210,48 @@ class EstoqueServiceTest(TestCase):
         self.assertEqual(itens_estoque.count(), 2)
 
 
-    @patch("plataforma_de_servicos.inventario.models.Inventario.objects.first")
-    def test_criar_saida_sem_inventario(self, mock_inventario):
-        """Testar criação quando inventario_origem é None"""
-        mock_inventario.return_value = self.inventario
-
+    def test_criar_saida_sem_inventario(self):
+        """Sem depósito de origem a saída é recusada; não há mais depósito "qualquer" de fallback."""
         itens_pedido = [{"produto": self.produto1, "quantidade": 1, "variacao": None}]
 
-        saida = EstoqueService.criar_saida_por_ordem_compra(
-            ordem_compra=self.ordem_compra,
-            itens_pedido=itens_pedido,
-            funcionario=self.user,
-            inventario_origem=None,  # Deve usar o primeiro inventário
-        )
+        with self.assertRaisesMessage(ValueError, "inventario_origem é obrigatório"):
+            EstoqueService.criar_saida_por_ordem_compra(
+                ordem_compra=self.ordem_compra,
+                itens_pedido=itens_pedido,
+                funcionario=self.user,
+                inventario_origem=None,
+            )
+        self.assertFalse(Estoque.objects.filter(ordem_compra=self.ordem_compra).exists())
 
-        self.assertEqual(saida.inventario_origem, self.inventario)
-        mock_inventario.assert_called_once()
+    def test_criar_saida_com_deposito_de_outra_empresa(self):
+        """O depósito precisa ser da empresa da ordem."""
+        outro = Inventario.objects.create(nome="Depósito de outra empresa", empresa=EmpresaFactory())
+        itens_pedido = [{"produto": self.produto1, "quantidade": 1, "variacao": None}]
+
+        with self.assertRaisesMessage(ValueError, "depósito de outra empresa"):
+            EstoqueService.criar_saida_por_ordem_compra(
+                ordem_compra=self.ordem_compra,
+                itens_pedido=itens_pedido,
+                inventario_origem=outro,
+            )
+        self.assertFalse(Estoque.objects.filter(ordem_compra=self.ordem_compra).exists())
+
+    def test_criar_saida_manual_grava_empresa_do_deposito(self):
+        saida = EstoqueService.criar_saida_manual(
+            origem=OrigemSaida.PERDA.value,
+            itens=[{"produto": self.produto2, "quantidade": 1}],
+            funcionario=self.user,
+            inventario_origem=self.inventario,
+        )
+        self.assertEqual(saida.empresa, self.inventario.empresa)
+
+    def test_criar_saida_manual_sem_inventario(self):
+        with self.assertRaisesMessage(ValueError, "inventario_origem é obrigatório"):
+            EstoqueService.criar_saida_manual(
+                origem=OrigemSaida.PERDA.value,
+                itens=[{"produto": self.produto2, "quantidade": 1}],
+                funcionario=self.user,
+            )
 
     def test_criar_saida_observacao_automatica(self):
         """Testar se observação é gerada automaticamente"""
@@ -225,6 +260,7 @@ class EstoqueServiceTest(TestCase):
         saida = EstoqueService.criar_saida_por_ordem_compra(
             ordem_compra=self.ordem_compra,
             itens_pedido=itens_pedido,
+            inventario_origem=self.inventario,
         )
 
         self.assertIn(str(self.ordem_compra.pk), saida.observacao)
@@ -240,14 +276,15 @@ class EstoqueServiceTest(TestCase):
             categoria=self.categoria,
         )
 
-        ordem = OrdemCompraFactory()
+        ordem = self.ordem_compra
         itens_pedido = [{"produto": produto_sem_estoque, "quantidade": 5, "variacao": None}]
 
         # Tentar criar saída deve falhar por estoque insuficiente
-        with self.assertRaises(Exception):
+        with self.assertRaises(ProdutoSaldoInsuficienteError):
             EstoqueService.criar_saida_por_ordem_compra(
                 ordem_compra=ordem,
                 itens_pedido=itens_pedido,
+                inventario_origem=self.inventario,
             )
 
         # Verificar que nenhum registro foi criado

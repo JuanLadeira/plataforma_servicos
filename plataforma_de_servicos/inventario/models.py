@@ -1,11 +1,22 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db import transaction
+from django.db.models import Q
 from django.utils.translation import gettext as _
 from django_extensions.db.fields import AutoSlugField
 
 from plataforma_de_servicos.core.models import TimeStampedModel
+from plataforma_de_servicos.inventario.exceptions import InventarioPadraoAusenteError
 from plataforma_de_servicos.produto.models.atributos import VariacaoProduto
 from plataforma_de_servicos.produto.models.produto_model import Produto
+
+
+class InventarioManager(models.Manager):
+    def padrao_da_empresa(self, empresa):
+        inventario = self.filter(empresa=empresa, padrao=True, is_ativo=True).first()
+        if inventario is None:
+            raise InventarioPadraoAusenteError(empresa)
+        return inventario
 
 
 class Inventario(TimeStampedModel):
@@ -32,6 +43,13 @@ class Inventario(TimeStampedModel):
         verbose_name="Exibir na Vitrine",
         help_text="Se marcado, os produtos deste inventário serão exibidos na página inicial para os clientes.",
     )
+    padrao = models.BooleanField(
+        default=False,
+        verbose_name="Depósito padrão",
+        help_text="As ordens aprovadas dão baixa neste depósito. Só um por empresa.",
+    )
+
+    objects = InventarioManager()
 
     class Meta:
         verbose_name = _("Inventário")
@@ -43,10 +61,20 @@ class Inventario(TimeStampedModel):
                 fields=["empresa", "slug"],
                 name="unique_empresa_inventario_slug",
             ),
+            models.UniqueConstraint(
+                fields=["empresa"],
+                condition=Q(padrao=True),
+                name="unique_inventario_padrao_por_empresa",
+            ),
         ]
 
     def __str__(self):
         return _("Inventário: {nome}").format(nome=self.nome)
+
+    def clean(self):
+        super().clean()
+        if self.padrao and not self.is_ativo:
+            raise ValidationError({"padrao": "O depósito padrão precisa estar ativo."})
 
     def atualizar_estoque(self, produto, quantidade, variacao=None):
         with transaction.atomic():
@@ -76,10 +104,21 @@ class InventarioSaldo(models.Model):
     atualizado_em = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ("inventario", "produto", "variacao")
         verbose_name = _("Saldo de Inventário")
         verbose_name_plural = _("Saldos de Inventário")
         ordering = ("produto", "variacao")
+        constraints = [
+            # nulls_distinct=False: sem variação (NULL) também conta como repetido (Postgres 15+).
+            models.UniqueConstraint(
+                fields=["inventario", "produto", "variacao"],
+                name="unique_saldo_por_inventario_produto_variacao",
+                nulls_distinct=False,
+            ),
+            models.CheckConstraint(
+                condition=Q(quantidade__gte=0),
+                name="inventariosaldo_quantidade_nao_negativa",
+            ),
+        ]
 
     def __str__(self):
         if self.variacao:

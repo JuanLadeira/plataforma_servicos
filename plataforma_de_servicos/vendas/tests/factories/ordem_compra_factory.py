@@ -6,6 +6,7 @@ from factory.django import DjangoModelFactory
 
 from plataforma_de_servicos.corretor.tests.factories import InteresseCompraFactory
 from plataforma_de_servicos.empresa.tests.factories import EmpresaFactory
+from plataforma_de_servicos.inventario.models import Inventario
 from plataforma_de_servicos.users.tests.factories import FuncionarioFactory
 from plataforma_de_servicos.vendas.models import ItemOrdemCompra
 from plataforma_de_servicos.vendas.models import OrdemCompra
@@ -16,6 +17,7 @@ from plataforma_de_servicos.vendas.services import OrdemCompraService
 class OrdemCompraFactory(DjangoModelFactory):
     class Meta:
         model = OrdemCompra
+        skip_postgeneration_save = True
 
     empresa = factory.SubFactory(EmpresaFactory)
     numero = factory.LazyAttribute(
@@ -42,6 +44,17 @@ class OrdemCompraFactory(DjangoModelFactory):
         faturada = factory.Trait(
             status=StatusOrdemCompra.FATURADA,
         )
+
+    @factory.post_generation
+    def deposito_padrao(self, create, extracted, **kwargs):
+        """Garante um depósito padrão na empresa da ordem; a aprovação exige um.
+
+        Use OrdemCompraFactory(deposito_padrao=False) para testar a empresa sem padrão.
+        """
+        if not create or extracted is False or self.empresa_id is None:
+            return
+        if not Inventario.objects.filter(empresa=self.empresa, padrao=True).exists():
+            Inventario.objects.create(empresa=self.empresa, nome="Depósito padrão", padrao=True)
 
 
 class ItemOrdemCompraFactory(DjangoModelFactory):

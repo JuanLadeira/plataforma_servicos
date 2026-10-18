@@ -6,6 +6,9 @@ import pytest
 from plataforma_de_servicos.corretor.models import InteresseCompra
 from plataforma_de_servicos.corretor.models import ItemInteresse
 from plataforma_de_servicos.corretor.models import StatusInteresse
+from plataforma_de_servicos.empresa.tests.factories import EmpresaFactory
+from plataforma_de_servicos.inventario.models import Inventario
+from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models import Produto
 from plataforma_de_servicos.users.models import User
 from plataforma_de_servicos.vendas.models import StatusOrdemCompra
@@ -24,14 +27,27 @@ def usuario():
     return User.objects.create_user(email="approver@example.com", password="password")
 
 @pytest.fixture
-def produto_teste():
-    """Cria um produto de teste com estoque disponível."""
-    return Produto.objects.create(
+def empresa():
+    return EmpresaFactory()
+
+
+@pytest.fixture
+def deposito_padrao(empresa):
+    return Inventario.objects.create(empresa=empresa, nome="Depósito padrão", padrao=True)
+
+
+@pytest.fixture
+def produto_teste(empresa, deposito_padrao):
+    """Cria um produto de teste com estoque disponível no depósito padrão."""
+    produto = Produto.objects.create(
+        empresa=empresa,
         produto="Produto de Teste Final",
         preco=150.00,
         ncm="00001111",
         estoque=100,  # Estoque suficiente para testes
     )
+    InventarioSaldo.objects.create(inventario=deposito_padrao, produto=produto, quantidade=100)
+    return produto
 
 @pytest.fixture
 def ordem_compra_pendente(produto_teste):
@@ -40,6 +56,7 @@ def ordem_compra_pendente(produto_teste):
     Retorna a Ordem de Compra com status PENDENTE_APROVACAO.
     """
     interesse = InteresseCompra.objects.create(
+        empresa=produto_teste.empresa,
         nome_cliente="Cliente Pendente",
         email_cliente="pendente@example.com",
         telefone_cliente="11999991111",
@@ -71,6 +88,7 @@ def ordem_compra_aprovada(produto_teste, usuario):
     Cria uma Ordem de Compra e a coloca no status APROVADA.
     """
     interesse = InteresseCompra.objects.create(
+        empresa=produto_teste.empresa,
         nome_cliente="Cliente Aprovado",
         email_cliente="aprovado@example.com",
         telefone_cliente="11999992222",
@@ -102,7 +120,9 @@ def ordem_compra_aprovada(produto_teste, usuario):
 class TestOrdemCompraServiceAprovar:
 
     @patch("plataforma_de_servicos.vendas.services.ordem_compra_service.EstoqueService.criar_saida_por_ordem_compra")
-    def test_aprovar_ordem_pendente_deve_gerar_saida_estoque(self, mock_criar_saida, usuario, ordem_compra_pendente, produto_teste):
+    def test_aprovar_ordem_pendente_deve_gerar_saida_estoque(
+        self, mock_criar_saida, usuario, ordem_compra_pendente, produto_teste, deposito_padrao,
+    ):
         """
         Verifica se ao aprovar uma ordem PENDENTE, a saída de estoque é gerada
         e o status da ordem é atualizado corretamente.
@@ -122,6 +142,7 @@ class TestOrdemCompraServiceAprovar:
             ordem_compra=ordem,
             itens_pedido=itens_esperados,
             funcionario=usuario,
+            inventario_origem=deposito_padrao,
         )
 
         assert ordem_aprovada.status == StatusOrdemCompra.APROVADA

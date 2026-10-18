@@ -3,7 +3,9 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from plataforma_de_servicos.core.views import CreateListRetriveModelViewSet
+from plataforma_de_servicos.estoque.exceptions import InventarioSaldoInsuficienteError
 from plataforma_de_servicos.estoque.exceptions import ProdutoSaldoInsuficienteError
+from plataforma_de_servicos.estoque.exceptions import VariacaoSaldoInsuficienteError
 from plataforma_de_servicos.estoque.models.proxys.estoque_saida import EstoqueSaida
 from plataforma_de_servicos.estoque.serializers.estoque_saida_serializer import (
     EstoqueSaidaGetSerializer,
@@ -84,5 +86,9 @@ class EstoqueSaidaViewSet(CreateListRetriveModelViewSet):
         """
         try:
             return super().create(request, *args, **kwargs)
-        except ProdutoSaldoInsuficienteError as e:
+        except (
+            InventarioSaldoInsuficienteError,
+            ProdutoSaldoInsuficienteError,
+            VariacaoSaldoInsuficienteError,
+        ) as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
