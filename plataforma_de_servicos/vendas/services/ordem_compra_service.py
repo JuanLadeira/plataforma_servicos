@@ -17,7 +17,12 @@ from django.utils import timezone
 
 from plataforma_de_servicos.corretor.models import InteresseCompra
 from plataforma_de_servicos.corretor.models import StatusInteresse
+from plataforma_de_servicos.estoque.exceptions import InventarioSaldoInsuficienteError
+from plataforma_de_servicos.estoque.exceptions import ProdutoSaldoInsuficienteError
+from plataforma_de_servicos.estoque.exceptions import VariacaoSaldoInsuficienteError
 from plataforma_de_servicos.estoque.services import EstoqueService
+from plataforma_de_servicos.inventario.exceptions import InventarioPadraoAusenteError
+from plataforma_de_servicos.inventario.models import Inventario
 from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models import Produto
 from plataforma_de_servicos.produto.models import VariacaoProduto
@@ -36,6 +41,13 @@ class OrdemCompraServiceError(Exception):
 
 class EstoqueInsuficienteError(OrdemCompraServiceError):
     """Erro quando não há estoque suficiente para aprovar a ordem."""
+
+
+ERROS_DE_SALDO = (
+    InventarioSaldoInsuficienteError,
+    ProdutoSaldoInsuficienteError,
+    VariacaoSaldoInsuficienteError,
+)
 
 
 @dataclass
@@ -116,15 +128,29 @@ class OrdemCompraService:
     - Criação de ordens a partir de interesses
     - Validação de estoque antes da aprovação
     - Fluxo de status (aprovar, rejeitar, faturar, cancelar, concluir)
+
+    As transições recarregam a ordem com select_for_update() e checam o status
+    no registro travado, para que duas operações simultâneas não passem as duas.
     """
+
+    @staticmethod
+    def _travar(ordem: OrdemCompra) -> OrdemCompra:
+        return OrdemCompra.objects.select_for_update().get(pk=ordem.pk)
+
+    @staticmethod
+    def _deposito_padrao(empresa) -> Inventario:
+        try:
+            return Inventario.objects.padrao_da_empresa(empresa)
+        except InventarioPadraoAusenteError as exc:
+            raise OrdemCompraServiceError(str(exc)) from exc
 
     @staticmethod
     def validar_estoque(ordem: OrdemCompra) -> StockValidationResult:
         """
         Valida se há estoque suficiente para todos os itens da ordem.
 
-        Verifica o estoque real no momento da validação, considerando
-        reservas de outras ordens pendentes.
+        Consulta o saldo do depósito padrão da empresa da ordem, que é o mesmo
+        número que a aprovação vai checar com as linhas travadas.
 
         Args:
             ordem: OrdemCompra a ser validada
@@ -132,6 +158,11 @@ class OrdemCompraService:
         Returns:
             StockValidationResult com detalhes da validação
         """
+        try:
+            deposito = OrdemCompraService._deposito_padrao(ordem.empresa)
+        except OrdemCompraServiceError as exc:
+            return StockValidationResult(is_valid=False, items=[], message=str(exc))
+
         items_validation: list[StockValidationItem] = []
         all_valid = True
 
@@ -140,11 +171,9 @@ class OrdemCompraService:
                 # Item sem produto vinculado, não validar
                 continue
 
-            # Obter estoque disponível
-            if item.variacao:
-                estoque_disponivel = item.variacao.estoque
-            else:
-                estoque_disponivel = item.produto.estoque
+            estoque_disponivel = OrdemCompraService.obter_estoque_disponivel_item(
+                item.produto, item.variacao, deposito.pk,
+            )
 
             is_valid = item.quantidade <= estoque_disponivel
 
@@ -263,7 +292,7 @@ class OrdemCompraService:
             email_cliente: Email do cliente (opcional)
             telefone_cliente: Telefone do cliente (opcional)
             corretor: Funcionário responsável (opcional)
-            inventario_origem_id: ID do inventário para baixa (obrigatório para saídas)
+            inventario_origem_id: ID do inventário usado na validação (padrão: depósito padrão da empresa)
             validate_stock: Se True, valida estoque antes de criar
 
         Returns:
@@ -278,6 +307,9 @@ class OrdemCompraService:
 
         if not nome_cliente:
             raise OrdemCompraServiceError("Nome do cliente é obrigatório.")
+
+        if validate_stock and inventario_origem_id is None:
+            inventario_origem_id = OrdemCompraService._deposito_padrao(empresa).pk
 
         # Validar itens e calcular valor total
         valor_total = Decimal("0.00")
@@ -431,83 +463,64 @@ class OrdemCompraService:
 
     @staticmethod
     @transaction.atomic
-    def aprovar(
-        ordem: OrdemCompra,
-        usuario: User,
-        skip_stock_validation: bool = False,
-    ) -> OrdemCompra:
+    def aprovar(ordem: OrdemCompra, usuario: User) -> OrdemCompra:
         """
-        Aprova a ordem de compra com revalidação de estoque.
+        Aprova a ordem numa única transação: saída de estoque, status e comissão.
 
-        O estoque é revalidado no momento da aprovação para garantir
-        que a quantidade solicitada ainda está disponível.
+        A ordem é recarregada travada, então uma segunda aprovação simultânea
+        espera e depois falha. A baixa sai do depósito padrão da empresa da ordem
+        e o saldo é checado sobre as linhas travadas (ver Estoque.processar).
+        Qualquer erro desfaz tudo.
 
         Args:
             ordem: OrdemCompra a ser aprovada
             usuario: Usuário que está aprovando
-            skip_stock_validation: Se True, pula a validação de estoque
-                                   (usar com cuidado, apenas para casos especiais)
 
         Returns:
             OrdemCompra: Ordem atualizada
 
         Raises:
-            OrdemCompraServiceError: Se a ordem não puder ser aprovada
-            EstoqueInsuficienteError: Se não houver estoque suficiente
+            OrdemCompraServiceError: Se a ordem não puder ser aprovada ou a empresa
+                                     não tiver depósito padrão
+            EstoqueInsuficienteError: Se não houver estoque suficiente no depósito padrão
         """
-        # 1. Validar status da ordem
-        if not ordem.pode_aprovar:
+        travada = OrdemCompraService._travar(ordem)
+        if not travada.pode_aprovar:
             raise OrdemCompraServiceError(
-                f"Ordem {ordem.numero} não pode ser aprovada. Status atual: {ordem.status}",
+                f"Ordem {travada.numero} não pode ser aprovada. "
+                f"Status atual: {travada.get_status_display()}",
             )
 
-        # 2. Revalidar estoque no momento da aprovação
-        if not skip_stock_validation:
-            validation = OrdemCompraService.validar_estoque(ordem)
-            if not validation.is_valid:
-                # Construir mensagem detalhada de erro
-                invalid_items = validation.invalid_items
-                details = "\n".join([
-                    f"  - {item.produto_nome}"
-                    f"{' (' + item.variacao_info + ')' if item.variacao_info else ''}: "
-                    f"solicitado {item.quantidade_solicitada}, "
-                    f"disponível {item.quantidade_disponivel}"
-                    for item in invalid_items
-                ])
-                raise EstoqueInsuficienteError(
-                    f"Não é possível aprovar a ordem {ordem.numero}. "
-                    f"Estoque insuficiente para:\n{details}"
-                )
+        deposito = OrdemCompraService._deposito_padrao(travada.empresa)
 
-        # 3. Coletar itens e criar saída de estoque
-        itens_pedido = []
-        for item in ordem.itens.select_related("produto", "variacao").all():
-            if item.produto:
-                itens_pedido.append({
-                    "produto": item.produto,
-                    "variacao": item.variacao,
-                    "quantidade": item.quantidade,
-                })
-
+        itens_pedido = [
+            {"produto": item.produto, "variacao": item.variacao, "quantidade": item.quantidade}
+            for item in travada.itens.select_related("produto", "variacao").all()
+            if item.produto
+        ]
         if itens_pedido:
-            EstoqueService.criar_saida_por_ordem_compra(
-                ordem_compra=ordem,
-                itens_pedido=itens_pedido,
-                funcionario=usuario,
-            )
+            try:
+                EstoqueService.criar_saida_por_ordem_compra(
+                    ordem_compra=travada,
+                    itens_pedido=itens_pedido,
+                    funcionario=usuario,
+                    inventario_origem=deposito,
+                )
+            except ERROS_DE_SALDO as exc:
+                raise EstoqueInsuficienteError(
+                    f"Não é possível aprovar a ordem {travada.numero}. {exc}",
+                ) from exc
 
-        # 4. Atualizar o status da ordem
-        ordem.status = StatusOrdemCompra.APROVADA
-        ordem.aprovado_por = usuario
-        ordem.data_aprovacao = timezone.now()
-        ordem.save()
+        travada.status = StatusOrdemCompra.APROVADA
+        travada.aprovado_por = usuario
+        travada.data_aprovacao = timezone.now()
+        travada.save(update_fields=["status", "aprovado_por", "data_aprovacao", "modified"])
 
-        # 5. Criar comissão automaticamente se houver corretor
-        if ordem.corretor:
+        if travada.corretor:
             from plataforma_de_servicos.vendas.services.commission_service import CommissionService
-            commission_service = CommissionService(ordem.empresa)
-            commission_service.criar_comissao(ordem)
+            CommissionService(travada.empresa).criar_comissao(travada)
 
+        ordem.refresh_from_db()
         return ordem
 
     @staticmethod
