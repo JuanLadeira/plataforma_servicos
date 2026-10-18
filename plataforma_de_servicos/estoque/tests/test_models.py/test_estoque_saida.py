@@ -9,11 +9,13 @@ pytestmark = [pytest.mark.django_db(transaction=True), pytest.mark.estoque]
 
 
 class TestEstoquesaida:
-    def test_estoque_saida(self, produto_factory, user_factory, inventario_factory):
+    def test_estoque_saida(self, produto_factory, user_factory, inventario_factory, inventario_saldo_factory):
         produto = produto_factory(estoque=1)
         produto_2 = produto_factory(estoque=2)
         funcionario = user_factory()
         inventario = inventario_factory()
+        inventario_saldo_factory(inventario=inventario, produto=produto, quantidade=1)
+        inventario_saldo_factory(inventario=inventario, produto=produto_2, quantidade=2)
         dados_saida = {
             "nf": 1,
             "movimento": "s",

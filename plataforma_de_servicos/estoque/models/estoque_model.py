@@ -3,19 +3,29 @@ from logging import basicConfig
 from logging import getLogger
 
 from django.core.exceptions import ValidationError
+from django.db import connection
 from django.db import models
 from django.db import transaction
 
 from plataforma_de_servicos.core.models import TimeStampedModel
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.choices.origem_saida import OrigemSaida
+from plataforma_de_servicos.estoque.exceptions import InventarioSaldoInsuficienteError
+from plataforma_de_servicos.estoque.exceptions import ProdutoSaldoInsuficienteError
+from plataforma_de_servicos.estoque.exceptions import VariacaoSaldoInsuficienteError
 from plataforma_de_servicos.inventario.models import Inventario
-from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.users.models import User
 from plataforma_de_servicos.vendas.models.ordem_compra import OrdemCompra
 
 basicConfig(level=DEBUG)
 log = getLogger(__name__)
+
+
+def _nome_item(produto, variacao):
+    if variacao is None:
+        return produto.produto
+    valores = ", ".join(v.valor for v in variacao.valores.all())
+    return f"{produto.produto} - {valores}" if valores else f"{produto.produto} - variação #{variacao.pk}"
 
 
 class Estoque(TimeStampedModel):
@@ -118,65 +128,70 @@ class Estoque(TimeStampedModel):
 
     @transaction.atomic
     def processar(self):
+        """Aplica a movimentação aos saldos uma única vez, com as linhas travadas.
+
+        Trava a movimentação e depois os saldos em ordem fixa (ver estoque/locks.py).
+        Uma segunda chamada, mesmo concorrente, não faz nada. Qualquer saldo que ficaria
+        negativo (produto, variação ou depósito) levanta o erro e desfaz tudo.
         """
-        Atualiza o estoque de acordo com o movimento.
-        ou seja, entrada ou saída.
-        Updates the stock according to the movement.
-        that is, entry or exit.
-        """
-        if not self.processado:
-            self.atualizar_estoque()
+        from plataforma_de_servicos.estoque.locks import travar_saldos
+
+        with connection.cursor() as cursor:
+            cursor.execute("SET LOCAL lock_timeout = '5s'")
+        estoque = type(self).objects.select_for_update().get(pk=self.pk)
+        if estoque.processado:
             self.processado = True
-            self.save()
-
-    def atualizar_estoque(self):
-        """
-        Atualiza o estoque de acordo com a entrada ou saida,
-        ou seja, incrementa ou decrementa o saldo dos produtos.
-        Updates the stock according to the entry,
-        that is, increments the balance of the
-        products in this entry.
-        """
-        itens = self.estoque_itens.all()
+            return
+        itens = list(estoque.estoque_itens.select_related("produto", "variacao").order_by("pk"))
+        travas = travar_saldos(estoque, itens)
         for item in itens:
-            if self.movimento == Movimento.ENTRADA.value:
-                item.inventario = self.inventario_destino
-            elif self.movimento in {Movimento.SAIDA.value, Movimento.TRANSFERENCIA.value}:
-                item.inventario = self.inventario_origem
-
-            saldo = item.produto.estoque
-            item.atualizar_saldo()
-            saldo = item.produto.estoque
-            log.debug("Novo saldo do produto %s é %s", item.produto.produto, saldo)
-
-            self.atualizar_inventario_saldo(item)
-            item.save()
+            estoque._aplicar_item(item, travas)
+        for variacao in travas.variacoes.values():
+            variacao.save(update_fields=["estoque"])
+        for produto in travas.produtos.values():
+            produto.save(update_fields=["estoque"])
+        for saldo in travas.saldos.values():
+            saldo.save(update_fields=["quantidade", "atualizado_em"])
+        estoque.processado = True
+        estoque.save(update_fields=["processado", "modified"])
+        self.processado = True
         log.debug("Estoque %s processado com sucesso", self.pk)
 
-    def atualizar_inventario_saldo(self, item):
-        """Atualiza o saldo específico por inventário"""
-        with transaction.atomic():
-            if self.movimento == Movimento.ENTRADA.value:
-                self._atualizar_inventario(item, self.inventario_destino, item.quantidade)
-            elif self.movimento == Movimento.SAIDA.value:
-                self._atualizar_inventario(item, self.inventario_origem, -item.quantidade)
-            elif self.movimento == Movimento.TRANSFERENCIA.value:
-                self._atualizar_inventario(item, self.inventario_origem, -item.quantidade)
-                self._atualizar_inventario(item, self.inventario_destino, item.quantidade)
+    def _aplicar_item(self, item, travas):
+        """Calcula e aplica o item sobre as instâncias travadas, sem gravar produto, variação e saldos."""
+        produto = travas.produtos[item.produto_id]
+        variacao = travas.variacoes.get(item.variacao_id)
+        quantidade = item.quantidade
+        origem = (self.inventario_origem_id, item.produto_id, item.variacao_id)
+        destino = (self.inventario_destino_id, item.produto_id, item.variacao_id)
 
-    def _atualizar_inventario(self, item, inventario, quantidade):
-        try:
-            obj = InventarioSaldo.objects.select_for_update().get(
-                inventario=inventario,
-                produto=item.produto,
-                variacao=item.variacao,
-            )
-            obj.quantidade += quantidade
-            obj.save()
-        except InventarioSaldo.DoesNotExist:
-            InventarioSaldo.objects.create(
-                inventario=inventario,
-                produto=item.produto,
-                variacao=item.variacao,
-                quantidade=max(quantidade, 0),  # Evita valores negativos para novos registros
-            )
+        if self.movimento == Movimento.ENTRADA.value:
+            delta_total, deltas = quantidade, {destino: quantidade}
+            item.inventario_id = self.inventario_destino_id
+        elif self.movimento == Movimento.SAIDA.value:
+            delta_total, deltas = -quantidade, {origem: -quantidade}
+            item.inventario_id = self.inventario_origem_id
+        else:  # transferência: produto e variação não mudam
+            delta_total, deltas = 0, {origem: -quantidade, destino: quantidade}
+            item.inventario_id = self.inventario_origem_id
+
+        referencia = variacao or produto
+        item.saldo_anterior = referencia.estoque or 0
+
+        if variacao is not None and variacao.estoque + delta_total < 0:
+            raise VariacaoSaldoInsuficienteError(variacao, quantidade)
+        if (produto.estoque or 0) + delta_total < 0:
+            raise ProdutoSaldoInsuficienteError(produto.produto, quantidade)
+        for chave, delta in deltas.items():
+            saldo = travas.saldos[chave]
+            if saldo.quantidade + delta < 0:
+                raise InventarioSaldoInsuficienteError(saldo, quantidade, item=_nome_item(produto, variacao))
+
+        if variacao is not None:
+            variacao.estoque += delta_total
+        produto.estoque = (produto.estoque or 0) + delta_total
+        for chave, delta in deltas.items():
+            travas.saldos[chave].quantidade += delta
+
+        item.saldo = referencia.estoque
+        item.save(update_fields=["saldo_anterior", "saldo", "inventario"])

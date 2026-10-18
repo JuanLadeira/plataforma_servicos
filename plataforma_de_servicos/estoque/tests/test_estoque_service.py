@@ -11,6 +11,7 @@ from plataforma_de_servicos.estoque.models import Estoque
 from plataforma_de_servicos.estoque.models import EstoqueItens
 from plataforma_de_servicos.estoque.services import EstoqueService
 from plataforma_de_servicos.inventario.models import Inventario
+from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models import Categoria
 from plataforma_de_servicos.produto.models import Produto
 from plataforma_de_servicos.produto.models import VariacaoProduto
@@ -55,6 +56,12 @@ class EstoqueServiceTest(TestCase):
             preco=Decimal("1600.00"),
             estoque=5,
         )
+
+        InventarioSaldo.objects.create(inventario=self.inventario, produto=self.produto1, quantidade=5)
+        InventarioSaldo.objects.create(
+            inventario=self.inventario, produto=self.produto1, variacao=self.variacao, quantidade=5,
+        )
+        InventarioSaldo.objects.create(inventario=self.inventario, produto=self.produto2, quantidade=20)
 
         self.ordem_compra = OrdemCompraFactory()
 

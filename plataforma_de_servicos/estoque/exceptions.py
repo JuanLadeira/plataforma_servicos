@@ -25,6 +25,6 @@ class ProtocoloProcessadoError(Exception):
 class InventarioSaldoInsuficienteError(Exception):
     def __init__(self, saldo, quantidade, item):
         super().__init__(
-            f"Saldo insuficiente de '{item}' no depósito {saldo.inventario}: "
+            f"Saldo insuficiente de '{item}' no depósito {getattr(saldo.inventario, 'nome', saldo.inventario)}: "
             f"saldo {saldo.quantidade}, solicitado {quantidade}.",
         )
