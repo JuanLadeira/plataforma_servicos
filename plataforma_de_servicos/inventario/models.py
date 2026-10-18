@@ -104,10 +104,21 @@ class InventarioSaldo(models.Model):
     atualizado_em = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ("inventario", "produto", "variacao")
         verbose_name = _("Saldo de Inventário")
         verbose_name_plural = _("Saldos de Inventário")
         ordering = ("produto", "variacao")
+        constraints = [
+            # nulls_distinct=False: sem variação (NULL) também conta como repetido (Postgres 15+).
+            models.UniqueConstraint(
+                fields=["inventario", "produto", "variacao"],
+                name="unique_saldo_por_inventario_produto_variacao",
+                nulls_distinct=False,
+            ),
+            models.CheckConstraint(
+                condition=Q(quantidade__gte=0),
+                name="inventariosaldo_quantidade_nao_negativa",
+            ),
+        ]
 
     def __str__(self):
         if self.variacao:
