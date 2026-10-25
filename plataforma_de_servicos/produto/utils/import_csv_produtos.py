@@ -21,6 +21,9 @@ def produto_json(request, pk):
 def save_data(data):
     """
     Salva os dados no banco.
+
+    A coluna estoque é ignorada: o estoque é a soma dos saldos nos depósitos
+    e só entra por movimentação de estoque (issue #144).
     """
     aux = []
     for item in data:
@@ -28,14 +31,12 @@ def save_data(data):
         ncm = str(item.get("ncm"))
         importado = item.get("importado") == "True"
         preco = item.get("preco")
-        estoque = item.get("estoque")
         estoque_minimo = item.get("estoque_minimo")
         obj = Produto(
             produto=produto,
             ncm=ncm,
             importado=importado,
             preco=preco,
-            estoque=estoque,
             estoque_minimo=estoque_minimo,
         )
         aux.append(obj)
@@ -86,7 +87,6 @@ def import_csv_with_pandas(request):
             ncm=row[1],
             importado=row[2],
             preco=row[3],
-            estoque=row[4],
             estoque_minimo=row[5],
         )
         aux.append(obj)
