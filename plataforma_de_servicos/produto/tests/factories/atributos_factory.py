@@ -39,6 +39,17 @@ class VariacaoProdutoFactory(DjangoModelFactory):
     preco = Faker("pydecimal", left_digits=4, right_digits=2, positive=True)
     estoque = Faker("random_int", min=10, max=100)
 
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        # estoque é derivado do InventarioSaldo (issue #144): vira saldo no depósito de teste.
+        estoque = kwargs.pop("estoque", 0) or 0
+        variacao = super()._create(model_class, *args, **kwargs)
+        if estoque:
+            from plataforma_de_servicos.inventario.tests.saldo import dar_saldo
+
+            dar_saldo(variacao, estoque)
+        return variacao
+
     @factory.post_generation
     def valores(self, create, extracted, **kwargs):
         if not create:

@@ -44,9 +44,9 @@ def produto_teste(empresa, deposito_padrao):
         produto="Produto de Teste Final",
         preco=150.00,
         ncm="00001111",
-        estoque=100,  # Estoque suficiente para testes
     )
     InventarioSaldo.objects.create(inventario=deposito_padrao, produto=produto, quantidade=100)
+    produto.refresh_from_db()
     return produto
 
 @pytest.fixture

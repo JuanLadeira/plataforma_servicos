@@ -10,6 +10,7 @@ from django.test import Client
 from django.test import RequestFactory
 from django.test import TestCase
 
+from plataforma_de_servicos.inventario.tests.saldo import dar_saldo
 from plataforma_de_servicos.cart.cart import Cart
 from plataforma_de_servicos.cart.views import cart_add
 from plataforma_de_servicos.produto.models import Categoria
@@ -37,7 +38,6 @@ class CartViewsTest(TestCase):
         self.produto = Produto.objects.create(
             produto="Tablet",
             preco=Decimal("600.00"),
-            estoque=10,
             categoria=self.categoria,
             ncm="12345678",
         )
@@ -46,8 +46,9 @@ class CartViewsTest(TestCase):
             produto=self.produto,
             sku="TAB001",
             preco=Decimal("650.00"),
-            estoque=5,
         )
+        dar_saldo(self.produto, 5)  # sem variação
+        dar_saldo(self.variacao, 5)  # produto fica com 10
 
     def create_request_with_middleware(self, method="POST", data=None, session=None):
         """Criar request com todos os middlewares necessários"""

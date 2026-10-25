@@ -40,7 +40,6 @@ class TestProdutoServiceListarProdutosVitrine:
 
         produto = ProdutoFactory(
             categoria=categoria,
-            estoque=10,
             preco=Decimal("99.90"),
             empresa=empresa,
         )
@@ -68,7 +67,6 @@ class TestProdutoServiceListarProdutosVitrine:
 
         produto = ProdutoFactory(
             categoria=categoria,
-            estoque=10,
             preco=Decimal("99.90"),
             empresa=empresa,
         )
@@ -94,7 +92,6 @@ class TestProdutoServiceListarProdutosVitrine:
 
         produto = ProdutoFactory(
             categoria=categoria,
-            estoque=10,
             preco=Decimal("99.90"),
             empresa=empresa,
         )
@@ -115,8 +112,8 @@ class TestProdutoServiceListarProdutosVitrine:
         categoria2 = CategoriaFactory(categoria="Categoria 2", empresa=empresa)
         inventario = InventarioFactory(is_ativo=True, exibir_na_vitrine=True, empresa=empresa)
 
-        produto1 = ProdutoFactory(categoria=categoria1, estoque=10, preco=Decimal("50.00"), empresa=empresa)
-        produto2 = ProdutoFactory(categoria=categoria2, estoque=10, preco=Decimal("60.00"), empresa=empresa)
+        produto1 = ProdutoFactory(categoria=categoria1, preco=Decimal("50.00"), empresa=empresa)
+        produto2 = ProdutoFactory(categoria=categoria2, preco=Decimal("60.00"), empresa=empresa)
 
         InventarioSaldo.objects.create(inventario=inventario, produto=produto1, quantidade=10)
         InventarioSaldo.objects.create(inventario=inventario, produto=produto2, quantidade=10)
@@ -139,14 +136,12 @@ class TestProdutoServiceListarProdutosVitrine:
         produto1 = ProdutoFactory(
             produto="Pizza Margherita Especial",
             categoria=categoria,
-            estoque=10,
             preco=Decimal("50.00"),
             empresa=empresa,
         )
         produto2 = ProdutoFactory(
             produto="Refrigerante Cola",
             categoria=categoria,
-            estoque=10,
             preco=Decimal("10.00"),
             empresa=empresa,
         )
@@ -165,7 +160,7 @@ class TestProdutoServiceListarProdutosVitrine:
         categoria = CategoriaFactory(empresa=empresa)
         inventario = InventarioFactory(is_ativo=True, exibir_na_vitrine=True, empresa=empresa)
 
-        produto = ProdutoFactory(categoria=categoria, estoque=10, preco=Decimal("50.00"), empresa=empresa)
+        produto = ProdutoFactory(categoria=categoria, preco=Decimal("50.00"), empresa=empresa)
         InventarioSaldo.objects.create(inventario=inventario, produto=produto, quantidade=10)
 
         produtos, categoria_result = ProdutoService.listar_produtos_vitrine(
@@ -196,7 +191,6 @@ class TestProdutoServicePrepararProdutosParaVitrine:
         produto = ProdutoFactory(
             produto="Pizza Teste",
             categoria=categoria,
-            estoque=10,
             preco=Decimal("49.90"),
             empresa=empresa,
         )
@@ -220,11 +214,10 @@ class TestProdutoServicePrepararProdutosParaVitrine:
 
         produto = ProdutoFactory(
             categoria=categoria,
-            estoque=0,
             preco=Decimal("49.90"),
             empresa=empresa,
         )
-        InventarioSaldo.objects.create(inventario=inventario, produto=produto, quantidade=5)
+        InventarioSaldo.objects.create(inventario=inventario, produto=produto, quantidade=0)
 
         produtos_qs, _ = ProdutoService.listar_produtos_vitrine(empresa=empresa)
         resultado = ProdutoService.preparar_produtos_para_vitrine(produtos_qs)
@@ -238,7 +231,6 @@ class TestProdutoServicePrepararProdutosParaVitrine:
 
         produto = ProdutoFactory(
             categoria=None,
-            estoque=10,
             preco=Decimal("49.90"),
             empresa=empresa,
         )
