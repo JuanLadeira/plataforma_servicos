@@ -88,6 +88,21 @@ class OrdemCompra(TimeStampedModel):
         blank=True,
     )
 
+    # Cancelamento
+    cancelado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ordens_canceladas",
+        verbose_name="cancelado por",
+    )
+    data_cancelamento = models.DateTimeField(
+        "data de cancelamento",
+        null=True,
+        blank=True,
+    )
+
     # Corretor responsável
     corretor = models.ForeignKey(
         Funcionario,
