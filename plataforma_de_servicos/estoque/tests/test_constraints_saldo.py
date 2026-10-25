@@ -17,15 +17,12 @@ def test_saldo_de_deposito_nao_pode_ser_negativo():
         s.save()
 
 
-def test_estoque_de_produto_nao_pode_ser_negativo():
-    p = ProdutoFactory(estoque=0)
+def test_estoque_de_produto_nao_pode_ser_gravado_direto():
+    # Derivado do InventarioSaldo (issue #144): o trigger de guarda recusa antes do CHECK.
+    p = ProdutoFactory()
     p.estoque = -1
     with pytest.raises(IntegrityError), transaction.atomic():
-        p.save()
-
-
-def test_estoque_de_produto_pode_ser_nulo():
-    assert ProdutoFactory(estoque=None).estoque is None
+        p.save(update_fields=["estoque"])
 
 
 def test_saldo_duplicado_sem_variacao_e_recusado():

@@ -22,24 +22,24 @@ def deposito(empresa=None, nome=None, **kwargs):
 
 def produto_com_saldo(saldos_por_deposito, empresa=None):
     """Produto sem variação com {deposito: quantidade}; produto.estoque é a soma."""
-    produto = ProdutoFactory(empresa=empresa, estoque=sum(saldos_por_deposito.values()))
+    produto = ProdutoFactory(empresa=empresa)
     for dep, qtd in saldos_por_deposito.items():
         InventarioSaldo.objects.create(
             inventario=dep, produto=produto, variacao=None, quantidade=qtd
         )
+    produto.refresh_from_db(fields=["estoque"])
     return produto
 
 
 def variacao_com_saldo(saldos_por_deposito, empresa=None):
     """Variação com {deposito: quantidade}; variação e produto ficam com a soma."""
-    total = sum(saldos_por_deposito.values())
-    variacao = VariacaoProdutoFactory(
-        estoque=total, produto=ProdutoFactory(empresa=empresa, estoque=total)
-    )
+    variacao = VariacaoProdutoFactory(estoque=0, produto=ProdutoFactory(empresa=empresa))
     for dep, qtd in saldos_por_deposito.items():
         InventarioSaldo.objects.create(
             inventario=dep, produto=variacao.produto, variacao=variacao, quantidade=qtd
         )
+    variacao.refresh_from_db(fields=["estoque"])
+    variacao.produto.refresh_from_db(fields=["estoque"])
     return variacao
 
 
@@ -97,3 +97,12 @@ def saldos(alvo, dep):
             saldo_deposito(dep, v),
         )
     return None, Produto.objects.get(pk=alvo.pk).estoque, saldo_deposito(dep, alvo)
+
+
+def gravar_estoque(alvo, quantidade):
+    """Grava direto na cópia de estoque de produto ou variação, como antes da issue #144.
+
+    Só funciona com a fixture ``sem_trigger_de_saldo``.
+    """
+    type(alvo).objects.filter(pk=alvo.pk).update(estoque=quantidade)
+    alvo.refresh_from_db(fields=["estoque"])
