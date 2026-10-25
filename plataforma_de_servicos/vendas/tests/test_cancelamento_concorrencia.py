@@ -25,7 +25,9 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 def _cancelar(pk):
     usuario = UserFactory()
-    return lambda: OrdemCompraService.cancelar(OrdemCompra.objects.get(pk=pk), usuario=usuario)
+    return lambda: OrdemCompraService.cancelar(
+        OrdemCompra.objects.get(pk=pk), usuario=usuario
+    )
 
 
 def _aprovar(pk):
@@ -33,7 +35,9 @@ def _aprovar(pk):
     return lambda: OrdemCompraService.aprovar(OrdemCompra.objects.get(pk=pk), usuario)
 
 
-def test_dois_cancelamentos_simultaneos_estornam_uma_vez(monkeypatch, empresa, padrao, usuario):
+def test_dois_cancelamentos_simultaneos_estornam_uma_vez(
+    monkeypatch, empresa, padrao, usuario
+):
     v = cenarios.variacao_com_saldo({padrao: 10}, empresa=empresa)
     ordem = OrdemCompraService.aprovar(ordem_com_itens(empresa, [(v, 2)]), usuario)
     atrasar_save(monkeypatch, VariacaoProduto)
@@ -41,11 +45,18 @@ def test_dois_cancelamentos_simultaneos_estornam_uma_vez(monkeypatch, empresa, p
     resultados = em_paralelo(_cancelar(ordem.pk), _cancelar(ordem.pk))
 
     assert sorted(r[0] for r in resultados) == ["erro", "ok"], resultados
-    assert Estoque.objects.filter(ordem_compra=ordem, movimento=Movimento.ENTRADA.value).count() == 1
+    assert (
+        Estoque.objects.filter(
+            ordem_compra=ordem, movimento=Movimento.ENTRADA.value
+        ).count()
+        == 1
+    )
     assert cenarios.saldos(v, padrao) == (10, 10, 10)
 
 
-def test_cancelamento_e_pagamento_simultaneos_nunca_terminam_os_dois(monkeypatch, empresa, padrao, usuario):
+def test_cancelamento_e_pagamento_simultaneos_nunca_terminam_os_dois(
+    monkeypatch, empresa, padrao, usuario
+):
     v = cenarios.variacao_com_saldo({padrao: 10}, empresa=empresa)
     ordem = OrdemCompraService.aprovar(
         ordem_com_itens(empresa, [(v, 2)], com_corretor=True), usuario
@@ -55,7 +66,9 @@ def test_cancelamento_e_pagamento_simultaneos_nunca_terminam_os_dois(monkeypatch
     atrasar_save(monkeypatch, Comissao)
 
     def pagar():
-        return CommissionService(empresa).pagar_comissao(Comissao.objects.get(pk=comissao.pk))
+        return CommissionService(empresa).pagar_comissao(
+            Comissao.objects.get(pk=comissao.pk)
+        )
 
     em_paralelo(_cancelar(ordem.pk), pagar)
 
@@ -70,7 +83,9 @@ def test_cancelamento_e_pagamento_simultaneos_nunca_terminam_os_dois(monkeypatch
         assert cenarios.saldos(v, padrao) == (8, 8, 8)
 
 
-def test_cancelar_uma_e_aprovar_outra_no_mesmo_item_sem_deadlock(monkeypatch, empresa, padrao, usuario):
+def test_cancelar_uma_e_aprovar_outra_no_mesmo_item_sem_deadlock(
+    monkeypatch, empresa, padrao, usuario
+):
     v = cenarios.variacao_com_saldo({padrao: 3}, empresa=empresa)
     aprovada = OrdemCompraService.aprovar(ordem_com_itens(empresa, [(v, 2)]), usuario)
     pendente = ordem_com_itens(empresa, [(v, 3)])

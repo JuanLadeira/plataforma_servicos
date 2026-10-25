@@ -2,11 +2,11 @@
 
 import django.db.models.deletion
 from django.conf import settings
-from django.db import migrations, models
+from django.db import migrations
+from django.db import models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("vendas", "0004_add_comissao_models"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

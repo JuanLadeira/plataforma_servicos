@@ -57,7 +57,9 @@ def test_estorno_devolve_ao_deposito_da_saida(empresa, padrao):
     assert entrada.inventario_destino == padrao
     assert entrada.estorno_de == saida
     assert entrada.empresa == empresa
-    itens = [(i.produto_id, i.variacao_id, i.quantidade) for i in entrada.estoque_itens.all()]
+    itens = [
+        (i.produto_id, i.variacao_id, i.quantidade) for i in entrada.estoque_itens.all()
+    ]
     assert itens == [(v.produto_id, v.pk, 2)]
 
 

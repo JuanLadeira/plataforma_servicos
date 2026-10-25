@@ -8,7 +8,9 @@ from plataforma_de_servicos.vendas.models import Comissao
 from plataforma_de_servicos.vendas.models import StatusOrdemCompra
 from plataforma_de_servicos.vendas.models.comissao import StatusComissao
 from plataforma_de_servicos.vendas.services.commission_service import CommissionService
-from plataforma_de_servicos.vendas.services.ordem_compra_service import ComissaoPagaError
+from plataforma_de_servicos.vendas.services.ordem_compra_service import (
+    ComissaoPagaError,
+)
 from plataforma_de_servicos.vendas.services.ordem_compra_service import (
     OrdemCompraService,
 )

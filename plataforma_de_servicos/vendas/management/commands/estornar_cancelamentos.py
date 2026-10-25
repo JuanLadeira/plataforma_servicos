@@ -7,7 +7,9 @@ from plataforma_de_servicos.estoque.models import Estoque
 from plataforma_de_servicos.vendas.models import OrdemCompra
 from plataforma_de_servicos.vendas.models import StatusOrdemCompra
 from plataforma_de_servicos.vendas.models.comissao import StatusComissao
-from plataforma_de_servicos.vendas.services.ordem_compra_service import ComissaoPagaError
+from plataforma_de_servicos.vendas.services.ordem_compra_service import (
+    ComissaoPagaError,
+)
 from plataforma_de_servicos.vendas.services.ordem_compra_service import (
     OrdemCompraService,
 )
@@ -33,17 +35,23 @@ class Command(BaseCommand):
     def handle(self, *args, empresa=None, aplicar=False, **options):
         ordens = self._pendentes(empresa)
         if not ordens:
-            self.stdout.write(self.style.SUCCESS("Nenhuma ordem cancelada sem estorno."))
+            self.stdout.write(
+                self.style.SUCCESS("Nenhuma ordem cancelada sem estorno.")
+            )
             return
 
-        self.stdout.write(self.style.WARNING(f"Ordens canceladas sem estorno: {len(ordens)}"))
+        self.stdout.write(
+            self.style.WARNING(f"Ordens canceladas sem estorno: {len(ordens)}")
+        )
         for ordem in ordens:
             if aplicar:
                 self._aplicar(ordem)
             else:
                 self.stdout.write(f"  {self._descrever(ordem)}")
         if not aplicar:
-            self.stdout.write("Nada foi alterado. Rode de novo com --aplicar para corrigir.")
+            self.stdout.write(
+                "Nada foi alterado. Rode de novo com --aplicar para corrigir."
+            )
 
     def _pendentes(self, empresa):
         saidas = Estoque.objects.filter(
@@ -56,7 +64,11 @@ class Command(BaseCommand):
         if empresa:
             saidas = saidas.filter(ordem_compra__empresa__slug=empresa)
         ids = saidas.values_list("ordem_compra_id", flat=True)
-        return list(OrdemCompra.objects.filter(pk__in=ids).select_related("empresa").order_by("pk"))
+        return list(
+            OrdemCompra.objects.filter(pk__in=ids)
+            .select_related("empresa")
+            .order_by("pk")
+        )
 
     def _descrever(self, ordem):
         comissoes = ordem.comissoes.exclude(status=StatusComissao.CANCELADA)
@@ -70,6 +82,12 @@ class Command(BaseCommand):
                 travada = OrdemCompra.objects.select_for_update().get(pk=ordem.pk)
                 OrdemCompraService.desfazer_aprovacao(travada, MOTIVO)
         except ComissaoPagaError:
-            self.stdout.write(self.style.ERROR(f"  {ordem.numero}: pulada, comissão já paga"))
+            self.stdout.write(
+                self.style.ERROR(f"  {ordem.numero}: pulada, comissão já paga")
+            )
             return
-        self.stdout.write(self.style.SUCCESS(f"  {ordem.numero}: estoque devolvido e comissões canceladas"))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"  {ordem.numero}: estoque devolvido e comissões canceladas"
+            )
+        )

@@ -7,7 +7,9 @@ from plataforma_de_servicos.estoque.tests import cenarios
 from plataforma_de_servicos.users.tests.factories import UserFactory
 from plataforma_de_servicos.vendas.admin import ordem_compra_admin
 from plataforma_de_servicos.vendas.admin.ordem_compra_admin import OrdemCompraAdmin
-from plataforma_de_servicos.vendas.admin.ordem_compra_admin import OrdemCompraGerenteAdmin
+from plataforma_de_servicos.vendas.admin.ordem_compra_admin import (
+    OrdemCompraGerenteAdmin,
+)
 from plataforma_de_servicos.vendas.models import Comissao
 from plataforma_de_servicos.vendas.models import OrdemCompra
 from plataforma_de_servicos.vendas.models import StatusOrdemCompra
@@ -62,10 +64,14 @@ def test_status_somente_leitura_no_admin_principal(empresa):
     assert {"status", "cancelado_por", "data_cancelamento"} <= set(campos)
 
 
-def test_detail_cancelar_registra_usuario_e_devolve_estoque(admin, aprovada, empresa, padrao, gerente):
+def test_detail_cancelar_registra_usuario_e_devolve_estoque(
+    admin, aprovada, empresa, padrao, gerente
+):
     ordem, v = aprovada
 
-    admin.detail_cancelar(_request("post", empresa, gerente, {"motivo": "desistiu"}), object_id=ordem.pk)
+    admin.detail_cancelar(
+        _request("post", empresa, gerente, {"motivo": "desistiu"}), object_id=ordem.pk
+    )
 
     ordem.refresh_from_db()
     assert ordem.status == StatusOrdemCompra.CANCELADA
@@ -73,25 +79,37 @@ def test_detail_cancelar_registra_usuario_e_devolve_estoque(admin, aprovada, emp
     assert cenarios.saldos(v, padrao) == (5, 5, 5)
 
 
-def test_detail_cancelar_com_comissao_paga_mostra_erro(admin, aprovada, empresa, gerente, monkeypatch):
+def test_detail_cancelar_com_comissao_paga_mostra_erro(
+    admin, aprovada, empresa, gerente, monkeypatch
+):
     ordem, _ = aprovada
     comissao = Comissao.objects.get(ordem=ordem)
     CommissionService(empresa).aprovar_comissao(comissao)
     CommissionService(empresa).pagar_comissao(comissao)
-    monkeypatch.setattr(ordem_compra_admin, "render", lambda request, template, context: context)
+    monkeypatch.setattr(
+        ordem_compra_admin, "render", lambda request, template, context: context
+    )
 
-    admin.detail_cancelar(_request("post", empresa, gerente, {"motivo": "teste"}), object_id=ordem.pk)
+    admin.detail_cancelar(
+        _request("post", empresa, gerente, {"motivo": "teste"}), object_id=ordem.pk
+    )
 
     ordem.refresh_from_db()
     assert ordem.status == StatusOrdemCompra.APROVADA
     assert any("já paga" in m for m in admin.mensagens), admin.mensagens
 
 
-def test_tela_de_cancelamento_mostra_o_que_sera_estornado(admin, aprovada, empresa, padrao, gerente, monkeypatch):
+def test_tela_de_cancelamento_mostra_o_que_sera_estornado(
+    admin, aprovada, empresa, padrao, gerente, monkeypatch
+):
     ordem, v = aprovada
-    monkeypatch.setattr(ordem_compra_admin, "render", lambda request, template, context: context)
+    monkeypatch.setattr(
+        ordem_compra_admin, "render", lambda request, template, context: context
+    )
 
-    contexto = admin.detail_cancelar(_request("get", empresa, gerente), object_id=ordem.pk)
+    contexto = admin.detail_cancelar(
+        _request("get", empresa, gerente), object_id=ordem.pk
+    )
 
     [saida] = contexto["saidas_a_estornar"]
     assert saida.inventario_origem == padrao
