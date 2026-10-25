@@ -57,6 +57,15 @@ class Estoque(TimeStampedModel):
         blank=True,
         help_text="Ordem de compra que originou esta saída de estoque",
     )
+    estorno_de = models.OneToOneField(
+        "self",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="estorno",
+        verbose_name="estorno de",
+        help_text="Saída que esta entrada desfaz",
+    )
     observacao = models.TextField(
         "Observações",
         null=True,
