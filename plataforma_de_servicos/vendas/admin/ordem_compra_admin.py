@@ -12,12 +12,15 @@ from unfold.admin import TabularInline
 from unfold.decorators import action
 
 from plataforma_de_servicos.core.admin.mixins import TenantAwareAdminMixin
+from plataforma_de_servicos.estoque.choices.movimento import Movimento
+from plataforma_de_servicos.estoque.models import Estoque
 from plataforma_de_servicos.produto.models import VariacaoProduto
 from plataforma_de_servicos.vendas.admin.forms import CancelamentoOrdemForm
 from plataforma_de_servicos.vendas.admin.forms import RejeicaoOrdemForm
 from plataforma_de_servicos.vendas.models import ItemOrdemCompra
 from plataforma_de_servicos.vendas.models import OrdemCompra
 from plataforma_de_servicos.vendas.models import StatusOrdemCompra
+from plataforma_de_servicos.vendas.models.comissao import StatusComissao
 from plataforma_de_servicos.vendas.services import OrdemCompraService
 from plataforma_de_servicos.vendas.services import OrdemCompraServiceError
 
@@ -81,8 +84,11 @@ class OrdemCompraAdmin(ModelAdmin):
         "email_cliente",
         "telefone_cliente",
         "valor_total",
+        "status",
         "aprovado_por",
         "data_aprovacao",
+        "cancelado_por",
+        "data_cancelamento",
         "created",
         "modified",
     ]
@@ -111,7 +117,15 @@ class OrdemCompraAdmin(ModelAdmin):
         (
             "Status e Aprovacao",
             {
-                "fields": ["status", "corretor", "aprovado_por", "data_aprovacao", "motivo_rejeicao"],
+                "fields": [
+                    "status",
+                    "corretor",
+                    "aprovado_por",
+                    "data_aprovacao",
+                    "motivo_rejeicao",
+                    "cancelado_por",
+                    "data_cancelamento",
+                ],
             },
         ),
         (
@@ -280,6 +294,8 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
         "status",
         "aprovado_por",
         "data_aprovacao",
+        "cancelado_por",
+        "data_cancelamento",
         "created",
         "modified",
     ]
@@ -315,7 +331,15 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
         (
             "Status e Aprovacao",
             {
-                "fields": ["status", "corretor", "aprovado_por", "data_aprovacao", "motivo_rejeicao"],
+                "fields": [
+                    "status",
+                    "corretor",
+                    "aprovado_por",
+                    "data_aprovacao",
+                    "motivo_rejeicao",
+                    "cancelado_por",
+                    "data_cancelamento",
+                ],
             },
         ),
         (
@@ -539,6 +563,29 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
             reverse("gerentes:vendas_ordemcompra_change", args=[object_id]),
         )
 
+    @staticmethod
+    def _resumo_do_estorno(ordem: OrdemCompra) -> dict:
+        """O que o cancelamento de uma ordem aprovada vai desfazer, para a tela de confirmação."""
+        if ordem.status != StatusOrdemCompra.APROVADA:
+            return {"saidas_a_estornar": [], "comissoes_a_cancelar": [], "comissao_paga": False}
+        saidas = (
+            Estoque.objects.filter(
+                ordem_compra=ordem,
+                movimento=Movimento.SAIDA.value,
+                processado=True,
+                estorno__isnull=True,
+            )
+            .select_related("inventario_origem")
+            .prefetch_related("estoque_itens__produto", "estoque_itens__variacao__valores")
+            .order_by("pk")
+        )
+        comissoes = ordem.comissoes.select_related("funcionario").exclude(status=StatusComissao.CANCELADA)
+        return {
+            "saidas_a_estornar": list(saidas),
+            "comissoes_a_cancelar": [c for c in comissoes if c.status != StatusComissao.PAGA],
+            "comissao_paga": any(c.status == StatusComissao.PAGA for c in comissoes),
+        }
+
     @action(
         description="Cancelar",
         url_path="cancelar",
@@ -551,7 +598,9 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
 
         if request.method == "POST" and form.is_valid():
             try:
-                OrdemCompraService.cancelar(ordem, form.cleaned_data.get("motivo", ""))
+                OrdemCompraService.cancelar(
+                    ordem, form.cleaned_data.get("motivo", ""), usuario=request.user,
+                )
                 self.message_user(
                     request,
                     f"Ordem {ordem.numero} cancelada.",
@@ -569,6 +618,7 @@ class OrdemCompraGerenteAdmin(TenantAwareAdminMixin, ModelAdmin):
             "object": ordem,
             "opts": self.model._meta,
             "title": f"Cancelar Ordem {ordem.numero}",
+            **self._resumo_do_estorno(ordem),
         }
         return render(
             request,

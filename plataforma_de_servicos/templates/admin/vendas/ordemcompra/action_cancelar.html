@@ -56,6 +56,35 @@
             </div>
         </div>
 
+        {% if comissao_paga %}
+            <div class="border-b border-base-200 p-4 dark:border-base-800">
+                <p class="font-medium text-red-700 text-sm dark:text-red-400">
+                    {% translate "Esta ordem tem comissão já paga. O cancelamento será recusado até a comissão ser estornada manualmente." %}
+                </p>
+            </div>
+        {% elif saidas_a_estornar or comissoes_a_cancelar %}
+            <div class="border-b border-base-200 p-4 dark:border-base-800">
+                <h2 class="font-semibold mb-3 text-font-important-light dark:text-font-important-dark">
+                    {% translate "O que será desfeito" %}
+                </h2>
+                <ul class="list-disc pl-5 space-y-1 text-sm">
+                    {% for saida in saidas_a_estornar %}
+                        {% for item in saida.estoque_itens.all %}
+                            <li>
+                                {{ item.quantidade }}x {{ item.produto.produto }}{% if item.variacao %} ({{ item.variacao }}){% endif %}
+                                {% blocktranslate with deposito=saida.inventario_origem.nome %}voltam ao depósito {{ deposito }}{% endblocktranslate %}
+                            </li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for comissao in comissoes_a_cancelar %}
+                        <li>
+                            {% blocktranslate with valor=comissao.valor_comissao vendedor=comissao.funcionario %}Comissão de R$ {{ valor }} de {{ vendedor }} será cancelada{% endblocktranslate %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
         <div class="border-b border-base-200 p-4 dark:border-base-800">
             <h2 class="font-semibold mb-3 text-font-important-light dark:text-font-important-dark">
                 {% translate "Dados da Ordem" %}
