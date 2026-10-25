@@ -30,13 +30,18 @@ class EstoqueService:
             ordem_compra: Ordem de compra que originou a saída
             itens_pedido: Lista de dicts com 'produto', 'quantidade', 'variacao' (opcional)
             funcionario: Usuário responsável pela operação
-            inventario_origem: Inventário de origem (se None, usa o principal)
+            inventario_origem: Depósito de origem, da mesma empresa da ordem (obrigatório)
 
         Returns:
             Estoque: Registro de saída criado
+
+        Raises:
+            ValueError: sem depósito ou com depósito de outra empresa
         """
-        if not inventario_origem:
-            inventario_origem = Inventario.objects.first()  # Ou lógica para inventário padrão
+        if inventario_origem is None:
+            raise ValueError("inventario_origem é obrigatório")
+        if inventario_origem.empresa_id != ordem_compra.empresa_id:
+            raise ValueError("depósito de outra empresa")
 
         with transaction.atomic():
             # Criar registro de saída
@@ -74,14 +79,15 @@ class EstoqueService:
             origem: Tipo de origem da saída (OrigemSaida)
             itens: Lista de dicts com 'produto', 'quantidade' e 'variacao' (opcional)
             funcionario: Usuário responsável
-            inventario_origem: Inventário de origem
+            inventario_origem: Depósito de origem (obrigatório); a saída fica na empresa dele
             observacao: Observações adicionais
         """
-        if not inventario_origem:
-            inventario_origem = Inventario.objects.first()
+        if inventario_origem is None:
+            raise ValueError("inventario_origem é obrigatório")
 
         with transaction.atomic():
             saida = Estoque.objects.create(
+                empresa=inventario_origem.empresa,
                 funcionario=funcionario,
                 movimento=Movimento.SAIDA.value,
                 origem_saida=origem,
@@ -129,4 +135,5 @@ class EstoqueService:
             ordem_compra=ordem_compra,
             itens_pedido=itens_pedido,
             funcionario=funcionario,
+            inventario_origem=Inventario.objects.padrao_da_empresa(ordem_compra.empresa),
         )

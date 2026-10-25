@@ -13,6 +13,7 @@ from plataforma_de_servicos.estoque.tests.factories.estoque_itens_factory import
     EstoqueItensFactory,
 )
 from plataforma_de_servicos.inventario.tests.factories import InventarioFactory
+from plataforma_de_servicos.inventario.tests.factories import InventarioSaldoFactory
 from plataforma_de_servicos.produto.tests.factories.categoria_factory import (
     CategoriaFactory,
 )
@@ -47,5 +48,6 @@ register(UserFactory)
 register(EstoqueEntradaFactory)
 register(EstoqueItensFactory)
 register(InventarioFactory)
+register(InventarioSaldoFactory)
 register(InteresseCompraFactory)
 register(ItemInteresseFactory)

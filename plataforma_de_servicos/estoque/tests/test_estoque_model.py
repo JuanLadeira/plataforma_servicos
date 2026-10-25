@@ -46,6 +46,8 @@ class EstoqueModelTest(TestCase):
             categoria=self.categoria
         )
 
+        InventarioSaldo.objects.create(inventario=self.inventario_origem, produto=self.produto, quantidade=15)
+
         self.ordem_compra = OrdemCompraFactory()
 
     def test_criar_saida_com_origem_pedido(self):

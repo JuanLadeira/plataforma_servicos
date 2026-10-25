@@ -97,6 +97,10 @@ class Produto(models.Model):
                 fields=["empresa", "slug"],
                 name="unique_empresa_produto_slug",
             ),
+            models.CheckConstraint(
+                condition=models.Q(estoque__gte=0) | models.Q(estoque__isnull=True),
+                name="produto_estoque_nao_negativo",
+            ),
         ]
 
     def __str__(self):
