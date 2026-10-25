@@ -270,6 +270,11 @@ class CommissionService:
             comissao=comissao,
         )
 
+    @staticmethod
+    def _travar(comissao: Comissao) -> Comissao:
+        """Recarrega a comissão travada, para checar o status gravado e não o da memória."""
+        return Comissao.objects.select_for_update().get(pk=comissao.pk)
+
     @transaction.atomic
     def aprovar_comissao(self, comissao: Comissao) -> CommissionResult:
         """
@@ -281,6 +286,7 @@ class CommissionService:
         Returns:
             CommissionResult com resultado da operação
         """
+        comissao = self._travar(comissao)
         if not comissao.pode_aprovar:
             return CommissionResult(
                 success=False,
@@ -309,6 +315,7 @@ class CommissionService:
         Returns:
             CommissionResult com resultado da operação
         """
+        comissao = self._travar(comissao)
         if not comissao.pode_pagar:
             return CommissionResult(
                 success=False,
@@ -342,6 +349,7 @@ class CommissionService:
         Returns:
             CommissionResult com resultado da operação
         """
+        comissao = self._travar(comissao)
         if not comissao.pode_cancelar:
             return CommissionResult(
                 success=False,
