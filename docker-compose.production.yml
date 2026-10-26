@@ -43,6 +43,8 @@ services:
     image: plataforma_de_servicos_production_traefik
     depends_on:
       - django
+    env_file:
+      - ./.envs/.production/.traefik
     volumes:
       - production_traefik:/etc/traefik/acme
     ports:
