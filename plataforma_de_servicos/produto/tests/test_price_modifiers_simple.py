@@ -3,6 +3,7 @@ Testes unitários simples para modificadores de preço.
 Evita usar factories e foca na funcionalidade core.
 """
 import pytest
+from plataforma_de_servicos.inventario.tests.saldo import dar_saldo
 from decimal import Decimal
 from django.test import TestCase
 
@@ -65,7 +66,6 @@ class TestPriceModifiersCore(TestCase):
         variacao = VariacaoProduto.objects.create(
             produto=self.produto,
             preco=Decimal('100.00'),
-            estoque=10
         )
         variacao.valores.add(valor)
         
@@ -83,7 +83,6 @@ class TestPriceModifiersCore(TestCase):
         variacao = VariacaoProduto.objects.create(
             produto=self.produto,
             preco=Decimal('100.00'),
-            estoque=10
         )
         variacao.valores.add(valor)
         
@@ -102,7 +101,6 @@ class TestPriceModifiersCore(TestCase):
         variacao = VariacaoProduto.objects.create(
             produto=self.produto,
             preco=Decimal('50.00'),
-            estoque=10
         )
         variacao.valores.add(valor)
         
@@ -123,7 +121,6 @@ class TestPriceModifiersCore(TestCase):
         variacao = VariacaoProduto.objects.create(
             produto=self.produto,
             preco=Decimal('80.00'),
-            estoque=10
         )
         variacao.valores.add(valor)
         
@@ -150,7 +147,6 @@ class TestPriceModifiersCore(TestCase):
         variacao = VariacaoProduto.objects.create(
             produto=self.produto,
             preco=Decimal('100.00'),
-            estoque=10
         )
         variacao.valores.add(cor_valor, tam_valor)
         
@@ -170,7 +166,6 @@ class TestPriceModifiersCore(TestCase):
         variacao = VariacaoProduto.objects.create(
             produto=self.produto,
             preco=None,
-            estoque=10
         )
         variacao.valores.add(valor)
         
@@ -197,7 +192,6 @@ class TestPriceModifiersCore(TestCase):
         variacao = VariacaoProduto.objects.create(
             produto=produto_sem_preco,
             preco=None,
-            estoque=10
         )
         variacao.valores.add(valor)
         
@@ -215,7 +209,6 @@ class TestPriceModifiersCore(TestCase):
         variacao = VariacaoProduto.objects.create(
             produto=self.produto,
             preco=Decimal('1000.00'),
-            estoque=10
         )
         variacao.valores.add(valor)
         
@@ -235,7 +228,6 @@ class TestPriceModifiersCore(TestCase):
         variacao = VariacaoProduto.objects.create(
             produto=self.produto,
             preco=Decimal('30.00'),
-            estoque=10
         )
         variacao.valores.add(valor)
         
@@ -261,10 +253,10 @@ class TestPriceModifiersCore(TestCase):
         variacao = VariacaoProduto.objects.create(
             produto=self.produto,
             preco=Decimal('50.00'),
-            estoque=10
         )
         variacao.valores.add(cor_valor, tam_valor)
-        
+        dar_saldo(variacao, 10)
+
         str_repr = str(variacao)
         self.assertIn("Produto Teste", str_repr)
         self.assertIn("Verde", str_repr)

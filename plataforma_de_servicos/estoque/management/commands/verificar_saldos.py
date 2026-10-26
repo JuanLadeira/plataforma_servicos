@@ -13,7 +13,8 @@ LIMITE = 50
 class Command(BaseCommand):
     help = (
         "Lista saldos de estoque negativos, duplicados e divergentes. "
-        "Com --corrigir, junta duplicados e recalcula produto e variação pela soma dos depósitos. "
+        "Com --corrigir, junta duplicados, recalcula produto e variação pela soma dos depósitos e dá "
+        "entrada no depósito padrão para produtos com estoque e sem depósito. "
         "Sai com código 1 quando encontra algum problema."
     )
 
@@ -22,12 +23,19 @@ class Command(BaseCommand):
         parser.add_argument(
             "--corrigir",
             action="store_true",
-            help="recalcula produto e variação pelos depósitos e junta saldos duplicados",
+            help="junta duplicados, recalcula pelas somas e dá entrada para produtos sem depósito",
         )
 
     def handle(self, *args, empresa=None, corrigir=False, **options):
         if corrigir:
-            saldos.corrigir(Produto, VariacaoProduto, InventarioSaldo, empresa)
+            sem_padrao = saldos.corrigir(Produto, VariacaoProduto, InventarioSaldo, empresa)
+            for produto in sem_padrao:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"produto #{produto.pk} {produto.produto}: sem depósito e a empresa não tem "
+                        "depósito padrão; marque um e rode de novo"
+                    )
+                )
             self.stdout.write("Correção aplicada. Verificando de novo...")
         if self._relatorio(empresa):
             sys.exit(1)
@@ -85,9 +93,9 @@ class Command(BaseCommand):
                 for p in saldos.produtos_divergentes(Produto, InventarioSaldo, empresa)
             ),
         )
-        # Só alerta: sem depósito não há de onde recalcular.
-        self._secao(
-            "Aviso: produto com estoque e sem nenhum depósito (não conta como problema)",
+        # A migration da fonte única de saldo (#144) não roda com estes casos.
+        problemas += self._secao(
+            "Produto com estoque e sem nenhum depósito (--corrigir dá entrada no depósito padrão)",
             (
                 f"produto #{p.pk} {p.produto}: estoque={p.estoque}"
                 for p in saldos.produtos_sem_deposito(Produto, InventarioSaldo, empresa)

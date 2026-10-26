@@ -400,16 +400,16 @@ class Command(BaseCommand):
                     empresa, produto, prod_dados.get("atributos", {}), atributos_cache
                 )
 
-                # Criar saldo no inventário para cada variação
+                # Criar saldo no inventário para cada variação.
+                # O estoque da variação e do produto é derivado do saldo pelo
+                # banco (issue #144), não é gravado aqui.
                 for variacao in produto.variacoes.all():
-                    saldo, _ = InventarioSaldo.objects.update_or_create(
+                    InventarioSaldo.objects.update_or_create(
                         inventario=inventario,
                         produto=produto,
+                        variacao=variacao,
                         defaults={"quantidade": 10},  # Estoque inicial
                     )
-                    # Atualiza estoque da variação
-                    variacao.estoque = 10
-                    variacao.save(update_fields=["estoque"])
 
         self.stdout.write(self.style.SUCCESS(f"\n  Empresa {empresa.nome} populada com sucesso!"))
 

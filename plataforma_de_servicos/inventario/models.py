@@ -1,6 +1,5 @@
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db import transaction
 from django.db.models import Q
 from django.utils.translation import gettext as _
 from django_extensions.db.fields import AutoSlugField
@@ -75,19 +74,6 @@ class Inventario(TimeStampedModel):
         super().clean()
         if self.padrao and not self.is_ativo:
             raise ValidationError({"padrao": "O depósito padrão precisa estar ativo."})
-
-    def atualizar_estoque(self, produto, quantidade, variacao=None):
-        with transaction.atomic():
-            saldo, _created = InventarioSaldo.objects.select_for_update().get_or_create(
-                inventario=self,
-                produto=produto,
-                variacao=variacao,
-                defaults={"quantidade": 0},
-            )
-            saldo.quantidade += quantidade
-            if saldo.quantidade < 0:
-                raise ValueError(_("Saldo não pode ser negativo"))
-            saldo.save()
 
 
 class InventarioSaldo(models.Model):

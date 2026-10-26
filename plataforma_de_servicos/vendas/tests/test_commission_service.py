@@ -88,7 +88,6 @@ def produto(empresa, categoria):
         empresa=empresa,
         categoria=categoria,
         ncm="12345678",
-        estoque=10,
     )
 
 

@@ -11,8 +11,6 @@ from plataforma_de_servicos.core.models import TimeStampedModel
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.choices.origem_saida import OrigemSaida
 from plataforma_de_servicos.estoque.exceptions import InventarioSaldoInsuficienteError
-from plataforma_de_servicos.estoque.exceptions import ProdutoSaldoInsuficienteError
-from plataforma_de_servicos.estoque.exceptions import VariacaoSaldoInsuficienteError
 from plataforma_de_servicos.inventario.models import Inventario
 from plataforma_de_servicos.users.models import User
 from plataforma_de_servicos.vendas.models.ordem_compra import OrdemCompra
@@ -131,8 +129,9 @@ class Estoque(TimeStampedModel):
         """Aplica a movimentação aos saldos uma única vez, com as linhas travadas.
 
         Trava a movimentação e depois os saldos em ordem fixa (ver estoque/locks.py).
-        Uma segunda chamada, mesmo concorrente, não faz nada. Qualquer saldo que ficaria
-        negativo (produto, variação ou depósito) levanta o erro e desfaz tudo.
+        Uma segunda chamada, mesmo concorrente, não faz nada. Só o InventarioSaldo é gravado:
+        o estoque de produto e variação é recalculado pelo trigger do banco (issue #144).
+        Um depósito que ficaria negativo levanta o erro e desfaz tudo.
         """
         from plataforma_de_servicos.estoque.locks import travar_saldos
 
@@ -146,10 +145,6 @@ class Estoque(TimeStampedModel):
         travas = travar_saldos(estoque, itens)
         for item in itens:
             estoque._aplicar_item(item, travas)
-        for variacao in travas.variacoes.values():
-            variacao.save(update_fields=["estoque"])
-        for produto in travas.produtos.values():
-            produto.save(update_fields=["estoque"])
         for saldo in travas.saldos.values():
             saldo.save(update_fields=["quantidade", "atualizado_em"])
         estoque.processado = True
@@ -158,7 +153,11 @@ class Estoque(TimeStampedModel):
         log.debug("Estoque %s processado com sucesso", self.pk)
 
     def _aplicar_item(self, item, travas):
-        """Calcula e aplica o item sobre as instâncias travadas, sem gravar produto, variação e saldos."""
+        """Calcula e aplica o item sobre as instâncias travadas, sem gravar os saldos.
+
+        Produto e variação travados só acumulam em memória, para registrar saldo_anterior e
+        saldo do item; no banco quem os atualiza é o trigger, quando os saldos são gravados.
+        """
         produto = travas.produtos[item.produto_id]
         variacao = travas.variacoes.get(item.variacao_id)
         quantidade = item.quantidade
@@ -178,10 +177,6 @@ class Estoque(TimeStampedModel):
         referencia = variacao or produto
         item.saldo_anterior = referencia.estoque or 0
 
-        if variacao is not None and variacao.estoque + delta_total < 0:
-            raise VariacaoSaldoInsuficienteError(variacao, quantidade)
-        if (produto.estoque or 0) + delta_total < 0:
-            raise ProdutoSaldoInsuficienteError(produto.produto, quantidade)
         for chave, delta in deltas.items():
             saldo = travas.saldos[chave]
             if saldo.quantidade + delta < 0:

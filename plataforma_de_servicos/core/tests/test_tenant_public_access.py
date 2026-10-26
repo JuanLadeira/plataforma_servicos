@@ -99,7 +99,6 @@ def produto_autoprime(categoria_autoprime, empresa_autoprime, inventario_autopri
     variacao = VariacaoProduto.objects.create(
         produto=produto,
         preco=55.00,
-        estoque=10,
     )
     variacao.valores.add(valor)
     variacao.gerar_sku()
@@ -109,6 +108,7 @@ def produto_autoprime(categoria_autoprime, empresa_autoprime, inventario_autopri
     InventarioSaldo.objects.create(
         inventario=inventario_autoprime,
         produto=produto,
+        variacao=variacao,
         quantidade=10,
     )
 
@@ -133,7 +133,6 @@ def produto_autolitros(categoria_autolitros, empresa_autolitros, inventario_auto
     variacao = VariacaoProduto.objects.create(
         produto=produto,
         preco=85.00,
-        estoque=50,
     )
     variacao.valores.add(valor)
     variacao.gerar_sku()
@@ -143,6 +142,7 @@ def produto_autolitros(categoria_autolitros, empresa_autolitros, inventario_auto
     InventarioSaldo.objects.create(
         inventario=inventario_autolitros,
         produto=produto,
+        variacao=variacao,
         quantidade=50,
     )
 
