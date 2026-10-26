@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 import pytest
 from django.contrib.admin.sites import AdminSite
 from django.test import RequestFactory
@@ -8,11 +6,9 @@ from plataforma_de_servicos.empresa.tests.factories import EmpresaFactory
 from plataforma_de_servicos.estoque.models import Estoque
 from plataforma_de_servicos.estoque.tests import cenarios
 from plataforma_de_servicos.inventario.models import Inventario
-from plataforma_de_servicos.produto.models.atributos import VariacaoProduto
 from plataforma_de_servicos.users.tests.factories import UserFactory
 from plataforma_de_servicos.vendas.admin.ordem_compra_admin import OrdemCompraAdmin
 from plataforma_de_servicos.vendas.models import Comissao
-from plataforma_de_servicos.vendas.models import ConfiguracaoComissao
 from plataforma_de_servicos.vendas.models import OrdemCompra
 from plataforma_de_servicos.vendas.models import StatusOrdemCompra
 from plataforma_de_servicos.vendas.services.ordem_compra_service import (
@@ -24,40 +20,9 @@ from plataforma_de_servicos.vendas.services.ordem_compra_service import (
 from plataforma_de_servicos.vendas.services.ordem_compra_service import (
     OrdemCompraServiceError,
 )
-from plataforma_de_servicos.vendas.tests.factories import ItemOrdemCompraFactory
-from plataforma_de_servicos.vendas.tests.factories import OrdemCompraFactory
+from plataforma_de_servicos.vendas.tests.cenarios import ordem_com_itens
 
 pytestmark = pytest.mark.django_db
-
-
-def ordem_com_itens(empresa, itens, **kwargs):
-    ordem = OrdemCompraFactory(empresa=empresa, deposito_padrao=False, **kwargs)
-    for alvo, qtd in itens:
-        variacao = alvo if isinstance(alvo, VariacaoProduto) else None
-        produto = variacao.produto if variacao else alvo
-        ItemOrdemCompraFactory(
-            ordem=ordem, produto=produto, variacao=variacao, quantidade=qtd
-        )
-    return ordem
-
-
-@pytest.fixture
-def empresa():
-    empresa = EmpresaFactory()
-    ConfiguracaoComissao.objects.create(
-        empresa=empresa, percentual_padrao=Decimal("5.00")
-    )
-    return empresa
-
-
-@pytest.fixture
-def padrao(empresa):
-    return cenarios.deposito(empresa=empresa, nome="Principal", padrao=True)
-
-
-@pytest.fixture
-def usuario():
-    return UserFactory()
 
 
 def _nada_gravado(ordem):

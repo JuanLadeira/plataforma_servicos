@@ -510,6 +510,43 @@ class TestCancelarComissao:
 
 
 # ============================================
+# Testes: transições checam o status no banco
+# ============================================
+
+
+class TestTransicoesComInstanciaVelha:
+    """A instância recebida pode estar desatualizada; vale o status gravado no banco."""
+
+    @pytest.fixture
+    def comissao_velha(self, service, funcionario, ordem_compra, configuracao_comissao):
+        """Comissão PENDENTE em memória, mas já CANCELADA no banco."""
+        comissao = service.criar_comissao(ordem_compra, funcionario).comissao
+        Comissao.objects.filter(pk=comissao.pk).update(status=StatusComissao.CANCELADA)
+        return comissao
+
+    def test_aprovar_comissao_ja_cancelada_falha(self, service, comissao_velha):
+        result = service.aprovar_comissao(comissao_velha)
+
+        assert result.success is False
+        assert Comissao.objects.get(pk=comissao_velha.pk).status == StatusComissao.CANCELADA
+
+    def test_cancelar_comissao_ja_cancelada_falha(self, service, comissao_velha):
+        result = service.cancelar_comissao(comissao_velha, motivo="de novo")
+
+        assert result.success is False
+        assert "de novo" not in Comissao.objects.get(pk=comissao_velha.pk).observacoes
+
+    def test_pagar_comissao_ja_cancelada_falha(self, service, comissao_velha):
+        Comissao.objects.filter(pk=comissao_velha.pk).update(status=StatusComissao.CANCELADA)
+        comissao_velha.status = StatusComissao.APROVADA
+
+        result = service.pagar_comissao(comissao_velha)
+
+        assert result.success is False
+        assert Comissao.objects.get(pk=comissao_velha.pk).status == StatusComissao.CANCELADA
+
+
+# ============================================
 # Testes: listar_comissoes_pendentes
 # ============================================
 

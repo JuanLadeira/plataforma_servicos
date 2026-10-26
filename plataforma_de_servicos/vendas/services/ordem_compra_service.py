@@ -17,9 +17,12 @@ from django.utils import timezone
 
 from plataforma_de_servicos.corretor.models import InteresseCompra
 from plataforma_de_servicos.corretor.models import StatusInteresse
+from plataforma_de_servicos.estoque.choices.movimento import Movimento
+from plataforma_de_servicos.estoque.choices.origem_saida import OrigemSaida
 from plataforma_de_servicos.estoque.exceptions import InventarioSaldoInsuficienteError
 from plataforma_de_servicos.estoque.exceptions import ProdutoSaldoInsuficienteError
 from plataforma_de_servicos.estoque.exceptions import VariacaoSaldoInsuficienteError
+from plataforma_de_servicos.estoque.models import Estoque
 from plataforma_de_servicos.estoque.services import EstoqueService
 from plataforma_de_servicos.inventario.exceptions import InventarioPadraoAusenteError
 from plataforma_de_servicos.inventario.models import Inventario
@@ -27,9 +30,11 @@ from plataforma_de_servicos.inventario.models import InventarioSaldo
 from plataforma_de_servicos.produto.models import Produto
 from plataforma_de_servicos.produto.models import VariacaoProduto
 from plataforma_de_servicos.users.models import User
+from plataforma_de_servicos.vendas.models import Comissao
 from plataforma_de_servicos.vendas.models import ItemOrdemCompra
 from plataforma_de_servicos.vendas.models import OrdemCompra
 from plataforma_de_servicos.vendas.models import StatusOrdemCompra
+from plataforma_de_servicos.vendas.models.comissao import StatusComissao
 
 if TYPE_CHECKING:
     from plataforma_de_servicos.empresa.models import Empresa
@@ -41,6 +46,10 @@ class OrdemCompraServiceError(Exception):
 
 class EstoqueInsuficienteError(OrdemCompraServiceError):
     """Erro quando não há estoque suficiente para aprovar a ordem."""
+
+
+class ComissaoPagaError(OrdemCompraServiceError):
+    """A ordem tem comissão já paga; o cancelamento exige estorno manual da comissão antes."""
 
 
 ERROS_DE_SALDO = (
@@ -588,19 +597,24 @@ class OrdemCompraService:
 
     @staticmethod
     @transaction.atomic
-    def cancelar(ordem: OrdemCompra, motivo: str = "") -> OrdemCompra:
+    def cancelar(ordem: OrdemCompra, motivo: str = "", usuario: User | None = None) -> OrdemCompra:
         """
         Cancela a ordem de compra.
+
+        Se a ordem já estava aprovada, desfaz a aprovação na mesma transação:
+        devolve o estoque baixado ao depósito de onde saiu e cancela as comissões.
 
         Args:
             ordem: OrdemCompra a ser cancelada
             motivo: Motivo do cancelamento (opcional)
+            usuario: Usuário que está cancelando (opcional)
 
         Returns:
             OrdemCompra: Ordem atualizada
 
         Raises:
             OrdemCompraServiceError: Se a ordem não puder ser cancelada
+            ComissaoPagaError: Se a ordem aprovada tiver comissão já paga
         """
         travada = OrdemCompraService._travar(ordem)
         if not travada.pode_cancelar:
@@ -608,13 +622,60 @@ class OrdemCompraService:
                 f"Ordem {travada.numero} não pode ser cancelada. Status atual: {travada.get_status_display()}",
             )
 
+        if travada.status == StatusOrdemCompra.APROVADA:
+            OrdemCompraService.desfazer_aprovacao(travada, motivo, usuario)
+
         travada.status = StatusOrdemCompra.CANCELADA
+        travada.cancelado_por = usuario
+        travada.data_cancelamento = timezone.now()
         if motivo:
             travada.observacoes = f"{travada.observacoes}\n\nCancelamento: {motivo}".strip()
-        travada.save(update_fields=["status", "observacoes", "modified"])
+        travada.save(
+            update_fields=["status", "observacoes", "cancelado_por", "data_cancelamento", "modified"],
+        )
 
         ordem.refresh_from_db()
         return ordem
+
+    @staticmethod
+    def desfazer_aprovacao(travada: OrdemCompra, motivo: str = "", usuario: User | None = None) -> None:
+        """
+        Devolve o estoque baixado pela aprovação e cancela as comissões da ordem.
+
+        Precisa rodar numa transação, com a ordem já travada. Trava as comissões
+        antes dos saldos; os saldos são travados por Estoque.processar().
+        Saídas que já têm estorno são ignoradas.
+
+        Raises:
+            ComissaoPagaError: Se alguma comissão da ordem já foi paga (nada é gravado)
+        """
+        from plataforma_de_servicos.vendas.services.commission_service import CommissionService
+
+        comissoes = list(Comissao.objects.select_for_update().filter(ordem=travada).order_by("pk"))
+        if any(c.status == StatusComissao.PAGA for c in comissoes):
+            raise ComissaoPagaError(
+                f"Ordem {travada.numero} tem comissão já paga. Estorne a comissão antes de cancelar.",
+            )
+
+        saidas = Estoque.objects.filter(
+            ordem_compra=travada,
+            movimento=Movimento.SAIDA.value,
+            origem_saida=OrigemSaida.PEDIDO.value,
+            processado=True,
+            estorno__isnull=True,
+        ).order_by("pk")
+        for saida in saidas:
+            EstoqueService.criar_estorno_de_saida(
+                saida,
+                funcionario=usuario,
+                observacao=f"Estorno do cancelamento da ordem {travada.numero}",
+            )
+
+        servico = CommissionService(travada.empresa)
+        texto = f"Ordem {travada.numero} cancelada" + (f": {motivo}" if motivo else "")
+        for comissao in comissoes:
+            if comissao.pode_cancelar:
+                servico.cancelar_comissao(comissao, texto)
 
     @staticmethod
     @transaction.atomic
