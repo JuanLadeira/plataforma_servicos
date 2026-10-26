@@ -24,14 +24,22 @@ certificatesResolvers:
     acme:
       email: 'ladeirajuan96@gmail.com'
       storage: /etc/traefik/acme/acme.json
-      # https://doc.traefik.io/traefik/https/acme/#httpchallenge
-      httpChallenge:
-        entryPoint: web
+      # DNS challenge via API da Hostinger (HOSTINGER_API_TOKEN em .envs/.production/.traefik).
+      # Permite o certificado curinga *.dominio: todo tenant novo já nasce com HTTPS.
+      # https://go-acme.github.io/lego/dns/hostinger/
+      dnsChallenge:
+        provider: hostinger
+        resolvers:
+          - '1.1.1.1:53'
+          - '8.8.8.8:53'
+        propagation:
+          delayBeforeChecks: 30s
 
 http:
   routers:
+    # Domínio principal e qualquer subdomínio de tenant (xn--ladeirasolues-sgb4s.tech = ladeirasoluções.tech)
     web-secure-router:
-      rule: 'Host(`example.com`) || Host(`www.example.com`)'
+      rule: 'Host(`xn--ladeirasolues-sgb4s.tech`) || HostRegexp(`^[a-z0-9-]+\.xn--ladeirasolues-sgb4s\.tech$`)'
       entryPoints:
         - web-secure
       middlewares:
@@ -40,18 +48,21 @@ http:
       tls:
         # https://doc.traefik.io/traefik/routing/routers/#certresolver
         certResolver: letsencrypt
+        domains:
+          - main: 'xn--ladeirasolues-sgb4s.tech'
+            sans:
+              - '*.xn--ladeirasolues-sgb4s.tech'
 
     flower-secure-router:
-      rule: 'Host(`example.com`)'
+      rule: 'Host(`xn--ladeirasolues-sgb4s.tech`)'
       entryPoints:
         - flower
       service: flower
       tls:
-        # https://doc.traefik.io/traefik/master/routing/routers/#certresolver
         certResolver: letsencrypt
 
     web-media-router:
-      rule: '(Host(`example.com`) || Host(`www.example.com`)) && PathPrefix(`/media/`)'
+      rule: '(Host(`xn--ladeirasolues-sgb4s.tech`) || HostRegexp(`^[a-z0-9-]+\.xn--ladeirasolues-sgb4s\.tech$`)) && PathPrefix(`/media/`)'
       entryPoints:
         - web-secure
       middlewares:
