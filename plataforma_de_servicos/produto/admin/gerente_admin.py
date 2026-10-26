@@ -45,28 +45,13 @@ class InventarioSaldoInline(TabularInline):
 
 
 class VariacaoProdutoInlineFormSet(BaseInlineFormSet):
-    """Formset customizado que valida a soma do estoque das variações e a seleção de atributos."""
+    """Formset customizado que valida a seleção de atributos das variações."""
 
     def clean(self):
         super().clean()
 
         if not self.instance or not self.instance.pk:
             return
-
-        # Validação de estoque
-        produto_estoque = self.instance.estoque or 0
-        if produto_estoque > 0:
-            total_variacao_estoque = 0
-            for form in self.forms:
-                if form.cleaned_data and not form.cleaned_data.get("DELETE", False):
-                    estoque = form.cleaned_data.get("estoque", 0) or 0
-                    total_variacao_estoque += estoque
-
-            if total_variacao_estoque > produto_estoque:
-                raise forms.ValidationError(
-                    f"O estoque total das variações ({total_variacao_estoque}) "
-                    f"não pode exceder o estoque do produto ({produto_estoque}).",
-                )
 
         # Validação de múltipla seleção por atributo
         for form in self.forms:
@@ -260,11 +245,10 @@ class ProdutoGerenteAdmin(RBACAdminMixin, TenantAwareAdminMixin, ImportExportMod
                 "fields": [
                     "estoque_display",
                     "estoque_variacoes_display",
-                    "estoque_disponivel_display",
                 ],
                 "description": (
-                    "O estoque total do produto é gerenciado pelo sistema de movimentações de estoque (Entrada/Saída). "
-                    "A soma do estoque de todas as variações não pode exceder o estoque total do produto."
+                    "O estoque é a soma dos saldos nos depósitos e só muda por movimentação de estoque "
+                    "(entrada, saída ou transferência)."
                 ),
             },
         ),
@@ -283,7 +267,7 @@ class ProdutoGerenteAdmin(RBACAdminMixin, TenantAwareAdminMixin, ImportExportMod
         ),
     ]
     inlines = [InventarioSaldoInline, ImageInline, VariacaoProdutoInline]
-    readonly_fields = ["data", "estoque_display", "estoque_variacoes_display", "estoque_disponivel_display"]
+    readonly_fields = ["data", "estoque_display", "estoque_variacoes_display"]
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -296,34 +280,17 @@ class ProdutoGerenteAdmin(RBACAdminMixin, TenantAwareAdminMixin, ImportExportMod
 
     @admin.display(description="Estoque Total do Produto")
     def estoque_display(self, obj):
-        """Mostra o estoque total do produto (gerenciado via movimentações)."""
+        """Estoque total do produto: soma dos saldos em todos os depósitos."""
         if obj.pk:
-            estoque = obj.estoque or 0
-            if estoque == 0:
-                return "Não definido (sem limite para variações)"
-            return str(estoque)
+            return str(obj.estoque or 0)
         return "-"
 
-    @admin.display(description="Estoque Alocado nas Variações")
+    @admin.display(description="Estoque das Variações")
     def estoque_variacoes_display(self, obj):
         """Mostra a soma do estoque de todas as variações."""
         if obj.pk:
             total = sum(v.estoque or 0 for v in obj.variacoes.all())
             return str(total)
-        return "-"
-
-    @admin.display(description="Estoque Disponível para Alocar")
-    def estoque_disponivel_display(self, obj):
-        """Mostra quanto estoque ainda pode ser alocado nas variações."""
-        if obj.pk:
-            estoque_produto = obj.estoque or 0
-            if estoque_produto == 0:
-                return "Sem limite definido"
-            total_variacoes = sum(v.estoque or 0 for v in obj.variacoes.all())
-            disponivel = estoque_produto - total_variacoes
-            if disponivel < 0:
-                return f"{disponivel} (EXCEDIDO!)"
-            return str(disponivel)
         return "-"
 
     # Manter outras configurações do ModelAdmin

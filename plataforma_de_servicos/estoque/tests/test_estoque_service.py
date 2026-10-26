@@ -7,7 +7,7 @@ from django.test import TestCase
 from plataforma_de_servicos.empresa.tests.factories import EmpresaFactory
 from plataforma_de_servicos.estoque.choices.movimento import Movimento
 from plataforma_de_servicos.estoque.choices.origem_saida import OrigemSaida
-from plataforma_de_servicos.estoque.exceptions import ProdutoSaldoInsuficienteError
+from plataforma_de_servicos.estoque.exceptions import InventarioSaldoInsuficienteError
 from plataforma_de_servicos.estoque.models import Estoque
 from plataforma_de_servicos.estoque.models import EstoqueItens
 from plataforma_de_servicos.estoque.services import EstoqueService
@@ -43,14 +43,12 @@ class EstoqueServiceTest(TestCase):
         self.produto1 = Produto.objects.create(
             produto="Notebook Dell",
             preco=Decimal("1500.00"),
-            estoque=10,
             categoria=self.categoria,
         )
 
         self.produto2 = Produto.objects.create(
             produto="Mouse",
             preco=Decimal("50.00"),
-            estoque=20,
             categoria=self.categoria,
         )
 
@@ -58,7 +56,6 @@ class EstoqueServiceTest(TestCase):
             produto=self.produto1,
             sku="DELL001",
             preco=Decimal("1600.00"),
-            estoque=5,
         )
 
         InventarioSaldo.objects.create(inventario=self.inventario, produto=self.produto1, quantidade=5)
@@ -66,6 +63,8 @@ class EstoqueServiceTest(TestCase):
             inventario=self.inventario, produto=self.produto1, variacao=self.variacao, quantidade=5,
         )
         InventarioSaldo.objects.create(inventario=self.inventario, produto=self.produto2, quantidade=20)
+        for obj in (self.produto1, self.produto2, self.variacao):
+            obj.refresh_from_db()
 
     def test_criar_saida_por_ordem_compra(self):
         """Testar criação de saída de estoque para ordem de compra"""
@@ -152,8 +151,7 @@ class EstoqueServiceTest(TestCase):
         self.assertEqual(self.variacao.estoque, estoque_inicial_variacao - 2)  # 5 - 2 = 3
 
     def test_criar_saida_variacao_estoque_insuficiente(self):
-        """Testar que saída falha quando variação tem estoque insuficiente."""
-        from plataforma_de_servicos.estoque.exceptions import VariacaoSaldoInsuficienteError
+        """Testar que saída falha quando o depósito não tem saldo da variação."""
 
         itens_pedido = [
             {
@@ -163,7 +161,7 @@ class EstoqueServiceTest(TestCase):
             },
         ]
 
-        with self.assertRaises(VariacaoSaldoInsuficienteError):
+        with self.assertRaises(InventarioSaldoInsuficienteError):
             EstoqueService.criar_saida_por_ordem_compra(
                 ordem_compra=self.ordem_compra,
                 itens_pedido=itens_pedido,
@@ -272,7 +270,6 @@ class EstoqueServiceTest(TestCase):
         produto_sem_estoque = Produto.objects.create(
             produto="Produto Sem Estoque",
             preco=Decimal("100.00"),
-            estoque=0,
             categoria=self.categoria,
         )
 
@@ -280,7 +277,7 @@ class EstoqueServiceTest(TestCase):
         itens_pedido = [{"produto": produto_sem_estoque, "quantidade": 5, "variacao": None}]
 
         # Tentar criar saída deve falhar por estoque insuficiente
-        with self.assertRaises(ProdutoSaldoInsuficienteError):
+        with self.assertRaises(InventarioSaldoInsuficienteError):
             EstoqueService.criar_saida_por_ordem_compra(
                 ordem_compra=ordem,
                 itens_pedido=itens_pedido,

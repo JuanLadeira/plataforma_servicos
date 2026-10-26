@@ -261,6 +261,7 @@ class TestOrdemCompraServiceCancelar:
         ordem = OrdemCompraService.cancelar(ordem)
 
         assert ordem.status == StatusOrdemCompra.CANCELADA
+        assert ordem.data_cancelamento is not None
 
     def test_cancelar_ordem_faturada_erro(self):
         ordem = OrdemCompraFactory(status=StatusOrdemCompra.FATURADA)

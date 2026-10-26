@@ -136,7 +136,8 @@ class ProdutoResource(resources.ModelResource):
     - empresa: Slug da empresa (obrigatório para import)
     - ncm: Código NCM (obrigatório)
     - preco: Preço do produto
-    - estoque: Quantidade em estoque
+    - estoque: Quantidade em estoque (só exportação: é a soma dos saldos nos
+      depósitos e só muda por movimentação de estoque, issue #144)
     - estoque_minimo: Estoque mínimo
     - disponivel: True/False
     - importado: True/False
@@ -155,6 +156,7 @@ class ProdutoResource(resources.ModelResource):
         attribute="empresa",
         widget=ForeignKeyWidget(Empresa, field="slug"),
     )
+    estoque = fields.Field(column_name="estoque", attribute="estoque", readonly=True)
 
     class Meta:
         model = Produto
@@ -264,7 +266,7 @@ class VariacaoProdutoResource(resources.ModelResource):
     - empresa: Slug da empresa (para filtrar produto)
     - sku: SKU da variação (opcional - gerado automaticamente)
     - preco: Preço específico da variação (opcional)
-    - estoque: Quantidade em estoque
+    - estoque: Quantidade em estoque (só exportação, ver ProdutoResource)
     - valores: Valores de atributo no formato "Atributo:Valor, Atributo:Valor"
               Ex: "Cor:Vermelho, Tamanho:P"
 
@@ -289,6 +291,7 @@ class VariacaoProdutoResource(resources.ModelResource):
         attribute="valores",
         widget=ValorAtributoM2MWidget(ValorAtributo, separator=","),
     )
+    estoque = fields.Field(column_name="estoque", attribute="estoque", readonly=True)
 
     class Meta:
         model = VariacaoProduto

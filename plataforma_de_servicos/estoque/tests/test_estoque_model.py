@@ -42,11 +42,11 @@ class EstoqueModelTest(TestCase):
         self.produto = Produto.objects.create(
             produto="Monitor",
             preco=Decimal("500.00"),
-            estoque=15,
             categoria=self.categoria
         )
 
         InventarioSaldo.objects.create(inventario=self.inventario_origem, produto=self.produto, quantidade=15)
+        self.produto.refresh_from_db()
 
         self.ordem_compra = OrdemCompraFactory()
 
@@ -264,7 +264,6 @@ class EstoqueInventarioSaldoVariacaoTest(TestCase):
         self.produto = Produto.objects.create(
             produto="Camiseta",
             preco=Decimal("50.00"),
-            estoque=0,
             categoria=self.categoria
         )
 
@@ -323,9 +322,7 @@ class EstoqueInventarioSaldoVariacaoTest(TestCase):
 
     def test_saida_com_variacao_decrementa_saldo_correto(self):
         """Testar que saída com variação decrementa o saldo da variação correta."""
-        variacao = VariacaoProdutoFactory(produto=self.produto, estoque=20)
-        self.produto.estoque = 20
-        self.produto.save()
+        variacao = VariacaoProdutoFactory(produto=self.produto, estoque=0)
 
         # Criar saldo inicial
         InventarioSaldo.objects.create(
@@ -417,9 +414,7 @@ class EstoqueInventarioSaldoVariacaoTest(TestCase):
     def test_transferencia_com_variacao(self):
         """Testar transferência entre inventários mantém variação."""
         inventario_destino = Inventario.objects.create(nome="Destino")
-        variacao = VariacaoProdutoFactory(produto=self.produto, estoque=30)
-        self.produto.estoque = 30
-        self.produto.save()
+        variacao = VariacaoProdutoFactory(produto=self.produto, estoque=0)
 
         # Criar saldo inicial na origem
         InventarioSaldo.objects.create(

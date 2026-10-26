@@ -18,3 +18,17 @@ def sem_constraints_de_saldo(db):
             )
             for (nome,) in cursor.fetchall():
                 cursor.execute(f'ALTER TABLE {tabela} DROP CONSTRAINT "{nome}"')
+
+
+@pytest.fixture
+def sem_trigger_de_saldo(db):
+    """Remove, só dentro do teste, os triggers da fonte única de saldo (issue #144).
+
+    Serve para simular dados de antes da migration, quando produto e variação guardavam
+    cópias que podiam divergir dos depósitos. O DDL é desfeito no rollback do teste.
+    """
+    with connection.cursor() as cursor:
+        cursor.execute("DROP TRIGGER sincronizar_estoque_saldo ON inventario_inventariosaldo")
+        cursor.execute("DROP TRIGGER guardar_estoque_derivado ON produto_produto")
+        cursor.execute("DROP TRIGGER guardar_estoque_derivado ON produto_variacaoproduto")
+

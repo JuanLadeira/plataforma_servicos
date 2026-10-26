@@ -4,6 +4,7 @@ from django.urls import reverse
 from django_extensions.db.models import AutoSlugField
 
 from .categoria_model import Categoria
+from .estoque_derivado import EstoqueDerivadoMixin
 from .produto_model import Produto
 
 
@@ -103,7 +104,7 @@ class ValorAtributo(models.Model):
             )
 
 
-class VariacaoProduto(models.Model):
+class VariacaoProduto(EstoqueDerivadoMixin, models.Model):
     """
     Representa uma variação específica de um produto (SKU),
     baseada em uma combinação de valores de atributos.

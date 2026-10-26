@@ -50,6 +50,17 @@ class ProdutoFactory(DjangoModelFactory):
     data = LazyFunction(timezone.now)
     categoria = factory.SubFactory(CategoriaFactory)
 
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        # estoque é derivado do InventarioSaldo (issue #144): vira saldo no depósito de teste.
+        estoque = kwargs.pop("estoque", 0) or 0
+        produto = super()._create(model_class, *args, **kwargs)
+        if estoque:
+            from plataforma_de_servicos.inventario.tests.saldo import dar_saldo
+
+            dar_saldo(produto, estoque)
+        return produto
+
     @factory.lazy_attribute 
     def produto(self):
         # Otimização: buscar todos os produtos existentes de uma vez

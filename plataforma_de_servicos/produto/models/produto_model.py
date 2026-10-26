@@ -5,6 +5,7 @@ from django_extensions.db.models import AutoSlugField
 from django.templatetags.static import static
 
 from plataforma_de_servicos.produto.models.categoria_model import Categoria
+from plataforma_de_servicos.produto.models.estoque_derivado import EstoqueDerivadoMixin
 
 
 class OrderField(models.PositiveIntegerField):
@@ -55,7 +56,7 @@ class Image(models.Model):
         return f"Produto: {self.produto} - Imagem: {self.id}"
 
 
-class Produto(models.Model):
+class Produto(EstoqueDerivadoMixin, models.Model):
     empresa = models.ForeignKey(
         "empresa.Empresa",
         on_delete=models.CASCADE,

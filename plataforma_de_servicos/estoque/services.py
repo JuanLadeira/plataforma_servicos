@@ -71,6 +71,48 @@ class EstoqueService:
             return saida
 
     @staticmethod
+    def criar_estorno_de_saida(saida: Estoque, funcionario: User = None, observacao: str = "") -> Estoque:
+        """
+        Cria e processa a entrada que devolve ao depósito de origem tudo o que a saída baixou.
+
+        Args:
+            saida: Saída já processada
+            funcionario: Usuário responsável pelo estorno
+            observacao: Observação da entrada (padrão: "Estorno da saída #<pk>")
+
+        Returns:
+            Estoque: Entrada de estorno, já processada
+
+        Raises:
+            ValueError: se não for uma saída processada ou se ela já tiver estorno
+        """
+        if saida.movimento != Movimento.SAIDA.value or not saida.processado:
+            raise ValueError("só uma saída processada pode ser estornada")
+        if Estoque.objects.filter(estorno_de=saida).exists():
+            raise ValueError(f"saída #{saida.pk} já estornada")
+
+        with transaction.atomic():
+            entrada = Estoque.objects.create(
+                empresa=saida.empresa,
+                funcionario=funcionario,
+                movimento=Movimento.ENTRADA.value,
+                ordem_compra=saida.ordem_compra,
+                inventario_destino=saida.inventario_origem,
+                estorno_de=saida,
+                observacao=observacao or f"Estorno da saída #{saida.pk}",
+            )
+            for item in saida.estoque_itens.order_by("pk"):
+                EstoqueItens.objects.create(
+                    estoque=entrada,
+                    produto_id=item.produto_id,
+                    variacao_id=item.variacao_id,
+                    quantidade=item.quantidade,
+                    inventario=saida.inventario_origem,
+                )
+            entrada.processar()
+            return entrada
+
+    @staticmethod
     def criar_saida_manual(origem: str, itens: list, funcionario: User, inventario_origem: Inventario = None, observacao: str = ""):
         """
         Cria uma saída de estoque manual (perda, ajuste, etc.)

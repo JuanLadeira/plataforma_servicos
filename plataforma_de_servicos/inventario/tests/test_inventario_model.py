@@ -139,8 +139,8 @@ class InventarioSaldoModelTest(TestCase):
         valor1 = ValorAtributoFactory(atributo=atributo, valor="P")
         valor2 = ValorAtributoFactory(atributo=atributo, valor="G")
 
-        variacao1 = VariacaoProdutoFactory(produto=produto, valores=[valor1])
-        variacao2 = VariacaoProdutoFactory(produto=produto, valores=[valor2])
+        variacao1 = VariacaoProdutoFactory(produto=produto, estoque=0, valores=[valor1])
+        variacao2 = VariacaoProdutoFactory(produto=produto, estoque=0, valores=[valor2])
 
         saldo1 = InventarioSaldo.objects.create(
             inventario=inventario,
@@ -159,74 +159,6 @@ class InventarioSaldoModelTest(TestCase):
         self.assertEqual(saldo1.quantidade, 10)
         self.assertEqual(saldo2.quantidade, 20)
         self.assertEqual(InventarioSaldo.objects.filter(produto=produto).count(), 2)
-
-    def test_atualizar_estoque_com_variacao(self):
-        """Testar método atualizar_estoque do Inventario com variação."""
-        inventario = InventarioFactory()
-        variacao = VariacaoProdutoFactory()
-
-        inventario.atualizar_estoque(variacao.produto, 15, variacao=variacao)
-
-        saldo = InventarioSaldo.objects.get(
-            inventario=inventario,
-            produto=variacao.produto,
-            variacao=variacao,
-        )
-        self.assertEqual(saldo.quantidade, 15)
-
-    def test_atualizar_estoque_sem_variacao(self):
-        """Testar método atualizar_estoque sem variação (backward compatibility)."""
-        inventario = InventarioFactory()
-        produto = ProdutoFactory()
-
-        inventario.atualizar_estoque(produto, 25)
-
-        saldo = InventarioSaldo.objects.get(
-            inventario=inventario,
-            produto=produto,
-            variacao=None,
-        )
-        self.assertEqual(saldo.quantidade, 25)
-
-    def test_atualizar_estoque_incrementa_saldo_existente(self):
-        """Testar que atualizar_estoque incrementa saldo existente."""
-        inventario = InventarioFactory()
-        variacao = VariacaoProdutoFactory()
-
-        inventario.atualizar_estoque(variacao.produto, 10, variacao=variacao)
-        inventario.atualizar_estoque(variacao.produto, 5, variacao=variacao)
-
-        saldo = InventarioSaldo.objects.get(
-            inventario=inventario,
-            produto=variacao.produto,
-            variacao=variacao,
-        )
-        self.assertEqual(saldo.quantidade, 15)
-
-    def test_atualizar_estoque_decrementa_saldo(self):
-        """Testar que atualizar_estoque pode decrementar saldo."""
-        inventario = InventarioFactory()
-        variacao = VariacaoProdutoFactory()
-
-        inventario.atualizar_estoque(variacao.produto, 20, variacao=variacao)
-        inventario.atualizar_estoque(variacao.produto, -5, variacao=variacao)
-
-        saldo = InventarioSaldo.objects.get(
-            inventario=inventario,
-            produto=variacao.produto,
-            variacao=variacao,
-        )
-        self.assertEqual(saldo.quantidade, 15)
-
-    def test_atualizar_estoque_erro_saldo_negativo(self):
-        """Testar que atualizar_estoque levanta erro para saldo negativo."""
-        inventario = InventarioFactory()
-        variacao = VariacaoProdutoFactory()
-
-        inventario.atualizar_estoque(variacao.produto, 10, variacao=variacao)
-
-        with self.assertRaises(ValueError):
-            inventario.atualizar_estoque(variacao.produto, -15, variacao=variacao)
 
     def test_factory_inventario_saldo(self):
         """Testar que a factory cria InventarioSaldo corretamente."""

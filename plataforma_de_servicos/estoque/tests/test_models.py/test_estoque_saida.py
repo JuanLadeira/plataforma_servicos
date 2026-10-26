@@ -1,6 +1,6 @@
 import pytest
 
-from plataforma_de_servicos.estoque.exceptions import ProdutoSaldoInsuficienteError
+from plataforma_de_servicos.estoque.exceptions import InventarioSaldoInsuficienteError
 from plataforma_de_servicos.estoque.serializers.estoque_saida_serializer import (
     EstoqueSaidaPostSerializer,
 )
@@ -10,8 +10,8 @@ pytestmark = [pytest.mark.django_db(transaction=True), pytest.mark.estoque]
 
 class TestEstoquesaida:
     def test_estoque_saida(self, produto_factory, user_factory, inventario_factory, inventario_saldo_factory):
-        produto = produto_factory(estoque=1)
-        produto_2 = produto_factory(estoque=2)
+        produto = produto_factory()
+        produto_2 = produto_factory()
         funcionario = user_factory()
         inventario = inventario_factory()
         inventario_saldo_factory(inventario=inventario, produto=produto, quantidade=1)
@@ -99,7 +99,7 @@ class TestEstoquesaida:
         estoque_saida_serializer_class = EstoqueSaidaPostSerializer
         serializer = estoque_saida_serializer_class(data=dados_saida)
         assert serializer.is_valid(raise_exception=True)
-        with pytest.raises(ProdutoSaldoInsuficienteError):
+        with pytest.raises(InventarioSaldoInsuficienteError):
             serializer.save()
 
         assert produto.estoque == zero

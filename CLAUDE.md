@@ -274,6 +274,8 @@ djlint templates/      # Template linting
 
 6. **Service Layer:** Business logic in services (e.g., `InteresseCompraService`)
 
+7. **Single stock source (#144):** `InventarioSaldo` is the only stock written by code. `Produto.estoque` and `VariacaoProduto.estoque` are kept by Postgres triggers (`inventario/sql/fonte_unica_saldo.sql`) and the DB rejects direct writes. Change stock only through an `Estoque` movement (`processar()`); in tests use `inventario/tests/saldo.py::dar_saldo` or factories with `estoque=N`. Deploy: run `verificar_saldos` (and `--corrigir`) before `migrate`.
+
 ## File Reference
 
 | Purpose | Path |

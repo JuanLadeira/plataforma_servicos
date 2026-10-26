@@ -6,6 +6,7 @@ from plataforma_de_servicos.produto.models import VariacaoProduto
 from plataforma_de_servicos.produto.tests.factories import AtributoFactory
 from plataforma_de_servicos.produto.tests.factories import ProdutoFactory
 from plataforma_de_servicos.produto.tests.factories import ValorAtributoFactory
+from plataforma_de_servicos.produto.tests.factories import VariacaoProdutoFactory
 
 
 @pytest.fixture
@@ -25,118 +26,6 @@ def atributo_tamanho(db, produto_com_estoque):
     return atributo
 
 
-class TestVariacaoProdutoInlineFormSet:
-    """Testes para validação do estoque entre produto e variações."""
-
-    def test_variacao_estoque_soma_igual_produto_estoque_valido(
-        self, produto_com_estoque, atributo_tamanho,
-    ):
-        """
-        Quando a soma do estoque das variações é igual ao estoque do produto,
-        deve ser válido.
-        """
-        produto = produto_com_estoque
-        valor_pequeno = atributo_tamanho.valores.get(valor="Pequeno")
-        valor_grande = atributo_tamanho.valores.get(valor="Grande")
-
-        # Criar variações com estoque total = 10 (5 + 5)
-        var1 = VariacaoProduto.objects.create(produto=produto, estoque=5)
-        var1.valores.add(valor_pequeno)
-
-        var2 = VariacaoProduto.objects.create(produto=produto, estoque=5)
-        var2.valores.add(valor_grande)
-
-        # Verificar que o total é válido
-        total = sum(v.estoque or 0 for v in produto.variacoes.all())
-        assert total == 10
-        assert total <= produto.estoque
-
-    def test_variacao_estoque_soma_menor_produto_estoque_valido(
-        self, produto_com_estoque, atributo_tamanho,
-    ):
-        """
-        Quando a soma do estoque das variações é menor que o estoque do produto,
-        deve ser válido.
-        """
-        produto = produto_com_estoque
-        valor_pequeno = atributo_tamanho.valores.get(valor="Pequeno")
-
-        # Criar variação com estoque = 3 (menor que 10)
-        var1 = VariacaoProduto.objects.create(produto=produto, estoque=3)
-        var1.valores.add(valor_pequeno)
-
-        total = sum(v.estoque or 0 for v in produto.variacoes.all())
-        assert total == 3
-        assert total < produto.estoque
-
-    def test_produto_sem_estoque_permite_variacoes_sem_limite(self, db):
-        """
-        Quando o produto não tem estoque definido (0 ou None),
-        as variações podem ter qualquer estoque.
-        """
-        produto = ProdutoFactory(estoque=0)
-        # Cria atributo com a mesma categoria do produto
-        atributo_tamanho = AtributoFactory(nome="Tamanho", categoria=produto.categoria)
-        valor_pequeno = ValorAtributoFactory(atributo=atributo_tamanho, valor="Pequeno")
-
-        # Criar variação com estoque alto
-        var1 = VariacaoProduto.objects.create(produto=produto, estoque=100)
-        var1.valores.add(valor_pequeno)
-
-        # Deve ser válido pois produto.estoque é 0 (sem limite)
-        total = sum(v.estoque or 0 for v in produto.variacoes.all())
-        assert total == 100
-        # A validação não deve ser aplicada quando estoque do produto é 0
-
-    def test_variacao_estoque_soma_excede_produto_invalido(
-        self, produto_com_estoque, atributo_tamanho,
-    ):
-        """
-        Quando a soma do estoque das variações excede o estoque do produto,
-        deve ser inválido.
-        """
-        produto = produto_com_estoque  # estoque = 10
-        valor_pequeno = atributo_tamanho.valores.get(valor="Pequeno")
-        valor_grande = atributo_tamanho.valores.get(valor="Grande")
-
-        # Criar variações com estoque total = 16 (8 + 8 > 10)
-        var1 = VariacaoProduto.objects.create(produto=produto, estoque=8)
-        var1.valores.add(valor_pequeno)
-
-        var2 = VariacaoProduto.objects.create(produto=produto, estoque=8)
-        var2.valores.add(valor_grande)
-
-        # O total excede o estoque do produto
-        total = sum(v.estoque or 0 for v in produto.variacoes.all())
-        assert total == 16
-        assert total > produto.estoque  # 16 > 10
-
-    def test_deletar_variacao_libera_estoque(
-        self, produto_com_estoque, atributo_tamanho,
-    ):
-        """
-        Quando uma variação é deletada, seu estoque é liberado para outras variações.
-        """
-        produto = produto_com_estoque  # estoque = 10
-        valor_pequeno = atributo_tamanho.valores.get(valor="Pequeno")
-        valor_grande = atributo_tamanho.valores.get(valor="Grande")
-
-        # Criar variações
-        var1 = VariacaoProduto.objects.create(produto=produto, estoque=5)
-        var1.valores.add(valor_pequeno)
-
-        var2 = VariacaoProduto.objects.create(produto=produto, estoque=5)
-        var2.valores.add(valor_grande)
-
-        # Deletar var1
-        var1.delete()
-
-        # Agora o total é 5
-        total = sum(v.estoque or 0 for v in produto.variacoes.all())
-        assert total == 5
-        assert total < produto.estoque  # 5 < 10
-
-
 class TestProdutoGerenteAdminEstoqueDisplay:
     """Testes para os métodos de exibição de estoque no admin."""
 
@@ -152,10 +41,9 @@ class TestProdutoGerenteAdminEstoqueDisplay:
         assert result == "10"
 
     def test_estoque_display_sem_estoque(self, admin_instance, db):
-        """Deve mostrar mensagem quando estoque é 0."""
-        produto = ProdutoFactory(estoque=0)
-        result = admin_instance.estoque_display(produto)
-        assert "Não definido" in result
+        """Produto sem saldo em depósito mostra 0."""
+        produto = ProdutoFactory()
+        assert admin_instance.estoque_display(produto) == "0"
 
     def test_estoque_display_produto_novo(self, admin_instance, db):
         """Deve retornar '-' para produto não salvo."""
@@ -168,17 +56,13 @@ class TestProdutoGerenteAdminEstoqueDisplay:
     ):
         """Deve mostrar a soma do estoque das variações."""
         produto = produto_com_estoque
-        valor_pequeno = atributo_tamanho.valores.get(valor="Pequeno")
-        valor_grande = atributo_tamanho.valores.get(valor="Grande")
-
-        var1 = VariacaoProduto.objects.create(produto=produto, estoque=3)
-        var1.valores.add(valor_pequeno)
-
-        var2 = VariacaoProduto.objects.create(produto=produto, estoque=4)
-        var2.valores.add(valor_grande)
-
-        result = admin_instance.estoque_variacoes_display(produto)
-        assert result == "7"
+        var1 = VariacaoProdutoFactory(
+            produto=produto, estoque=3, valores=[atributo_tamanho.valores.get(valor="Pequeno")],
+        )
+        VariacaoProdutoFactory(produto=produto, estoque=4, valores=[atributo_tamanho.valores.get(valor="Grande")])
+        assert admin_instance.estoque_variacoes_display(produto) == "7"
+        var1.produto.refresh_from_db()
+        assert admin_instance.estoque_display(var1.produto) == "17"  # 10 sem variação + 3 + 4
 
     def test_estoque_variacoes_display_sem_variacoes(
         self, admin_instance, produto_com_estoque,
@@ -187,43 +71,31 @@ class TestProdutoGerenteAdminEstoqueDisplay:
         result = admin_instance.estoque_variacoes_display(produto_com_estoque)
         assert result == "0"
 
-    def test_estoque_disponivel_display(
-        self, admin_instance, produto_com_estoque, atributo_tamanho,
-    ):
-        """Deve mostrar estoque disponível para alocação."""
-        produto = produto_com_estoque  # estoque = 10
-        valor_pequeno = atributo_tamanho.valores.get(valor="Pequeno")
 
-        var1 = VariacaoProduto.objects.create(produto=produto, estoque=3)
-        var1.valores.add(valor_pequeno)
+class TestFormsetSemRegraDeSomaDeEstoque:
+    """Com o estoque derivado dos depósitos (issue #144), o formset não compara variações com o produto."""
 
-        result = admin_instance.estoque_disponivel_display(produto)
-        assert result == "7"  # 10 - 3 = 7
+    def test_formset_valido_com_variacoes_acima_do_saldo_sem_variacao(self, produto_com_estoque, atributo_tamanho):
+        from django.forms.models import inlineformset_factory
 
-    def test_estoque_disponivel_display_excedido(
-        self, admin_instance, produto_com_estoque, atributo_tamanho,
-    ):
-        """Deve mostrar alerta quando estoque é excedido."""
-        produto = produto_com_estoque  # estoque = 10
-        valor_pequeno = atributo_tamanho.valores.get(valor="Pequeno")
-        valor_grande = atributo_tamanho.valores.get(valor="Grande")
+        from plataforma_de_servicos.produto.admin.gerente_admin import VariacaoProdutoInlineFormSet
 
-        # Criar variações que excedem o estoque
-        var1 = VariacaoProduto.objects.create(produto=produto, estoque=8)
-        var1.valores.add(valor_pequeno)
-
-        var2 = VariacaoProduto.objects.create(produto=produto, estoque=8)
-        var2.valores.add(valor_grande)
-
-        result = admin_instance.estoque_disponivel_display(produto)
-        assert "EXCEDIDO" in result
-        assert "-6" in result  # 10 - 16 = -6
-
-    def test_estoque_disponivel_display_sem_limite(self, admin_instance, db):
-        """Deve mostrar 'Sem limite' quando estoque do produto é 0."""
-        produto = ProdutoFactory(estoque=0)
-        result = admin_instance.estoque_disponivel_display(produto)
-        assert "Sem limite" in result
+        VariacaoProdutoFactory(
+            produto=produto_com_estoque, estoque=50, valores=[atributo_tamanho.valores.get(valor="Pequeno")],
+        )
+        FormSet = inlineformset_factory(
+            Produto, VariacaoProduto, formset=VariacaoProdutoInlineFormSet, fields=["valores"], extra=0,
+        )
+        variacao = produto_com_estoque.variacoes.get()
+        data = {
+            "variacoes-TOTAL_FORMS": "1",
+            "variacoes-INITIAL_FORMS": "1",
+            "variacoes-0-id": str(variacao.pk),
+            "variacoes-0-produto": str(produto_com_estoque.pk),
+            "variacoes-0-valores": [str(v.pk) for v in variacao.valores.all()],
+        }
+        formset = FormSet(data, instance=produto_com_estoque)
+        assert formset.is_valid(), formset.errors
 
 
 class TestVariacaoAtributoSelecaoUnica:
@@ -265,7 +137,7 @@ class TestVariacaoAtributoSelecaoUnica:
         """Variação com apenas um valor de atributo de seleção única é válido."""
         valor_vermelho = atributo_cor_selecao_unica.valores.get(valor="Vermelho")
 
-        variacao = VariacaoProduto.objects.create(produto=produto, estoque=5)
+        variacao = VariacaoProduto.objects.create(produto=produto)
         variacao.valores.add(valor_vermelho)
 
         # Verificar que só tem um valor do atributo
@@ -279,7 +151,7 @@ class TestVariacaoAtributoSelecaoUnica:
         valor_embalagem = atributo_extras_multipla_selecao.valores.get(valor="Embalagem")
         valor_cartao = atributo_extras_multipla_selecao.valores.get(valor="Cartão")
 
-        variacao = VariacaoProduto.objects.create(produto=produto, estoque=5)
+        variacao = VariacaoProduto.objects.create(produto=produto)
         variacao.valores.add(valor_embalagem, valor_cartao)
 
         # Verificar que tem dois valores

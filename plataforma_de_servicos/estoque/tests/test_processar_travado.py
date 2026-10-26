@@ -3,8 +3,6 @@ from decimal import Decimal
 import pytest
 
 from plataforma_de_servicos.estoque.exceptions import InventarioSaldoInsuficienteError
-from plataforma_de_servicos.estoque.exceptions import ProdutoSaldoInsuficienteError
-from plataforma_de_servicos.estoque.exceptions import VariacaoSaldoInsuficienteError
 from plataforma_de_servicos.estoque.models import Estoque
 from plataforma_de_servicos.estoque.tests import cenarios
 from plataforma_de_servicos.produto.models.produto_model import Produto
@@ -45,7 +43,7 @@ def test_saida_de_deposito_sem_registro_de_saldo_falha():
 def test_saida_maior_que_a_variacao_falha():
     dep = cenarios.deposito()
     v = cenarios.variacao_com_saldo({dep: 3})
-    with pytest.raises(VariacaoSaldoInsuficienteError):
+    with pytest.raises(InventarioSaldoInsuficienteError):
         cenarios.saida([(v, 4)], origem=dep).processar()
     assert cenarios.saldos(v, dep) == (3, 3, 3)
 
@@ -53,7 +51,7 @@ def test_saida_maior_que_a_variacao_falha():
 def test_saida_maior_que_o_produto_falha():
     dep = cenarios.deposito()
     produto = cenarios.produto_com_saldo({dep: 3})
-    with pytest.raises(ProdutoSaldoInsuficienteError):
+    with pytest.raises(InventarioSaldoInsuficienteError):
         cenarios.saida([(produto, 4)], origem=dep).processar()
     assert cenarios.saldos(produto, dep) == (None, 3, 3)
 
@@ -62,7 +60,7 @@ def test_falha_no_segundo_item_desfaz_o_primeiro():
     dep = cenarios.deposito()
     v1 = cenarios.variacao_com_saldo({dep: 5})
     v2 = cenarios.variacao_com_saldo({dep: 1})
-    with pytest.raises(VariacaoSaldoInsuficienteError):
+    with pytest.raises(InventarioSaldoInsuficienteError):
         cenarios.saida([(v1, 2), (v2, 3)], origem=dep).processar()
     assert cenarios.saldos(v1, dep) == (5, 5, 5)
 
@@ -114,3 +112,13 @@ def test_entrada_saida_e_transferencia_mantem_os_tres_saldos_iguais():
     saldo_b = cenarios.saldo_deposito(dep_b, v)
     assert (estoque_variacao, estoque_produto, saldo_a, saldo_b) == (7, 7, 3, 4)
     assert estoque_variacao == saldo_a + saldo_b
+
+
+def test_estoque_de_produto_e_variacao_e_a_soma_de_todos_os_depositos():
+    dep_a, dep_b = cenarios.deposito(), cenarios.deposito()
+    v = cenarios.variacao_com_saldo({dep_a: 4, dep_b: 6})
+    cenarios.entrada([(v.produto, 3)], destino=dep_b).processar()  # saldo sem variação
+    v.refresh_from_db()
+    v.produto.refresh_from_db()
+    assert v.estoque == 10
+    assert v.produto.estoque == 13
