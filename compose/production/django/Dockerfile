@@ -16,8 +16,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 
 RUN apt-get update && apt-get install -y curl \
   && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-  && apt-get install -y nodejs \
-  && npm install -g npm@latest
+  && apt-get install -y nodejs
 
 # Verifica as versões instaladas (apenas para debug)
 RUN node -v && npm -v
